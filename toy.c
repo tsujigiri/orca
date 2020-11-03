@@ -37,6 +37,12 @@ set(Grid *g, int x, int y, char c)
 	g->data[x + (y * g->w)] = c;
 }
 
+int
+getint(Grid *g, int x, int y)
+{
+	return get(g, x, y) - '0';
+}
+
 void
 parse(Grid *g)
 {
@@ -52,7 +58,9 @@ parse(Grid *g)
 		y = i / g->w;
 		if(busy(g, x, y))
 			continue;
-		if(c == 'E') {
+		if(c == 'A') {
+			set(g, x, y + 1, '0');
+		} else if(c == 'E') {
 			if(x == g->w || get(g, x + 1, y) != '.')
 				set(g, x, y, '*');
 			else {
@@ -68,7 +76,6 @@ parse(Grid *g)
 				set(g, x, y - 1, 'N');
 				lock(g, x, y - 1, 1);
 			}
-
 		} else if(c == 'S') {
 			if(y == g->h || get(g, x, y + 1) != '.')
 				set(g, x, y, '*');
