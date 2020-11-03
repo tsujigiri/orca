@@ -5,6 +5,7 @@ typedef struct Grid {
 	int height;
 	int length;
 	char data[256 * 256];
+	int lock[256 * 256];
 } Grid;
 
 int
@@ -15,19 +16,81 @@ error(char *name)
 }
 
 void
-run(FILE *f, Grid *g)
+lock(Grid *g, int x, int y, int b)
+{
+	g->lock[x + (y * g->width)] = b;
+}
+
+int
+busy(Grid *g, int x, int y)
+{
+	return g->lock[x + (y * g->width)];
+}
+
+char
+get(Grid *g, int x, int y)
+{
+	return g->data[x + (y * g->width)];
+}
+
+void
+set(Grid *g, int x, int y, char c)
+{
+	g->data[x + (y * g->width)] = c;
+}
+
+void
+parse(Grid *g)
+{
+	int i, x, y;
+	printf("F0\n");
+	for(i = 0; i < g->length; ++i) {
+		printf("%c", g->data[i]);
+	}
+	printf("DEBUG\n");
+	for(i = 0; i < g->length; ++i) {
+		char c = g->data[i];
+		x = i % g->width;
+		y = i / g->width;
+		if(busy(g, x, y))
+			continue;
+		if(c == 'E') {
+			if(get(g, x + 1, y) == '.') {
+				set(g, x, y, '.');
+				set(g, x + 1, y, 'E');
+				lock(g, x + 1, y, 1);
+			} else
+				set(g, x, y, '*');
+		} else if(c == 'S') {
+			if(get(g, x, y + 1) == '.') {
+				set(g, x, y, '.');
+				set(g, x, y + 1, 'S');
+				lock(g, x, y + 1, 1);
+			} else
+				set(g, x, y, '*');
+		}
+	}
+	printf("F1\n");
+	for(i = 0; i < g->length; ++i) {
+		printf("%c", g->data[i]);
+	}
+}
+
+void
+load(FILE *f, Grid *g)
 {
 	char c;
 	g->length = 0;
 	while((c = fgetc(f)) != EOF) {
 		if(c == '\n') {
 			if(g->width == 0)
-				g->width = g->length;
+				g->width = g->length + 1;
 			g->height = g->length / g->width;
 		}
-		g->length++;
+		g->data[g->length++] = c;
 	}
 	printf("grid:%d(%dx%d)\n", g->length, g->width, g->height);
+	parse(g);
 }
 
 int
@@ -40,6 +103,6 @@ main(int argc, char *argv[])
 	f = fopen(argv[1], "r");
 	if(f == NULL)
 		return error("Missing input.");
-	run(f, &g);
+	load(f, &g);
 	return 0;
 }

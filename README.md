@@ -1,79 +1,38 @@
-# GYO
+# Orca(toy)
 
-[Gyo](https://wiki.xxiivv.com/site/gyo.html) is an imaginary computer with 16 registers, 256 addressable memory addresses. The cpu understands 16 opcodes, the assembler syntax understands `=constants` and `:labels`. Programs are loaded directly into memory to create procedural self-modifiable programs.
+Orca is an [esoteric programming language](https://en.wikipedia.org/wiki/Esoteric_programming_language) designed to quickly create procedural sequencers, in which every letter of the alphabet is an operation, where lowercase letters operate on bang, uppercase letters operate each frame.
 
-<img src='https://wiki.xxiivv.com/media/generic/gyo.jpg' width='200'/>
+This is a single-file toy implementation, written in ANSI C, of the basic operators created for educational purposes.
 
-## Instructions
+## Operators
 
-```
-0x0  BRK  Break
-0x1  JMP  Jump to position in memory
-0x2  JCA  Jump to position in memory, when carryflag
-0x3  JZE  Jump to position in memory, when zeroflag
-0x4  PEK  Read status
-0x5  POK  Write status
-0x6  GET  Store in register
-0x7  PUT  Store in memory
-0x8  ADD  Add value to register, set carryflag when overflow
-0x9  SUB  Substract value from register, set carryflag when overflow
-0xA  EQU  Compare register with value, set zeroflag when equal
-0xB  LES  Compare register with value, set zeroflag when less than
-0xC  AND  Bitwise AND operator
-0xD  XOR  Bitwise XOR operator
-0xE  ROL  Bitwise rotate left
-0xF  ROR  Bitwise rotate right
-```
+To display the list of operators inside of Orca, use `CmdOrCtrl+G`.
 
-## Addressing
-
-- `#ef` the raw value.
-- `$ef` the value at address #ef in memory.
-- `[e]` the value of the 15th register.
-- `{e}` the value at the address of the 15th register.
-
-## IO
-
-To begin IO mode, activate the traps flag with `POK #08`.
-
-```
-POK #08  ; Set traps flag ON
-GET      ; Read character from stdin
-PUT [0]  ; Write character to stdout
-POK #00  ; Set traps flag OFF 
-```
-
-## Status Register
-
-The status register is distributed as follows, it shares the same byte as the register selector. The **halt** flag is used by the BRK instruction is stops the cpu, the **zero** flag is used for conditional instructions(EQU/LES/JEQ/JNE), the **carry** flag is set when a SUB/ADD instruction carries over the 8bit range and the **traps** flag is set when the pointer should be sent to the traps location(in IO operations). 
-
-```
-T C Z H
-| | | +---- Halt
-| | +------ Zero
-| +-------- Carry
-+---------- Traps
-```
-
-## Assembly Syntax
-
-```
-=rate #01           ; defines constant value
-
-:label              ; a label defines an address in the program
-	ADD rate        ; add rate to register
-	EQU #0f         ; set zeroflag if register is equal to #0f
-	JZE end         ; goto end if equal
-	JMP label       
-:end
-	BRK
-```
-
-If you need to fill the memory with specific values, you can do it as follows:
-
-```
-:hello
-	#48 #65
-	#6C #6C
-	#6F #0A
-```
+- `A` **add**(*a* b): Outputs sum of inputs.
+- `B` **subtract**(*a* b): Outputs difference of inputs.
+- `C` **clock**(*rate* mod): Outputs modulo of frame.
+- `D` **delay**(*rate* mod): Bangs on modulo of frame.
+- `E` **east**: Moves eastward, or bangs.
+- `F` **if**(*a* b): Bangs if inputs are equal.
+- `G` **generator**(*x* *y* *len*): Writes operands with offset.
+- `H` **halt**: Halts southward operand.
+- `I` **increment**(*step* mod): Increments southward operand.
+- `J` **jumper**(*val*): Outputs northward operand.
+- `K` **konkat**(*len*): Reads multiple variables.
+- `L` **less**(*a* *b*): Outputs smallest of inputs.
+- `M` **multiply**(*a* b): Outputs product of inputs.
+- `N` **north**: Moves Northward, or bangs.
+- `O` **read**(*x* *y* read): Reads operand with offset.
+- `P` **push**(*len* *key* val): Writes eastward operand.
+- `Q` **query**(*x* *y* *len*): Reads operands with offset.
+- `R` **random**(*min* max): Outputs random value.
+- `S` **south**: Moves southward, or bangs.
+- `T` **track**(*key* *len* val): Reads eastward operand.
+- `U` **uclid**(*step* max): Bangs on Euclidean rhythm.
+- `V` **variable**(*write* read): Reads and writes variable.
+- `W` **west**: Moves westward, or bangs.
+- `X` **write**(*x* *y* val): Writes operand with offset.
+- `Y` **jymper**(*val*): Outputs westward operand.
+- `Z` **lerp**(*rate* target): Transitions operand to input.
+- `*` **bang**: Bangs neighboring operands.
+- `#` **comment**: Halts a line.
