@@ -1,11 +1,9 @@
 #include <stdio.h>
 
 typedef struct Grid {
-	int width;
-	int height;
-	int length;
-	char data[256 * 256];
+	int w, h, l;
 	int lock[256 * 256];
+	char data[256 * 256];
 } Grid;
 
 int
@@ -18,25 +16,25 @@ error(char *name)
 void
 lock(Grid *g, int x, int y, int b)
 {
-	g->lock[x + (y * g->width)] = b;
+	g->lock[x + (y * g->w)] = b;
 }
 
 int
 busy(Grid *g, int x, int y)
 {
-	return g->lock[x + (y * g->width)];
+	return g->lock[x + (y * g->w)];
 }
 
 char
 get(Grid *g, int x, int y)
 {
-	return g->data[x + (y * g->width)];
+	return g->data[x + (y * g->w)];
 }
 
 void
 set(Grid *g, int x, int y, char c)
 {
-	g->data[x + (y * g->width)] = c;
+	g->data[x + (y * g->w)] = c;
 }
 
 void
@@ -44,34 +42,53 @@ parse(Grid *g)
 {
 	int i, x, y;
 	printf("F0\n");
-	for(i = 0; i < g->length; ++i) {
+	for(i = 0; i < g->l; ++i) {
 		printf("%c", g->data[i]);
 	}
 	printf("DEBUG\n");
-	for(i = 0; i < g->length; ++i) {
+	for(i = 0; i < g->l; ++i) {
 		char c = g->data[i];
-		x = i % g->width;
-		y = i / g->width;
+		x = i % g->w;
+		y = i / g->w;
 		if(busy(g, x, y))
 			continue;
 		if(c == 'E') {
-			if(get(g, x + 1, y) == '.') {
+			if(x == g->w || get(g, x + 1, y) != '.')
+				set(g, x, y, '*');
+			else {
 				set(g, x, y, '.');
 				set(g, x + 1, y, 'E');
 				lock(g, x + 1, y, 1);
-			} else
+			}
+		} else if(c == 'N') {
+			if(y == 0 || get(g, x, y - 1) != '.')
 				set(g, x, y, '*');
+			else {
+				set(g, x, y, '.');
+				set(g, x, y - 1, 'N');
+				lock(g, x, y - 1, 1);
+			}
+
 		} else if(c == 'S') {
-			if(get(g, x, y + 1) == '.') {
+			if(y == g->h || get(g, x, y + 1) != '.')
+				set(g, x, y, '*');
+			else {
 				set(g, x, y, '.');
 				set(g, x, y + 1, 'S');
 				lock(g, x, y + 1, 1);
-			} else
+			}
+		} else if(c == 'W') {
+			if(x == 0 || get(g, x - 1, y) != '.')
 				set(g, x, y, '*');
+			else {
+				set(g, x, y, '.');
+				set(g, x - 1, y, 'W');
+				lock(g, x - 1, y, 1);
+			}
 		}
 	}
 	printf("F1\n");
-	for(i = 0; i < g->length; ++i) {
+	for(i = 0; i < g->l; ++i) {
 		printf("%c", g->data[i]);
 	}
 }
@@ -80,16 +97,16 @@ void
 load(FILE *f, Grid *g)
 {
 	char c;
-	g->length = 0;
+	g->l = 0;
 	while((c = fgetc(f)) != EOF) {
 		if(c == '\n') {
-			if(g->width == 0)
-				g->width = g->length + 1;
-			g->height = g->length / g->width;
+			if(g->w == 0)
+				g->w = g->l + 1;
+			g->h = g->l / g->w;
 		}
-		g->data[g->length++] = c;
+		g->data[g->l++] = c;
 	}
-	printf("grid:%d(%dx%d)\n", g->length, g->width, g->height);
+	printf("grid:%d(%dx%d)\n", g->l, g->w, g->h);
 	parse(g);
 }
 
