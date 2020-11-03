@@ -86,11 +86,6 @@ void
 parse(Grid *g)
 {
 	int i, x, y;
-	printf("F0\n");
-	for(i = 0; i < g->l; ++i) {
-		printf("%c", g->data[i]);
-	}
-	printf("DEBUG\n");
 	for(i = 0; i < g->l; ++i) {
 		char c = g->data[i];
 		x = i % g->w;
@@ -113,6 +108,18 @@ parse(Grid *g)
 				set(g, x + 1, y, 'E');
 				lock(g, x + 1, y);
 			}
+		} else if(c == 'F') {
+			/* TODO */
+			lock(g, x + 1, y);
+			lock(g, x, y + 1);
+		} else if(c == 'L') {
+			/* TODO */
+			lock(g, x + 1, y);
+			lock(g, x, y + 1);
+		} else if(c == 'M') {
+			/* TODO */
+			lock(g, x + 1, y);
+			lock(g, x, y + 1);
 		} else if(c == 'N') {
 			if(y == 0 || get(g, x, y - 1) != '.')
 				set(g, x, y, '*');
@@ -139,7 +146,6 @@ parse(Grid *g)
 			}
 		}
 	}
-	printf("F1\n");
 	for(i = 0; i < g->l; ++i) {
 		printf("%c", g->data[i]);
 	}
@@ -158,7 +164,6 @@ load(FILE *f, Grid *g)
 		}
 		g->data[g->l++] = c;
 	}
-	printf("grid:%d(%dx%d)\n", g->l, g->w, g->h);
 	parse(g);
 }
 

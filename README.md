@@ -2,7 +2,7 @@
 
 Orca is an [esoteric programming language](https://en.wikipedia.org/wiki/Esoteric_programming_language) designed to quickly create procedural sequencers, in which every letter of the alphabet is an operation, where lowercase letters operate on bang, uppercase letters operate each frame.
 
-This is a single-file toy implementation, written in ANSI C, of the basic operators created for educational purposes.
+This is a single-file implementation of the basic operators created for educational purposes. To try a complete environment with client and server, see [Orca](https://git.sr.ht/~rabbits/orca).
 
 ## Operators
 
@@ -36,3 +36,4 @@ To display the list of operators inside of Orca, use `CmdOrCtrl+G`.
 - `Z` **lerp**(*rate* target): Transitions operand to input.
 - `*` **bang**: Bangs neighboring operands.
 - `#` **comment**: Halts a line.
+
