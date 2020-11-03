@@ -7,6 +7,12 @@ typedef struct Grid {
 } Grid;
 
 int
+ciuc(char c)
+{
+	return c >= 'A' && c <= 'Z';
+}
+
+int
 cint(char c)
 {
 	if(c == '.')
@@ -15,7 +21,7 @@ cint(char c)
 		return c - '0';
 	if(c >= 'a' && c <= 'z')
 		return c - 'a' + 10;
-	if(c >= 'A' && c <= 'Z')
+	if(ciuc(c))
 		return c - 'A' + 10;
 	return 0;
 }
@@ -32,13 +38,6 @@ cchr(int v, int cap)
 	return 'a' + (v - 10);
 }
 
-int
-error(char *name)
-{
-	printf("Error: %s\n", name);
-	return 0;
-}
-
 char
 get(Grid *g, int x, int y)
 {
@@ -51,36 +50,202 @@ set(Grid *g, int x, int y, char c)
 	g->data[x + (y * g->w)] = c;
 }
 
-int
-getint(Grid *g, int x, int y)
-{
-	return cint(get(g, x, y));
-}
-
-void
-setint(Grid *g, int x, int y, int v)
-{
-	g->data[x + (y * g->w)] = cchr(v, 0);
-}
-
 void
 lock(Grid *g, int x, int y)
 {
 	g->lock[x + (y * g->w)] = 1;
 }
 
-int
-busy(Grid *g, int x, int y)
+/* Library */
+
+void
+_0(Grid *g, int x, int y)
 {
-	return g->lock[x + (y * g->w)];
 }
 
-int
-caps(Grid *g, int x, int y)
+void
+_a(Grid *g, int x, int y)
 {
-	char c = get(g, x, y);
-	return c >= 'A' && c <= 'Z';
+	char a = get(g, x - 1, y);
+	char b = get(g, x + 1, y);
+	set(g, x, y + 1, cchr(cint(a) + cint(b), ciuc(b)));
+	lock(g, x + 1, y);
+	lock(g, x, y + 1);
 }
+
+void
+_b(Grid *g, int x, int y)
+{
+	char a = get(g, x - 1, y);
+	char b = get(g, x + 1, y);
+	set(g, x, y + 1, cchr(cint(a) - cint(b), ciuc(b)));
+	lock(g, x + 1, y);
+	lock(g, x, y + 1);
+}
+
+void
+_c(Grid *g, int x, int y)
+{
+}
+
+void
+_d(Grid *g, int x, int y)
+{
+}
+
+void
+_e(Grid *g, int x, int y)
+{
+	if(x == g->w || get(g, x + 1, y) != '.')
+		set(g, x, y, '*');
+	else {
+		set(g, x, y, '.');
+		set(g, x + 1, y, 'E');
+		lock(g, x + 1, y);
+	}
+}
+
+void
+_f(Grid *g, int x, int y)
+{
+	set(g, x, y + 1, get(g, x - 1, y) == get(g, x + 1, y) ? '*' : '.');
+	lock(g, x + 1, y);
+	lock(g, x, y + 1);
+}
+
+void
+_g(Grid *g, int x, int y)
+{
+}
+
+void
+_h(Grid *g, int x, int y)
+{
+	lock(g, x, y + 1);
+}
+
+void
+_i(Grid *g, int x, int y)
+{
+}
+
+void
+_j(Grid *g, int x, int y)
+{
+}
+
+void
+_k(Grid *g, int x, int y)
+{
+}
+
+void
+_l(Grid *g, int x, int y)
+{
+	char a = get(g, x - 1, y);
+	char b = get(g, x + 1, y);
+	set(g, x, y + 1, cint(a) < cint(b) ? a : b);
+	lock(g, x + 1, y);
+	lock(g, x, y + 1);
+}
+
+void
+_m(Grid *g, int x, int y)
+{
+	char a = get(g, x - 1, y);
+	char b = get(g, x + 1, y);
+	set(g, x, y + 1, cchr(cint(a) * cint(b), ciuc(b)));
+	lock(g, x + 1, y);
+	lock(g, x, y + 1);
+}
+
+void
+_n(Grid *g, int x, int y)
+{
+	if(y == 0 || get(g, x, y - 1) != '.')
+		set(g, x, y, '*');
+	else {
+		set(g, x, y, '.');
+		set(g, x, y - 1, 'N');
+		lock(g, x, y - 1);
+	}
+}
+
+void
+_o(Grid *g, int x, int y)
+{
+}
+
+void
+_p(Grid *g, int x, int y)
+{
+}
+
+void
+_q(Grid *g, int x, int y)
+{
+}
+
+void
+_r(Grid *g, int x, int y)
+{
+}
+
+void
+_s(Grid *g, int x, int y)
+{
+	if(y == g->h || get(g, x, y + 1) != '.')
+		set(g, x, y, '*');
+	else {
+		set(g, x, y, '.');
+		set(g, x, y + 1, 'S');
+		lock(g, x, y + 1);
+	}
+}
+
+void
+_t(Grid *g, int x, int y)
+{
+}
+
+void
+_u(Grid *g, int x, int y)
+{
+}
+
+void
+_v(Grid *g, int x, int y)
+{
+}
+
+void
+_w(Grid *g, int x, int y)
+{
+	if(x == 0 || get(g, x - 1, y) != '.')
+		set(g, x, y, '*');
+	else {
+		set(g, x, y, '.');
+		set(g, x - 1, y, 'W');
+		lock(g, x - 1, y);
+	}
+}
+
+void
+_x(Grid *g, int x, int y)
+{
+}
+
+void
+_y(Grid *g, int x, int y)
+{
+}
+
+void
+_z(Grid *g, int x, int y)
+{
+}
+
+void (*library[36])() = {_0, _0, _0, _0, _0, _0, _0, _0, _0, _0, _a, _b, _c, _d, _e, _f, _g, _h, _i, _j, _k, _l, _m, _n, _o, _p, _q, _r, _s, _t, _u, _v, _w, _x, _y, _z};
 
 void
 parse(Grid *g)
@@ -90,65 +255,14 @@ parse(Grid *g)
 		char c = g->data[i];
 		x = i % g->w;
 		y = i / g->w;
-		if(busy(g, x, y))
+		if(g->lock[i])
 			continue;
-		if(c == 'A') {
-			set(g, x, y + 1, cchr(getint(g, x - 1, y) + getint(g, x + 1, y), caps(g, x + 1, y)));
-			lock(g, x + 1, y);
-			lock(g, x, y + 1);
-		} else if(c == 'B') {
-			set(g, x, y + 1, cchr(getint(g, x - 1, y) - getint(g, x + 1, y), caps(g, x + 1, y)));
-			lock(g, x + 1, y);
-			lock(g, x, y + 1);
-		} else if(c == 'E') {
-			if(x == g->w || get(g, x + 1, y) != '.')
-				set(g, x, y, '*');
-			else {
-				set(g, x, y, '.');
-				set(g, x + 1, y, 'E');
-				lock(g, x + 1, y);
-			}
-		} else if(c == 'F') {
-			/* TODO */
-			lock(g, x + 1, y);
-			lock(g, x, y + 1);
-		} else if(c == 'L') {
-			/* TODO */
-			lock(g, x + 1, y);
-			lock(g, x, y + 1);
-		} else if(c == 'M') {
-			/* TODO */
-			lock(g, x + 1, y);
-			lock(g, x, y + 1);
-		} else if(c == 'N') {
-			if(y == 0 || get(g, x, y - 1) != '.')
-				set(g, x, y, '*');
-			else {
-				set(g, x, y, '.');
-				set(g, x, y - 1, 'N');
-				lock(g, x, y - 1);
-			}
-		} else if(c == 'S') {
-			if(y == g->h || get(g, x, y + 1) != '.')
-				set(g, x, y, '*');
-			else {
-				set(g, x, y, '.');
-				set(g, x, y + 1, 'S');
-				lock(g, x, y + 1);
-			}
-		} else if(c == 'W') {
-			if(x == 0 || get(g, x - 1, y) != '.')
-				set(g, x, y, '*');
-			else {
-				set(g, x, y, '.');
-				set(g, x - 1, y, 'W');
-				lock(g, x - 1, y);
-			}
-		}
+		if(!ciuc(c))
+			continue;
+		library[cint(c)](g, x, y);
 	}
-	for(i = 0; i < g->l; ++i) {
+	for(i = 0; i < g->l; ++i)
 		printf("%c", g->data[i]);
-	}
 }
 
 void
@@ -165,6 +279,13 @@ load(FILE *f, Grid *g)
 		g->data[g->l++] = c;
 	}
 	parse(g);
+}
+
+int
+error(char *name)
+{
+	printf("Error: %s\n", name);
+	return 0;
 }
 
 int

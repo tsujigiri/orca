@@ -1,6 +1,7 @@
 #!/bin/bash
 
 clang-format -i toy.c
+clang-format -i library.h
 
 rm -f ./toy
 
