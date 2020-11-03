@@ -245,7 +245,18 @@ _z(Grid *g, int x, int y)
 {
 }
 
-void (*library[36])() = {_0, _0, _0, _0, _0, _0, _0, _0, _0, _0, _a, _b, _c, _d, _e, _f, _g, _h, _i, _j, _k, _l, _m, _n, _o, _p, _q, _r, _s, _t, _u, _v, _w, _x, _y, _z};
+/* clang-format off */
+
+void (*library[36])() = {
+	_0, _0, _0, _0, _0, _0, 
+	_0, _0, _0, _0, _a, _b, 
+	_c, _d, _e, _f, _g, _h, 
+	_i, _j, _k, _l, _m, _n, 
+	_o, _p, _q, _r, _s, _t, 
+	_u, _v, _w, _x, _y, _z
+};
+
+/* clang-format on */
 
 void
 parse(Grid *g)
