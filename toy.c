@@ -3,6 +3,7 @@
 typedef struct Grid {
 	int w, h, l, f;
 	int lock[256 * 256];
+	char vars[36];
 	char data[256 * 256];
 } Grid;
 
@@ -54,6 +55,18 @@ void
 lock(Grid *g, int x, int y)
 {
 	g->lock[x + (y * g->w)] = 1;
+}
+
+void
+save(Grid *g, char key, char val)
+{
+	g->vars[cint(key)] = val;
+}
+
+char
+load(Grid *g, char key)
+{
+	return g->vars[cint(key)];
 }
 
 /* Library */
@@ -154,6 +167,15 @@ _j(Grid *g, int x, int y)
 void
 _k(Grid *g, int x, int y)
 {
+	int len = cint(get(g, x - 1, y));
+	int i;
+	for(i = 0; i < len; ++i) {
+		char key = get(g, x + 1 + i, y);
+		if(key == '.')
+			continue;
+		set(g, x + 1 + i, y + 1, load(g, key));
+		lock(g, x + 1 + i, y + 1);
+	}
 }
 
 void
@@ -246,6 +268,15 @@ _u(Grid *g, int x, int y)
 void
 _v(Grid *g, int x, int y)
 {
+	char w = get(g, x - 1, y);
+	char r = get(g, x + 1, y);
+	if(w != '.')
+		save(g, w, r);
+	else if(w == '.' && r != '.') {
+		set(g, x, y + 1, load(g, r));
+		lock(g, x, y + 1);
+	}
+	lock(g, x + 1, y);
 }
 
 void
@@ -322,7 +353,7 @@ parse(Grid *g)
 }
 
 void
-load(FILE *f, Grid *g)
+disk(FILE *f, Grid *g)
 {
 	char c;
 	g->l = 0;
@@ -355,6 +386,6 @@ main(int argc, char *argv[])
 	f = fopen(argv[1], "r");
 	if(f == NULL)
 		return error("Missing input.");
-	load(f, &g);
+	disk(f, &g);
 	return 0;
 }
