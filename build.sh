@@ -11,5 +11,7 @@ cc -std=c89 -DDEBUG -Wall -Wpedantic -Wshadow -Wextra -Werror=implicit-int -Werr
 # Plan9
 # pcc toy.c -o toy
 
-./toy abflm.orca > abflm-result.orca
-diff abflm-result.orca abflm-expected.orca
+# ./toy abflm.orca > abflm-result.orca
+# diff abflm-result.orca abflm-expected.orca
+
+./toy demo.orca
