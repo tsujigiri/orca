@@ -1,10 +1,12 @@
 #include <stdio.h>
 
+#define MAXSZ 256 * 256
+
 typedef struct Grid {
 	int w, h, l, f, r;
-	int lock[256 * 256];
+	int lock[MAXSZ];
 	char vars[36];
-	char data[256 * 256];
+	char data[MAXSZ];
 } Grid;
 
 int
@@ -370,7 +372,7 @@ void (*library[36])() = {
 
 /* clang-format on */
 
-void
+int
 parse(Grid *g)
 {
 	int i, x, y;
@@ -386,14 +388,15 @@ parse(Grid *g)
 	}
 	for(i = 0; i < g->l; ++i)
 		printf("%c", g->data[i]);
+	return 1;
 }
 
-void
+int
 disk(FILE *f, Grid *g)
 {
 	char c;
 	g->l = 0;
-	while((c = fgetc(f)) != EOF) {
+	while((c = fgetc(f)) != EOF && g->l < MAXSZ) {
 		if(c == '\n') {
 			if(g->w == 0)
 				g->w = g->l + 1;
@@ -401,7 +404,9 @@ disk(FILE *f, Grid *g)
 		}
 		g->data[g->l++] = c;
 	}
-	parse(g);
+	if(g->w < 3 || g->h < 3)
+		return 0;
+	return parse(g);
 }
 
 int
@@ -421,8 +426,9 @@ main(int argc, char *argv[])
 	if(argc < 2)
 		return error("No input.");
 	f = fopen(argv[1], "r");
-	if(f == NULL)
+	if(!f)
 		return error("Missing input.");
-	disk(f, &g);
+	if(!disk(f, &g))
+		return error("Invalid grid");
 	return 0;
 }

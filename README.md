@@ -37,3 +37,8 @@ To display the list of operators inside of Orca, use `CmdOrCtrl+G`.
 - `*` **bang**: Bangs neighboring operands.
 - `#` **comment**: Halts a line.
 
+## TODOs
+
+- Lowercase on bang
+- Comments
+- Special operators
