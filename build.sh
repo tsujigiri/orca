@@ -13,4 +13,4 @@ cc -std=c89 -DDEBUG -Wall -Wpedantic -Wshadow -Wextra -Werror=implicit-int -Werr
 # ./toy abflm.orca > abflm-result.orca
 # diff abflm-result.orca abflm-expected.orca
 
-./toy demo.orca
+./toy demo.orca 10

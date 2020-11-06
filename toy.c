@@ -44,7 +44,7 @@ cchr(int v, int cap)
 int
 valid(Grid *g, int x, int y)
 {
-	return x >= 0 || x <= g->w || y >= 0 || y < g->h;
+	return x >= 0 || x < g->w || y >= 0 || y < g->h;
 }
 
 char
@@ -89,7 +89,7 @@ load(Grid *g, char key)
 }
 
 int
-rand(Grid *g)
+random(Grid *g)
 {
 	g->r *= 1103515245;
 	return ((g->r / 65536 * g->f) % 32768) ^ g->f;
@@ -253,7 +253,7 @@ opq(Grid *g, int x, int y)
 	int tx = cint(get(g, x - 3, y));
 	int ty = cint(get(g, x - 2, y));
 	int i, len = cint(get(g, x - 1, y));
-	for(i = 0; i < len; ++i) 
+	for(i = 0; i < len; ++i)
 		setlock(g, x + 1 - len + i, y + 1, get(g, x + 1 + tx + i, y + ty));
 }
 
@@ -263,7 +263,7 @@ opr(Grid *g, int x, int y)
 	int min = cint(get(g, x - 1, y));
 	char max = get(g, x + 1, y);
 	lock(g, x + 1, y);
-	setlock(g, x, y + 1, cchr((rand(g) % (cint(max) - min)) + min, ciuc(max)));
+	setlock(g, x, y + 1, cchr((random(g) % (cint(max) - min)) + min, ciuc(max)));
 }
 
 void
@@ -360,6 +360,15 @@ void (*library[36])() = {
 
 /* clang-format on */
 
+void
+print(Grid *g)
+{
+	int i;
+	for(i = 0; i < g->l; ++i)
+		putchar(g->data[i]);
+	putchar('\n');
+}
+
 int
 parse(Grid *g)
 {
@@ -376,8 +385,7 @@ parse(Grid *g)
 			continue;
 		library[cint(c)](g, x, y);
 	}
-	for(i = 0; i < g->l; ++i)
-		putchar(g->data[i]);
+	g->f++;
 	return 1;
 }
 
@@ -394,9 +402,7 @@ disk(FILE *f, Grid *g)
 		}
 		g->data[g->l++] = c;
 	}
-	if(g->w < 2 || g->h < 2)
-		return 0;
-	return parse(g);
+	return g->w > 2 && g->h > 2;
 }
 
 int
@@ -422,5 +428,11 @@ main(int argc, char *argv[])
 		return error("Missing input.");
 	if(!disk(f, &g))
 		return error("Invalid grid");
+	parse(&g);
+	print(&g);
+	parse(&g);
+	print(&g);
+	parse(&g);
+	print(&g);
 	return 0;
 }
