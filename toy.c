@@ -89,6 +89,12 @@ load(Grid *g, char key)
 }
 
 int
+bang(Grid *g, int x, int y)
+{
+	return get(g, x - 1, y) == '*' || get(g, x + 1, y) == '*' || get(g, x, y - 1) == '*' || get(g, x, y + 1) == '*';
+}
+
+int
 random(Grid *g)
 {
 	g->r *= 1103515245;
@@ -141,11 +147,12 @@ opd(Grid *g, int x, int y)
 void
 ope(Grid *g, int x, int y)
 {
+	char c = get(g, x, y);
 	if(x == g->w || get(g, x + 1, y) != '.')
 		setlock(g, x, y, '*');
 	else {
 		set(g, x, y, '.');
-		setlock(g, x + 1, y, 'E');
+		setlock(g, x + 1, y, c);
 	}
 }
 
@@ -220,11 +227,12 @@ opm(Grid *g, int x, int y)
 void
 opn(Grid *g, int x, int y)
 {
+	char c = get(g, x, y);
 	if(y == 0 || get(g, x, y - 1) != '.')
 		setlock(g, x, y, '*');
 	else {
 		set(g, x, y, '.');
-		setlock(g, x, y - 1, 'N');
+		setlock(g, x, y - 1, c);
 	}
 }
 
@@ -269,11 +277,12 @@ opr(Grid *g, int x, int y)
 void
 ops(Grid *g, int x, int y)
 {
+	char c = get(g, x, y);
 	if(y == g->h || get(g, x, y + 1) != '.')
 		setlock(g, x, y, '*');
 	else {
 		set(g, x, y, '.');
-		setlock(g, x, y + 1, 'S');
+		setlock(g, x, y + 1, c);
 	}
 }
 
@@ -312,11 +321,12 @@ opv(Grid *g, int x, int y)
 void
 opw(Grid *g, int x, int y)
 {
+	char c = get(g, x, y);
 	if(x == 0 || get(g, x - 1, y) != '.')
 		setlock(g, x, y, '*');
 	else {
 		set(g, x, y, '.');
-		setlock(g, x - 1, y, 'W');
+		setlock(g, x - 1, y, c);
 	}
 }
 
@@ -383,10 +393,12 @@ run(Grid *g)
 			comment = 0;
 		if(c == '#')
 			comment = !comment;
-		if(comment || g->lock[i] || (!ciuc(c) && c != '*'))
+		if(comment || g->lock[i])
 			continue;
 		if(c == '*')
 			set(g, x, y, '.');
+		if(!ciuc(c) && !bang(g, x, y))
+			continue;
 		library[cint(c)](g, x, y);
 	}
 	g->f++;
@@ -420,7 +432,7 @@ int
 main(int argc, char *argv[])
 {
 	FILE *f;
-	int limit = 30;
+	int limit = 3;
 	Grid g;
 	g.w = 0;
 	g.h = 0;
