@@ -41,22 +41,32 @@ cchr(int v, int cap)
 	return 'a' + (v - 10);
 }
 
+int
+valid(Grid *g, int x, int y)
+{
+	return x < 0 || x >= g->w || y < 0 || y >= g->h;
+}
+
 char
 get(Grid *g, int x, int y)
 {
-	return g->data[x + (y * g->w)];
+	if(valid(g, x, y))
+		return g->data[x + (y * g->w)];
+	return '.';
 }
 
 void
 set(Grid *g, int x, int y, char c)
 {
-	g->data[x + (y * g->w)] = c;
+	if(valid(g, x, y))
+		g->data[x + (y * g->w)] = c;
 }
 
 void
 lock(Grid *g, int x, int y)
 {
-	g->lock[x + (y * g->w)] = 1;
+	if(valid(g, x, y))
+		g->lock[x + (y * g->w)] = 1;
 }
 
 void
@@ -404,7 +414,7 @@ disk(FILE *f, Grid *g)
 		}
 		g->data[g->l++] = c;
 	}
-	if(g->w < 3 || g->h < 3)
+	if(g->w < 2 || g->h < 2)
 		return 0;
 	return parse(g);
 }
