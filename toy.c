@@ -72,12 +72,12 @@ load(Grid *g, char key)
 /* Library */
 
 void
-_0(void)
+op0(void)
 {
 }
 
 void
-_a(Grid *g, int x, int y)
+opa(Grid *g, int x, int y)
 {
 	char a = get(g, x - 1, y);
 	char b = get(g, x + 1, y);
@@ -87,7 +87,7 @@ _a(Grid *g, int x, int y)
 }
 
 void
-_b(Grid *g, int x, int y)
+opb(Grid *g, int x, int y)
 {
 	char a = get(g, x - 1, y);
 	char b = get(g, x + 1, y);
@@ -97,7 +97,7 @@ _b(Grid *g, int x, int y)
 }
 
 void
-_c(Grid *g, int x, int y)
+opc(Grid *g, int x, int y)
 {
 	char rate = get(g, x - 1, y);
 	char mod = get(g, x + 1, y);
@@ -107,7 +107,7 @@ _c(Grid *g, int x, int y)
 }
 
 void
-_d(Grid *g, int x, int y)
+opd(Grid *g, int x, int y)
 {
 	char rate = get(g, x - 1, y);
 	char mod = get(g, x + 1, y);
@@ -117,7 +117,7 @@ _d(Grid *g, int x, int y)
 }
 
 void
-_e(Grid *g, int x, int y)
+ope(Grid *g, int x, int y)
 {
 	if(x == g->w || get(g, x + 1, y) != '.')
 		set(g, x, y, '*');
@@ -129,7 +129,7 @@ _e(Grid *g, int x, int y)
 }
 
 void
-_f(Grid *g, int x, int y)
+opf(Grid *g, int x, int y)
 {
 	set(g, x, y + 1, get(g, x - 1, y) == get(g, x + 1, y) ? '*' : '.');
 	lock(g, x + 1, y);
@@ -137,18 +137,26 @@ _f(Grid *g, int x, int y)
 }
 
 void
-_g(Grid *g, int x, int y)
+opg(Grid *g, int x, int y)
 {
+	int tx = cint(get(g, x - 3, y));
+	int ty = cint(get(g, x - 2, y));
+	int len = cint(get(g, x - 1, y));
+	int i;
+	for(i = 0; i < len; ++i) {
+		set(g, x + i + tx, y + 1 + ty, get(g, x + 1 + i, y));
+		lock(g, x + i + tx, y + 1 + ty);
+	}
 }
 
 void
-_h(Grid *g, int x, int y)
+oph(Grid *g, int x, int y)
 {
 	lock(g, x, y + 1);
 }
 
 void
-_i(Grid *g, int x, int y)
+opi(Grid *g, int x, int y)
 {
 	char step = get(g, x - 1, y);
 	char mod = get(g, x + 1, y);
@@ -158,14 +166,14 @@ _i(Grid *g, int x, int y)
 }
 
 void
-_j(Grid *g, int x, int y)
+opj(Grid *g, int x, int y)
 {
 	set(g, x, y + 1, get(g, x, y - 1));
 	lock(g, x, y + 1);
 }
 
 void
-_k(Grid *g, int x, int y)
+opk(Grid *g, int x, int y)
 {
 	int len = cint(get(g, x - 1, y));
 	int i;
@@ -179,7 +187,7 @@ _k(Grid *g, int x, int y)
 }
 
 void
-_l(Grid *g, int x, int y)
+opl(Grid *g, int x, int y)
 {
 	char a = get(g, x - 1, y);
 	char b = get(g, x + 1, y);
@@ -189,7 +197,7 @@ _l(Grid *g, int x, int y)
 }
 
 void
-_m(Grid *g, int x, int y)
+opm(Grid *g, int x, int y)
 {
 	char a = get(g, x - 1, y);
 	char b = get(g, x + 1, y);
@@ -199,7 +207,7 @@ _m(Grid *g, int x, int y)
 }
 
 void
-_n(Grid *g, int x, int y)
+opn(Grid *g, int x, int y)
 {
 	if(y == 0 || get(g, x, y - 1) != '.')
 		set(g, x, y, '*');
@@ -211,27 +219,37 @@ _n(Grid *g, int x, int y)
 }
 
 void
-_o(Grid *g, int x, int y)
+opo(Grid *g, int x, int y)
+{
+	int tx = cint(get(g, x - 2, y));
+	int ty = cint(get(g, x - 1, y));
+	set(g, x, y + 1, get(g, x + 1 + tx, y + ty));
+	lock(g, x + 1 + tx, y + ty);
+}
+
+void
+opp(Grid *g, int x, int y)
+{
+	int key = cint(get(g, x - 2, y));
+	int len = cint(get(g, x - 1, y));
+	int i;
+	for(i = 0; i < len; ++i)
+		lock(g, x + i, y + 1);
+	set(g, x + (key % len), y + 1, get(g, x + 1, y));
+}
+
+void
+opq(Grid *g, int x, int y)
 {
 }
 
 void
-_p(Grid *g, int x, int y)
+opr(Grid *g, int x, int y)
 {
 }
 
 void
-_q(Grid *g, int x, int y)
-{
-}
-
-void
-_r(Grid *g, int x, int y)
-{
-}
-
-void
-_s(Grid *g, int x, int y)
+ops(Grid *g, int x, int y)
 {
 	if(y == g->h || get(g, x, y + 1) != '.')
 		set(g, x, y, '*');
@@ -243,7 +261,7 @@ _s(Grid *g, int x, int y)
 }
 
 void
-_t(Grid *g, int x, int y)
+opt(Grid *g, int x, int y)
 {
 	int key = cint(get(g, x - 2, y));
 	int len = cint(get(g, x - 1, y));
@@ -255,7 +273,7 @@ _t(Grid *g, int x, int y)
 }
 
 void
-_u(Grid *g, int x, int y)
+opu(Grid *g, int x, int y)
 {
 	int max = cint(get(g, x - 1, y));
 	int step = cint(get(g, x + 1, y));
@@ -266,7 +284,7 @@ _u(Grid *g, int x, int y)
 }
 
 void
-_v(Grid *g, int x, int y)
+opv(Grid *g, int x, int y)
 {
 	char w = get(g, x - 1, y);
 	char r = get(g, x + 1, y);
@@ -280,7 +298,7 @@ _v(Grid *g, int x, int y)
 }
 
 void
-_w(Grid *g, int x, int y)
+opw(Grid *g, int x, int y)
 {
 	if(x == 0 || get(g, x - 1, y) != '.')
 		set(g, x, y, '*');
@@ -292,7 +310,7 @@ _w(Grid *g, int x, int y)
 }
 
 void
-_x(Grid *g, int x, int y)
+opx(Grid *g, int x, int y)
 {
 	int tx = cint(get(g, x - 2, y));
 	int ty = cint(get(g, x - 1, y));
@@ -302,14 +320,14 @@ _x(Grid *g, int x, int y)
 }
 
 void
-_y(Grid *g, int x, int y)
+opy(Grid *g, int x, int y)
 {
 	set(g, x + 1, y, get(g, x - 1, y));
 	lock(g, x + 1, y);
 }
 
 void
-_z(Grid *g, int x, int y)
+opz(Grid *g, int x, int y)
 {
 	int rate = cint(get(g, x - 1, y));
 	char target = get(g, x + 1, y);
@@ -324,12 +342,12 @@ _z(Grid *g, int x, int y)
 /* clang-format off */
 
 void (*library[36])() = {
-	_0, _0, _0, _0, _0, _0, 
-	_0, _0, _0, _0, _a, _b, 
-	_c, _d, _e, _f, _g, _h, 
-	_i, _j, _k, _l, _m, _n, 
-	_o, _p, _q, _r, _s, _t, 
-	_u, _v, _w, _x, _y, _z
+	op0, op0, op0, op0, op0, op0, 
+	op0, op0, op0, op0, opa, opb, 
+	opc, opd, ope, opf, opg, oph, 
+	opi, opj, opk, opl, opm, opn, 
+	opo, opp, opq, opr, ops, opt, 
+	opu, opv, opw, opx, opy, opz
 };
 
 /* clang-format on */
