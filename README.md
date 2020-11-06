@@ -40,5 +40,4 @@ To display the list of operators inside of Orca, use `CmdOrCtrl+G`.
 ## TODOs
 
 - Lowercase on bang
-- Comments
 - Special operators

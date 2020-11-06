@@ -44,7 +44,7 @@ cchr(int v, int cap)
 int
 valid(Grid *g, int x, int y)
 {
-	return x < 0 || x >= g->w || y < 0 || y >= g->h;
+	return x >= 0 || x <= g->w || y >= 0 || y < g->h;
 }
 
 char
@@ -100,6 +100,7 @@ opa(Grid *g, int x, int y)
 {
 	char a = get(g, x - 1, y);
 	char b = get(g, x + 1, y);
+	printf("(%c:%c)\n", a, b);
 	set(g, x, y + 1, cchr(cint(a) + cint(b), ciuc(b)));
 	lock(g, x + 1, y);
 	lock(g, x, y + 1);
@@ -385,14 +386,16 @@ void (*library[36])() = {
 int
 parse(Grid *g)
 {
-	int i, x, y;
+	int i, x, y, comment = 0;
 	for(i = 0; i < g->l; ++i) {
 		char c = g->data[i];
 		x = i % g->w;
 		y = i / g->w;
-		if(g->lock[i])
-			continue;
-		if(!ciuc(c))
+		if(x == 0)
+			comment = 0;
+		if(c == '#')
+			comment = !comment;
+		if(comment || g->lock[i] || !ciuc(c))
 			continue;
 		library[cint(c)](g, x, y);
 	}
