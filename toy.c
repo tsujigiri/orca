@@ -370,7 +370,7 @@ print(Grid *g)
 }
 
 int
-parse(Grid *g)
+run(Grid *g)
 {
 	int i, x, y, comment = 0;
 	for(i = 0; i < g->l; ++i)
@@ -383,8 +383,10 @@ parse(Grid *g)
 			comment = 0;
 		if(c == '#')
 			comment = !comment;
-		if(comment || g->lock[i] || !ciuc(c))
+		if(comment || g->lock[i] || (!ciuc(c) && c != '*'))
 			continue;
+		if(c == '*')
+			set(g, x, y, '.');
 		library[cint(c)](g, x, y);
 	}
 	g->f++;
@@ -418,10 +420,11 @@ int
 main(int argc, char *argv[])
 {
 	FILE *f;
+	int limit = 30;
 	Grid g;
 	g.w = 0;
 	g.h = 0;
-	g.f = 2034;
+	g.f = 0;
 	g.r = 1;
 	if(argc < 2)
 		return error("No input.");
@@ -430,11 +433,9 @@ main(int argc, char *argv[])
 		return error("Missing input.");
 	if(!disk(f, &g))
 		return error("Invalid grid");
-	parse(&g);
-	print(&g);
-	parse(&g);
-	print(&g);
-	parse(&g);
-	print(&g);
+	while(g.f < limit) {
+		run(&g);
+		print(&g);
+	}
 	return 0;
 }
