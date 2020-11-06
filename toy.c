@@ -125,8 +125,8 @@ opc(Grid *g, int x, int y)
 {
 	char rate = get(g, x - 1, y);
 	char mod = get(g, x + 1, y);
-	setlock(g, x, y + 1, cchr(g->f / rate % mod, ciuc(mod)));
 	lock(g, x, y + 1);
+	setlock(g, x, y + 1, cchr(g->f / rate % mod, ciuc(mod)));
 }
 
 void
@@ -134,15 +134,15 @@ opd(Grid *g, int x, int y)
 {
 	char rate = get(g, x - 1, y);
 	char mod = get(g, x + 1, y);
-	setlock(g, x, y + 1, g->f % (rate * mod) == 0 ? '*' : '.');
 	lock(g, x + 1, y);
+	setlock(g, x, y + 1, g->f % (rate * mod) == 0 ? '*' : '.');
 }
 
 void
 ope(Grid *g, int x, int y)
 {
 	if(x == g->w || get(g, x + 1, y) != '.')
-		set(g, x, y, '*');
+		setlock(g, x, y, '*');
 	else {
 		set(g, x, y, '.');
 		setlock(g, x + 1, y, 'E');
@@ -152,8 +152,8 @@ ope(Grid *g, int x, int y)
 void
 opf(Grid *g, int x, int y)
 {
-	setlock(g, x, y + 1, get(g, x - 1, y) == get(g, x + 1, y) ? '*' : '.');
 	lock(g, x + 1, y);
+	setlock(g, x, y + 1, get(g, x - 1, y) == get(g, x + 1, y) ? '*' : '.');
 }
 
 void
@@ -161,8 +161,7 @@ opg(Grid *g, int x, int y)
 {
 	int tx = cint(get(g, x - 3, y));
 	int ty = cint(get(g, x - 2, y));
-	int len = cint(get(g, x - 1, y));
-	int i;
+	int i, len = cint(get(g, x - 1, y));
 	for(i = 0; i < len; ++i)
 		setlock(g, x + i + tx, y + 1 + ty, get(g, x + 1 + i, y));
 }
@@ -191,8 +190,7 @@ opj(Grid *g, int x, int y)
 void
 opk(Grid *g, int x, int y)
 {
-	int len = cint(get(g, x - 1, y));
-	int i;
+	int i, len = cint(get(g, x - 1, y));
 	for(i = 0; i < len; ++i) {
 		char key = get(g, x + 1 + i, y);
 		if(key == '.')
@@ -206,8 +204,8 @@ opl(Grid *g, int x, int y)
 {
 	char a = get(g, x - 1, y);
 	char b = get(g, x + 1, y);
-	setlock(g, x, y + 1, cint(a) < cint(b) ? a : b);
 	lock(g, x + 1, y);
+	setlock(g, x, y + 1, cint(a) < cint(b) ? a : b);
 }
 
 void
@@ -215,15 +213,15 @@ opm(Grid *g, int x, int y)
 {
 	char a = get(g, x - 1, y);
 	char b = get(g, x + 1, y);
-	setlock(g, x, y + 1, cchr(cint(a) * cint(b), ciuc(b)));
 	lock(g, x + 1, y);
+	setlock(g, x, y + 1, cchr(cint(a) * cint(b), ciuc(b)));
 }
 
 void
 opn(Grid *g, int x, int y)
 {
 	if(y == 0 || get(g, x, y - 1) != '.')
-		set(g, x, y, '*');
+		setlock(g, x, y, '*');
 	else {
 		set(g, x, y, '.');
 		setlock(g, x, y - 1, 'N');
@@ -235,16 +233,15 @@ opo(Grid *g, int x, int y)
 {
 	int tx = cint(get(g, x - 2, y));
 	int ty = cint(get(g, x - 1, y));
-	set(g, x, y + 1, get(g, x + 1 + tx, y + ty));
 	lock(g, x + 1 + tx, y + ty);
+	set(g, x, y + 1, get(g, x + 1 + tx, y + ty));
 }
 
 void
 opp(Grid *g, int x, int y)
 {
 	int key = cint(get(g, x - 2, y));
-	int len = cint(get(g, x - 1, y));
-	int i;
+	int i, len = cint(get(g, x - 1, y));
 	for(i = 0; i < len; ++i)
 		lock(g, x + i, y + 1);
 	set(g, x + (key % len), y + 1, get(g, x + 1, y));
@@ -255,11 +252,9 @@ opq(Grid *g, int x, int y)
 {
 	int tx = cint(get(g, x - 3, y));
 	int ty = cint(get(g, x - 2, y));
-	int len = cint(get(g, x - 1, y));
-	int i;
-	for(i = 0; i < len; ++i) {
+	int i, len = cint(get(g, x - 1, y));
+	for(i = 0; i < len; ++i) 
 		setlock(g, x + 1 - len + i, y + 1, get(g, x + 1 + tx + i, y + ty));
-	}
 }
 
 void
@@ -267,6 +262,7 @@ opr(Grid *g, int x, int y)
 {
 	int min = cint(get(g, x - 1, y));
 	char max = get(g, x + 1, y);
+	lock(g, x + 1, y);
 	setlock(g, x, y + 1, cchr((rand(g) % (cint(max) - min)) + min, ciuc(max)));
 }
 
@@ -274,7 +270,7 @@ void
 ops(Grid *g, int x, int y)
 {
 	if(y == g->h || get(g, x, y + 1) != '.')
-		set(g, x, y, '*');
+		setlock(g, x, y, '*');
 	else {
 		set(g, x, y, '.');
 		setlock(g, x, y + 1, 'S');
@@ -285,8 +281,7 @@ void
 opt(Grid *g, int x, int y)
 {
 	int key = cint(get(g, x - 2, y));
-	int len = cint(get(g, x - 1, y));
-	int i;
+	int i, len = cint(get(g, x - 1, y));
 	for(i = 0; i < len; ++i)
 		lock(g, x + 1 + i, y);
 	setlock(g, x, y + 1, get(g, x + 1 + (key % len), y));
@@ -298,8 +293,8 @@ opu(Grid *g, int x, int y)
 	int max = cint(get(g, x - 1, y));
 	int step = cint(get(g, x + 1, y));
 	int bucket = (step * (g->f + max - 1)) % max + step;
-	setlock(g, x, y + 1, bucket >= max ? '*' : '.');
 	lock(g, x + 1, y);
+	setlock(g, x, y + 1, bucket >= max ? '*' : '.');
 }
 
 void
@@ -307,18 +302,18 @@ opv(Grid *g, int x, int y)
 {
 	char w = get(g, x - 1, y);
 	char r = get(g, x + 1, y);
+	lock(g, x + 1, y);
 	if(w != '.')
 		save(g, w, r);
 	else if(w == '.' && r != '.')
 		setlock(g, x, y + 1, load(g, r));
-	lock(g, x + 1, y);
 }
 
 void
 opw(Grid *g, int x, int y)
 {
 	if(x == 0 || get(g, x - 1, y) != '.')
-		set(g, x, y, '*');
+		setlock(g, x, y, '*');
 	else {
 		set(g, x, y, '.');
 		setlock(g, x - 1, y, 'W');
@@ -330,8 +325,8 @@ opx(Grid *g, int x, int y)
 {
 	int tx = cint(get(g, x - 2, y));
 	int ty = cint(get(g, x - 1, y));
-	setlock(g, x + tx, y + ty + 1, get(g, x + 1, y));
 	lock(g, x + 1, y);
+	setlock(g, x + tx, y + ty + 1, get(g, x + 1, y));
 }
 
 void
@@ -348,8 +343,8 @@ opz(Grid *g, int x, int y)
 	char val = cint(get(g, x, y + 1));
 	int t = cint(target);
 	int mod = val < t ? rate : val > t ? -rate : 0;
-	setlock(g, x, y + 1, cchr(val + mod, ciuc(target)));
 	lock(g, x + 1, y);
+	setlock(g, x, y + 1, cchr(val + mod, ciuc(target)));
 }
 
 /* clang-format off */
