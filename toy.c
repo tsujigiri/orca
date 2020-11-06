@@ -373,6 +373,8 @@ int
 parse(Grid *g)
 {
 	int i, x, y, comment = 0;
+	for(i = 0; i < g->l; ++i)
+		g->lock[i] = 0;
 	for(i = 0; i < g->l; ++i) {
 		char c = g->data[i];
 		x = i % g->w;
