@@ -1,7 +1,7 @@
 #include <stdio.h>
 
 typedef struct Grid {
-	int w, h, l, f;
+	int w, h, l, f, r;
 	int lock[256 * 256];
 	char vars[36];
 	char data[256 * 256];
@@ -67,6 +67,13 @@ char
 load(Grid *g, char key)
 {
 	return g->vars[cint(key)];
+}
+
+int
+rand(Grid *g)
+{
+	g->r *= 1103515245;
+	return ((g->r / 65536 * g->f) % 32768) ^ g->f;
 }
 
 /* Library */
@@ -241,11 +248,22 @@ opp(Grid *g, int x, int y)
 void
 opq(Grid *g, int x, int y)
 {
+	int tx = cint(get(g, x - 3, y));
+	int ty = cint(get(g, x - 2, y));
+	int len = cint(get(g, x - 1, y));
+	int i;
+	for(i = 0; i < len; ++i) {
+		set(g, x + 1 - len + i, y + 1, get(g, x + 1 + tx + i, y + ty));
+		lock(g, x + 1 - len + i, y + 1);
+	}
 }
 
 void
 opr(Grid *g, int x, int y)
 {
+	int min = cint(get(g, x - 1, y));
+	char max = get(g, x + 1, y);
+	set(g, x, y + 1, cchr((rand(g) % (cint(max) - min)) + min, ciuc(max)));
 }
 
 void
@@ -398,7 +416,8 @@ main(int argc, char *argv[])
 {
 	FILE *f;
 	Grid g;
-	g.f = 0;
+	g.f = 2034;
+	g.r = 1;
 	if(argc < 2)
 		return error("No input.");
 	f = fopen(argv[1], "r");
