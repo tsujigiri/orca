@@ -380,18 +380,27 @@ opz(Grid *g, int x, int y)
 void
 opcomment(Grid *g, int x, int y)
 {
-	int i = 1;
-	while(x + i < g->w) {
+	int i;
+	for(i = 1; x + i < g->w; ++i) {
 		lock(g, x + i, y);
 		if(get(g, x + i, y) == '#')
 			break;
-		i++;
 	}
 }
 
 void
 opspecial(Grid *g, int x, int y)
 {
+	int i, b = bang(g, x, y);
+	for(i = 0; x + i < g->w; ++i) {
+		if(get(g, x + i, y) == '.')
+			break;
+		lock(g, x + i, y);
+		if(b)
+			printf("%c", get(g, x + i, y));
+	}
+	if(b)
+		printf("\n");
 }
 
 /* clang-format off */
@@ -419,7 +428,7 @@ print(Grid *g)
 int
 run(Grid *g)
 {
-	int i, x, y, c = 0;
+	int i, x, y;
 	for(i = 0; i < g->l; ++i)
 		g->lock[i] = 0;
 	for(i = 0; i < g->l; ++i) {
@@ -432,7 +441,7 @@ run(Grid *g)
 			set(g, x, y, '.');
 		else if(c == '#')
 			opcomment(g, x, y);
-		else if(cisp(c) && bang(g, x, y))
+		else if(cisp(c))
 			opspecial(g, x, y);
 		if(ciuc(c) || bang(g, x, y))
 			library[cint(c)](g, x, y);
@@ -482,8 +491,8 @@ main(int argc, char *argv[])
 	if(!disk(f, &g))
 		return error("Invalid grid");
 	while(g.f < limit) {
-		run(&g);
 		print(&g);
+		run(&g);
 	}
 	return 0;
 }

@@ -40,4 +40,3 @@ To display the list of operators inside of Orca, use `CmdOrCtrl+G`.
 ## TODOs
 
 - Default values
-- Special operators
