@@ -16,13 +16,31 @@ ciuc(char c)
 }
 
 int
+cilc(char c)
+{
+	return c >= 'a' && c <= 'z';
+}
+
+int
+cinu(char c)
+{
+	return c >= '0' && c <= '9';
+}
+
+int
+cisp(char c)
+{
+	return !ciuc(c) && !cilc(c) && !cinu(c) && c != '.';
+}
+
+int
 cint(char c)
 {
 	if(c == '.')
 		return 0;
-	if(c >= '0' && c <= '9')
+	if(cinu(c))
 		return c - '0';
-	if(c >= 'a' && c <= 'z')
+	if(cilc(c))
 		return c - 'a' + 10;
 	if(ciuc(c))
 		return c - 'A' + 10;
@@ -40,6 +58,8 @@ cchr(int v, int cap)
 		return 'A' + (v - 10);
 	return 'a' + (v - 10);
 }
+
+/* Core */
 
 int
 valid(Grid *g, int x, int y)
@@ -357,6 +377,23 @@ opz(Grid *g, int x, int y)
 	setlock(g, x, y + 1, cchr(val + mod, ciuc(target)));
 }
 
+void
+opcomment(Grid *g, int x, int y)
+{
+	int i = 1;
+	while(x + i < g->w) {
+		lock(g, x + i, y);
+		if(get(g, x + i, y) == '#')
+			break;
+		i++;
+	}
+}
+
+void
+opspecial(Grid *g, int x, int y)
+{
+}
+
 /* clang-format off */
 
 void (*library[36])() = {
@@ -382,24 +419,23 @@ print(Grid *g)
 int
 run(Grid *g)
 {
-	int i, x, y, comment = 0;
+	int i, x, y, c = 0;
 	for(i = 0; i < g->l; ++i)
 		g->lock[i] = 0;
 	for(i = 0; i < g->l; ++i) {
 		char c = g->data[i];
 		x = i % g->w;
 		y = i / g->w;
-		if(x == 0)
-			comment = 0;
-		if(c == '#')
-			comment = !comment;
-		if(comment || g->lock[i])
+		if(g->lock[i])
 			continue;
 		if(c == '*')
 			set(g, x, y, '.');
-		if(!ciuc(c) && !bang(g, x, y))
-			continue;
-		library[cint(c)](g, x, y);
+		else if(c == '#')
+			opcomment(g, x, y);
+		else if(cisp(c) && bang(g, x, y))
+			opspecial(g, x, y);
+		if(ciuc(c) || bang(g, x, y))
+			library[cint(c)](g, x, y);
 	}
 	g->f++;
 	return 1;
