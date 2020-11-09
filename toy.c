@@ -175,15 +175,16 @@ op0(void)
 }
 
 void
-opa(Grid *g, int x, int y)
+opa(Grid *g, int x, int y, char c)
 {
 	char a = getport(g, x - 1, y, 0);
 	char b = getport(g, x + 1, y, 1);
 	setport(g, x, y + 1, cchr(cint(a) + cint(b), ciuc(b)));
+	(void)c;
 }
 
 void
-opb(Grid *g, int x, int y)
+opb(Grid *g, int x, int y, char c)
 {
 	char a = getport(g, x - 1, y, 0);
 	char b = getport(g, x + 1, y, 1);
@@ -191,7 +192,7 @@ opb(Grid *g, int x, int y)
 }
 
 void
-opc(Grid *g, int x, int y)
+opc(Grid *g, int x, int y, char c)
 {
 	char rate = getport(g, x - 1, y, 0);
 	char mod = getport(g, x + 1, y, 1);
@@ -199,7 +200,7 @@ opc(Grid *g, int x, int y)
 }
 
 void
-opd(Grid *g, int x, int y)
+opd(Grid *g, int x, int y, char c)
 {
 	char rate = getport(g, x - 1, y, 0);
 	char mod = getport(g, x + 1, y, 1);
@@ -207,9 +208,8 @@ opd(Grid *g, int x, int y)
 }
 
 void
-ope(Grid *g, int x, int y)
+ope(Grid *g, int x, int y, char c)
 {
-	char c = get(g, x, y);
 	if(x == g->w || get(g, x + 1, y) != '.')
 		setport(g, x, y, '*');
 	else {
@@ -219,13 +219,13 @@ ope(Grid *g, int x, int y)
 }
 
 void
-opf(Grid *g, int x, int y)
+opf(Grid *g, int x, int y, char c)
 {
 	setport(g, x, y + 1, getport(g, x - 1, y, 0) == getport(g, x + 1, y, 1) ? '*' : '.');
 }
 
 void
-opg(Grid *g, int x, int y)
+opg(Grid *g, int x, int y, char c)
 {
 	int tx = cint(getport(g, x - 3, y, 0));
 	int ty = cint(getport(g, x - 2, y, 0));
@@ -235,13 +235,13 @@ opg(Grid *g, int x, int y)
 }
 
 void
-oph(Grid *g, int x, int y)
+oph(Grid *g, int x, int y, char c)
 {
 	getport(g, x, y + 1, 1);
 }
 
 void
-opi(Grid *g, int x, int y)
+opi(Grid *g, int x, int y, char c)
 {
 	char step = getport(g, x - 1, y, 0);
 	char mod = getport(g, x + 1, y, 1);
@@ -250,10 +250,9 @@ opi(Grid *g, int x, int y)
 }
 
 void
-opj(Grid *g, int x, int y)
+opj(Grid *g, int x, int y, char c)
 {
 	int i;
-	char c = get(g, x, y);
 	char link = getport(g, x, y - 1, 0);
 	if(link != c) {
 		for(i = 1; y + i < g->h; ++i)
@@ -264,7 +263,7 @@ opj(Grid *g, int x, int y)
 }
 
 void
-opk(Grid *g, int x, int y)
+opk(Grid *g, int x, int y, char c)
 {
 	int i, len = cint(getport(g, x - 1, y, 0));
 	for(i = 0; i < len; ++i) {
@@ -276,7 +275,7 @@ opk(Grid *g, int x, int y)
 }
 
 void
-opl(Grid *g, int x, int y)
+opl(Grid *g, int x, int y, char c)
 {
 	char a = getport(g, x - 1, y, 0);
 	char b = getport(g, x + 1, y, 1);
@@ -284,7 +283,7 @@ opl(Grid *g, int x, int y)
 }
 
 void
-opm(Grid *g, int x, int y)
+opm(Grid *g, int x, int y, char c)
 {
 	char a = getport(g, x - 1, y, 0);
 	char b = getport(g, x + 1, y, 1);
@@ -292,9 +291,8 @@ opm(Grid *g, int x, int y)
 }
 
 void
-opn(Grid *g, int x, int y)
+opn(Grid *g, int x, int y, char c)
 {
-	char c = get(g, x, y);
 	if(y == 0 || get(g, x, y - 1) != '.')
 		setport(g, x, y, '*');
 	else {
@@ -304,7 +302,7 @@ opn(Grid *g, int x, int y)
 }
 
 void
-opo(Grid *g, int x, int y)
+opo(Grid *g, int x, int y, char c)
 {
 	int tx = cint(getport(g, x - 2, y, 0));
 	int ty = cint(getport(g, x - 1, y, 0));
@@ -312,7 +310,7 @@ opo(Grid *g, int x, int y)
 }
 
 void
-opp(Grid *g, int x, int y)
+opp(Grid *g, int x, int y, char c)
 {
 	int key = cint(getport(g, x - 2, y, 0));
 	int i, len = cint(getport(g, x - 1, y, 0));
@@ -323,7 +321,7 @@ opp(Grid *g, int x, int y)
 }
 
 void
-opq(Grid *g, int x, int y)
+opq(Grid *g, int x, int y, char c)
 {
 	int tx = cint(getport(g, x - 3, y, 0));
 	int ty = cint(getport(g, x - 2, y, 0));
@@ -333,7 +331,7 @@ opq(Grid *g, int x, int y)
 }
 
 void
-opr(Grid *g, int x, int y)
+opr(Grid *g, int x, int y, char c)
 {
 	int min = cint(getport(g, x - 1, y, 0));
 	char max = getport(g, x + 1, y, 1);
@@ -341,9 +339,8 @@ opr(Grid *g, int x, int y)
 }
 
 void
-ops(Grid *g, int x, int y)
+ops(Grid *g, int x, int y, char c)
 {
-	char c = get(g, x, y);
 	if(y == g->h || get(g, x, y + 1) != '.')
 		setport(g, x, y, '*');
 	else {
@@ -353,7 +350,7 @@ ops(Grid *g, int x, int y)
 }
 
 void
-opt(Grid *g, int x, int y)
+opt(Grid *g, int x, int y, char c)
 {
 	int key = cint(getport(g, x - 2, y, 0));
 	int i, len = cint(getport(g, x - 1, y, 0));
@@ -363,7 +360,7 @@ opt(Grid *g, int x, int y)
 }
 
 void
-opu(Grid *g, int x, int y)
+opu(Grid *g, int x, int y, char c)
 {
 	int max = cint(getport(g, x - 1, y, 0));
 	int step = cint(getport(g, x + 1, y, 1));
@@ -372,7 +369,7 @@ opu(Grid *g, int x, int y)
 }
 
 void
-opv(Grid *g, int x, int y)
+opv(Grid *g, int x, int y, char c)
 {
 	char w = getport(g, x - 1, y, 0);
 	char r = getport(g, x + 1, y, 1);
@@ -383,9 +380,8 @@ opv(Grid *g, int x, int y)
 }
 
 void
-opw(Grid *g, int x, int y)
+opw(Grid *g, int x, int y, char c)
 {
-	char c = get(g, x, y);
 	if(x == 0 || get(g, x - 1, y) != '.')
 		setport(g, x, y, '*');
 	else {
@@ -395,7 +391,7 @@ opw(Grid *g, int x, int y)
 }
 
 void
-opx(Grid *g, int x, int y)
+opx(Grid *g, int x, int y, char c)
 {
 	int tx = cint(getport(g, x - 2, y, 0));
 	int ty = cint(getport(g, x - 1, y, 0));
@@ -403,10 +399,9 @@ opx(Grid *g, int x, int y)
 }
 
 void
-opy(Grid *g, int x, int y)
+opy(Grid *g, int x, int y, char c)
 {
 	int i;
-	char c = get(g, x, y);
 	char link = getport(g, x - 1, y, 0);
 	if(link != c) {
 		for(i = 1; x + i < g->w; ++i)
@@ -417,7 +412,7 @@ opy(Grid *g, int x, int y)
 }
 
 void
-opz(Grid *g, int x, int y)
+opz(Grid *g, int x, int y, char c)
 {
 	int rate = cint(getport(g, x - 1, y, 0));
 	char target = getport(g, x + 1, y, 1);
@@ -470,7 +465,7 @@ void
 opdefault(Grid *g, int x, int y, char c)
 {
 	settype(g, x, y, 3);
-	library[cint(c)](g, x, y);
+	library[cint(c)](g, x, y, c);
 }
 
 /* General */
