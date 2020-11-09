@@ -252,7 +252,15 @@ opi(Grid *g, int x, int y)
 void
 opj(Grid *g, int x, int y)
 {
-	setport(g, x, y + 1, getport(g, x, y - 1, 0));
+	int i;
+	char c = get(g, x, y);
+	char link = getport(g, x, y - 1, 0);
+	if(link != c) {
+		for(i = 1; y + i < g->h; ++i)
+			if(get(g, x, y + i) != c)
+				break;
+		setport(g, x, y + i, link);
+	}
 }
 
 void
@@ -397,7 +405,15 @@ opx(Grid *g, int x, int y)
 void
 opy(Grid *g, int x, int y)
 {
-	setport(g, x + 1, y, getport(g, x - 1, y, 0));
+	int i;
+	char c = get(g, x, y);
+	char link = getport(g, x - 1, y, 0);
+	if(link != c) {
+		for(i = 1; x + i < g->w; ++i)
+			if(get(g, x + i, y) != c)
+				break;
+		setport(g, x + i, y, link);
+	}
 }
 
 void
