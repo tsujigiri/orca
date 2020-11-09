@@ -77,8 +77,12 @@ valid(Grid *g, int x, int y)
 int
 random(Grid *g)
 {
+	(void)g;
+	return 0;
+	/*
 	g->r *= 1103515245;
 	return ((g->r / 65536 * g->f) % 32768) ^ g->f;
+	*/
 }
 
 /* IO */
@@ -445,19 +449,6 @@ opz(Grid *g, int x, int y, char c)
 	(void)c;
 }
 
-/* clang-format off */
-
-void (*library[36])(Grid *g, int x, int y, char c) = {
-	op0, op0, op0, op0, op0, op0, 
-	op0, op0, op0, op0, opa, opb, 
-	opc, opd, ope, opf, opg, oph, 
-	opi, opj, opk, opl, opm, opn, 
-	opo, opp, opq, opr, ops, opt, 
-	opu, opv, opw, opx, opy, opz
-};
-
-/* clang-format on */
-
 void
 opcomment(Grid *g, int x, int y)
 {
@@ -487,8 +478,35 @@ opspecial(Grid *g, int x, int y)
 void
 opdefault(Grid *g, int x, int y, char c)
 {
+	switch(cint(c)) {
+	case 10: opa(g, x, y, c); break;
+	case 11: opb(g, x, y, c); break;
+	case 12: opc(g, x, y, c); break;
+	case 13: opd(g, x, y, c); break;
+	case 14: ope(g, x, y, c); break;
+	case 15: opf(g, x, y, c); break;
+	case 16: opg(g, x, y, c); break;
+	case 17: oph(g, x, y, c); break;
+	case 18: opi(g, x, y, c); break;
+	case 19: opk(g, x, y, c); break;
+	case 20: opl(g, x, y, c); break;
+	case 21: opm(g, x, y, c); break;
+	case 22: opn(g, x, y, c); break;
+	case 23: opo(g, x, y, c); break;
+	case 24: opp(g, x, y, c); break;
+	case 25: opq(g, x, y, c); break;
+	case 26: opr(g, x, y, c); break;
+	case 27: ops(g, x, y, c); break;
+	case 28: opt(g, x, y, c); break;
+	case 29: opu(g, x, y, c); break;
+	case 30: opv(g, x, y, c); break;
+	case 31: opw(g, x, y, c); break;
+	case 32: opx(g, x, y, c); break;
+	case 33: opy(g, x, y, c); break;
+	case 34: opz(g, x, y, c); break;
+	default: op0(g, x, y, c);
+	}
 	settype(g, x, y, 3);
-	library[cint(c)](g, x, y, c);
 }
 
 /* General */
@@ -569,7 +587,7 @@ int
 main(int argc, char *argv[])
 {
 	FILE *f;
-	int limit = 100;
+	int limit = 1000000;
 	Grid g;
 	g.w = 0;
 	g.h = 0;
@@ -584,7 +602,8 @@ main(int argc, char *argv[])
 		return error("Invalid grid");
 	while(g.f < limit) {
 		run(&g);
-		print(&g);
+		if(g.f == limit - 1)
+			print(&g);
 	}
 	return 0;
 }
