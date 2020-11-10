@@ -255,6 +255,12 @@ void
 dokey(SDL_Event *event)
 {
 	switch(event->key.keysym.sym) {
+	case SDLK_s:
+		set(&g, selection.x, selection.y, 'S');
+		break;
+	case SDLK_0:
+		set(&g, selection.x, selection.y, '0');
+		break;
 	case SDLK_UP:
 		move(0, -1);
 		printf("up\n");
@@ -312,6 +318,7 @@ int
 main(int argc, char *argv[])
 {
 	int ticknext = 0;
+	int tickrun = 0;
 
 	if(!init())
 		return error("Init", "Failure");
@@ -333,6 +340,14 @@ main(int argc, char *argv[])
 		if(tick < ticknext)
 			SDL_Delay(ticknext - tick);
 		ticknext = tick + (1000 / FPS);
+
+		if(tickrun == 10) {
+			run(&g);
+			draw(pixels);
+			tickrun = 0;
+		}
+		tickrun++;
+
 		while(SDL_PollEvent(&event) != 0) {
 			if(event.type == SDL_QUIT)
 				quit();
