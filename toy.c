@@ -543,7 +543,7 @@ run(Grid *g)
 		char c = g->data[i];
 		x = i % g->w;
 		y = i / g->w;
-		if(g->lock[i] || c == '.')
+		if(c == '.' || g->lock[i])
 			continue;
 		if(cilc(c) && !bang(g, x, y))
 			continue;
