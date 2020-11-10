@@ -12,6 +12,7 @@ typedef struct Grid {
 	char data[MAXSZ];
 } Grid;
 
-void print(Grid *g);
+char get(Grid *g, int x, int y);
 int run(Grid *g);
 int disk(FILE *f, Grid *g);
+void create(Grid *g, int w, int h);

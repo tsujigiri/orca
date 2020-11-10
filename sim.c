@@ -553,3 +553,16 @@ disk(FILE *f, Grid *g)
 	}
 	return g->w > 2 && g->h > 2;
 }
+
+void
+create(Grid *g, int w, int h)
+{
+	int i;
+	g->w = w;
+	g->h = h;
+	g->f = 0;
+	g->r = 1;
+	for(i = 0; i < w * h; ++i) {
+		g->data[i] = '.';
+	}
+}

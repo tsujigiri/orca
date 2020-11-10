@@ -37,12 +37,22 @@ uint32_t *pixels;
 
 Rect2d selection;
 
+Grid g;
+
 Point2d
 Pt2d(int x, int y)
 {
 	Point2d p;
 	p.x = x;
 	p.y = y;
+	return p;
+}
+
+Point2d
+clampt(Point2d p, int step)
+{
+	p.x = abs((p.x + step / 2) / step) * step;
+	p.y = abs((p.y + step / 2) / step) * step;
 	return p;
 }
 
@@ -196,14 +206,18 @@ render(void)
 void
 domouse(SDL_Event *event)
 {
-	Point2d touch = Pt2d(
-		(event->motion.x - (PAD * ZOOM)) / ZOOM,
-		(event->motion.y - (PAD * ZOOM)) / ZOOM);
+	Point2d touch = clampt(
+		Pt2d(
+			(event->motion.x - (PAD * ZOOM)) / ZOOM,
+			(event->motion.y - (PAD * ZOOM)) / ZOOM),
+		8);
 	switch(event->type) {
 	case SDL_MOUSEBUTTONUP:
 		printf("mouse-up\n");
 		break;
 	case SDL_MOUSEBUTTONDOWN:
+		printf("%d,%d\n", touch.x / 8, touch.y / 8);
+		select(touch.x / 8, touch.y / 8, 1, 1);
 		printf("mouse-down\n");
 		break;
 	case SDL_MOUSEMOTION:
@@ -276,6 +290,7 @@ main(int argc, char *argv[])
 	if(!init())
 		return error("Init", "Failure");
 
+	create(&g, HOR, VER);
 	newchr();
 	select(0, 0, 0, 0);
 	draw(pixels);
