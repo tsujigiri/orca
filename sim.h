@@ -13,6 +13,9 @@ typedef struct Grid {
 } Grid;
 
 char get(Grid *g, int x, int y);
+void set(Grid *g, int x, int y, char c);
+int gettype(Grid *g, int x, int y);
 int run(Grid *g);
 int disk(FILE *f, Grid *g);
 void create(Grid *g, int w, int h);
+void print(Grid *g);

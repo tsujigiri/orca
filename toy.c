@@ -122,18 +122,42 @@ guide(int x, int y)
 }
 
 void
+drawtile(uint32_t *dst, int x, int y, char c, int type)
+{
+	int v, h;
+	/*printf("%d,%d = %c(%d)\n", x, y, get(&g, x, y));*/
+	for(v = 0; v < 8; v++)
+		for(h = 7; h >= 0; h--) {
+			int px = (x * 8) + h;
+			int py = (y * 8) + v;
+			if(x == selection.x && y == selection.y)
+				dst[(py + PAD) * WIDTH + (px + PAD)] = colors[1];
+			else
+				dst[(py + PAD) * WIDTH + (px + PAD)] = colors[type % 5];
+		}
+}
+
+void
 draw(uint32_t *dst)
 {
+	int x, y;
+	for(y = 0; y < VER; ++y) {
+		for(x = 0; x < HOR; ++x) {
+			drawtile(dst, x, y, get(&g, x, y), gettype(&g, x, y));
+		}
+	}
+
+	/*
 	int b, i, j, id = 0;
-	for(b = 0; b < SZ; b += 16)
+	for(b = 0; b < SZ; b += 16) {
+		int ti = id / 64;
+		int tx = ti % HOR;
+		int ty = ti / HOR;
 		for(i = 0; i < 8; i++)
 			for(j = 7; j >= 0; j--) {
 				int ch1 = chrbuf[b + i];
 				int ch2 = chrbuf[b + i + 8];
 				int color = ((ch1 >> j) & 0x1) + (((ch2 >> j) & 0x1) << 1);
-				int ti = id / 64;
-				int tx = ti % HOR;
-				int ty = ti / HOR;
 				int odd = (ti + (ti / HOR + 2)) % 2 == 0;
 				int px = (ti / (HOR * VER)) * (8 * HOR) + tx * 8 + (id % 8);
 				int py = ((ti / HOR) * 8) + ((id % 64) / 8);
@@ -143,6 +167,8 @@ draw(uint32_t *dst)
 					dst[(py + PAD) * WIDTH + (px + PAD)] = colors[GUIDES && odd && color == 0 ? 4 : color];
 				id++;
 			}
+	}
+	*/
 	SDL_UpdateTexture(gTexture, NULL, dst, WIDTH * sizeof(uint32_t));
 	SDL_RenderClear(gRenderer);
 	SDL_RenderCopy(gRenderer, gTexture, NULL, NULL);
@@ -291,6 +317,12 @@ main(int argc, char *argv[])
 		return error("Init", "Failure");
 
 	create(&g, HOR, VER);
+	set(&g, 3, 3, 'S');
+	set(&g, 3, 6, 'A');
+	set(&g, 4, 6, 'a');
+	run(&g);
+	print(&g);
+
 	newchr();
 	select(0, 0, 0, 0);
 	draw(pixels);
