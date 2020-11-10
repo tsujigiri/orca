@@ -43,6 +43,12 @@ cisp(char c)
 }
 
 int
+clca(int c)
+{
+	return ciuc(c) ? c + ('a' - 'A') : c;
+}
+
+int
 cint(char c)
 {
 	if(c == '.')
@@ -174,15 +180,6 @@ bang(Grid *g, int x, int y)
 /* Library */
 
 void
-op0(Grid *g, int x, int y, char c)
-{
-	(void)g;
-	(void)x;
-	(void)y;
-	(void)c;
-}
-
-void
 opa(Grid *g, int x, int y, char c)
 {
 	char a = getport(g, x - 1, y, 0);
@@ -222,7 +219,7 @@ void
 ope(Grid *g, int x, int y, char c)
 {
 	if(x == g->w || get(g, x + 1, y) != '.')
-		setport(g, x, y, '*');
+		set(g, x, y, '*');
 	else {
 		set(g, x, y, '.');
 		setport(g, x + 1, y, c);
@@ -312,7 +309,7 @@ void
 opn(Grid *g, int x, int y, char c)
 {
 	if(y == 0 || get(g, x, y - 1) != '.')
-		setport(g, x, y, '*');
+		set(g, x, y, '*');
 	else {
 		set(g, x, y, '.');
 		setport(g, x, y - 1, c);
@@ -364,7 +361,7 @@ void
 ops(Grid *g, int x, int y, char c)
 {
 	if(y == g->h || get(g, x, y + 1) != '.')
-		setport(g, x, y, '*');
+		set(g, x, y, '*');
 	else {
 		set(g, x, y, '.');
 		setport(g, x, y + 1, c);
@@ -408,7 +405,7 @@ void
 opw(Grid *g, int x, int y, char c)
 {
 	if(x == 0 || get(g, x - 1, y) != '.')
-		setport(g, x, y, '*');
+		set(g, x, y, '*');
 	else {
 		set(g, x, y, '.');
 		setport(g, x - 1, y, c);
@@ -465,46 +462,49 @@ opspecial(Grid *g, int x, int y)
 {
 	int i, b = bang(g, x, y);
 	for(i = 0; x + i < g->w; ++i) {
-		if(get(g, x + i, y) == '.')
+		char c = getport(g, x + i, y, 1);
+		if(c == '.')
 			break;
-		lock(g, x + i, y);
 		if(b)
-			printf("%c", get(g, x + i, y));
+			printf("%c", c);
 	}
 	if(b)
 		printf("\n");
 }
 
 void
-opdefault(Grid *g, int x, int y, char c)
+operate(Grid *g, int x, int y, char c)
 {
-	switch(cint(c)) {
-	case 10: opa(g, x, y, c); break;
-	case 11: opb(g, x, y, c); break;
-	case 12: opc(g, x, y, c); break;
-	case 13: opd(g, x, y, c); break;
-	case 14: ope(g, x, y, c); break;
-	case 15: opf(g, x, y, c); break;
-	case 16: opg(g, x, y, c); break;
-	case 17: oph(g, x, y, c); break;
-	case 18: opi(g, x, y, c); break;
-	case 19: opk(g, x, y, c); break;
-	case 20: opl(g, x, y, c); break;
-	case 21: opm(g, x, y, c); break;
-	case 22: opn(g, x, y, c); break;
-	case 23: opo(g, x, y, c); break;
-	case 24: opp(g, x, y, c); break;
-	case 25: opq(g, x, y, c); break;
-	case 26: opr(g, x, y, c); break;
-	case 27: ops(g, x, y, c); break;
-	case 28: opt(g, x, y, c); break;
-	case 29: opu(g, x, y, c); break;
-	case 30: opv(g, x, y, c); break;
-	case 31: opw(g, x, y, c); break;
-	case 32: opx(g, x, y, c); break;
-	case 33: opy(g, x, y, c); break;
-	case 34: opz(g, x, y, c); break;
-	default: op0(g, x, y, c);
+	switch(clca(c)) {
+	case 'a': opa(g, x, y, c); break;
+	case 'b': opb(g, x, y, c); break;
+	case 'c': opc(g, x, y, c); break;
+	case 'd': opd(g, x, y, c); break;
+	case 'e': ope(g, x, y, c); break;
+	case 'f': opf(g, x, y, c); break;
+	case 'g': opg(g, x, y, c); break;
+	case 'h': oph(g, x, y, c); break;
+	case 'i': opi(g, x, y, c); break;
+	case 'k': opk(g, x, y, c); break;
+	case 'j': opj(g, x, y, c); break;
+	case 'l': opl(g, x, y, c); break;
+	case 'm': opm(g, x, y, c); break;
+	case 'n': opn(g, x, y, c); break;
+	case 'o': opo(g, x, y, c); break;
+	case 'p': opp(g, x, y, c); break;
+	case 'q': opq(g, x, y, c); break;
+	case 'r': opr(g, x, y, c); break;
+	case 's': ops(g, x, y, c); break;
+	case 't': opt(g, x, y, c); break;
+	case 'u': opu(g, x, y, c); break;
+	case 'v': opv(g, x, y, c); break;
+	case 'w': opw(g, x, y, c); break;
+	case 'x': opx(g, x, y, c); break;
+	case 'y': opy(g, x, y, c); break;
+	case 'z': opz(g, x, y, c); break;
+	case '*': set(g, x, y, '.'); break;
+	case '#': opcomment(g, x, y); break;
+	default: opspecial(g, x, y);
 	}
 	settype(g, x, y, 3);
 }
@@ -543,16 +543,11 @@ run(Grid *g)
 		char c = g->data[i];
 		x = i % g->w;
 		y = i / g->w;
-		if(g->lock[i])
+		if(g->lock[i] || c == '.')
 			continue;
-		if(c == '*')
-			set(g, x, y, '.');
-		else if(c == '#')
-			opcomment(g, x, y);
-		else if(cisp(c))
-			opspecial(g, x, y);
-		else if(ciuc(c) || (cilc(c) && bang(g, x, y)))
-			opdefault(g, x, y, c);
+		if(cilc(c) && !bang(g, x, y))
+			continue;
+		operate(g, x, y, c);
 	}
 	g->f++;
 	return 1;
@@ -587,7 +582,7 @@ int
 main(int argc, char *argv[])
 {
 	FILE *f;
-	int limit = 1000000;
+	int limit = 3;
 	Grid g;
 	g.w = 0;
 	g.h = 0;
@@ -602,8 +597,7 @@ main(int argc, char *argv[])
 		return error("Invalid grid");
 	while(g.f < limit) {
 		run(&g);
-		if(g.f == limit - 1)
-			print(&g);
+		print(&g);
 	}
 	return 0;
 }
