@@ -5,7 +5,7 @@
 #define HOR 32
 #define VER 16
 #define PAD 8
-#define ZOOM 2
+#define ZOOM 1
 #define color1 0x000000
 #define color2 0xFFFFFF
 #define color3 0x72DEC2
@@ -83,7 +83,7 @@ guide(int x, int y)
 }
 
 int
-getfont(char c)
+getfont(int x, int y, char c, int type)
 {
 	if(c >= 'A' && c <= 'Z')
 		return c - 'A' + 36;
@@ -91,15 +91,19 @@ getfont(char c)
 		return c - 'a' + 9;
 	if(c >= '0' && c <= '9')
 		return c - '0';
-	if(c == '.')
+	if(x % 8 == 0 && y % 8 == 0)
+		return 65;
+	if(c == '.' && type != 0)
 		return 64;
+	if(c == '.')
+		return 70;
 	return 0;
 }
 
 void
 drawtile(uint32_t *dst, int x, int y, char c, int type)
 {
-	int v, h, offset = getfont(c) * 8 * 2;
+	int v, h, offset = getfont(x, y, c, type) * 8 * 2;
 	for(v = 0; v < 8; v++)
 		for(h = 0; h < 8; h++) {
 			int px = (x * 8) + (8 - h);
@@ -108,7 +112,6 @@ drawtile(uint32_t *dst, int x, int y, char c, int type)
 			int ch2 = font[offset + v + 8];
 			int clr = ((ch1 >> h) & 0x1) + ((ch2 << h) & 0x1);
 			int key = (py + PAD) * WIDTH + (px + PAD);
-
 			dst[key] = selected(x, y) ? colors[(clr + 2) % 5] : colors[clr];
 		}
 }
@@ -184,8 +187,8 @@ domouse(SDL_Event *event)
 {
 	Point2d touch = clampt(
 		Pt2d(
-			(event->motion.x - (PAD * ZOOM)) / ZOOM,
-			(event->motion.y - (PAD * ZOOM)) / ZOOM),
+			(event->motion.x - (PAD * ZOOM) - (8 * ZOOM / 2)) / ZOOM,
+			(event->motion.y - (PAD * ZOOM) - (8 * ZOOM / 2)) / ZOOM),
 		8);
 	switch(event->type) {
 	case SDL_MOUSEBUTTONUP:
@@ -206,6 +209,7 @@ dokey(SDL_Event *event)
 {
 	int shift = SDL_GetModState() & KMOD_LSHIFT || SDL_GetModState() & KMOD_RSHIFT;
 	switch(event->key.keysym.sym) {
+	case SDLK_BACKSPACE: insert('.'); break;
 	case SDLK_0: insert('0'); break;
 	case SDLK_1: insert('1'); break;
 	case SDLK_2: insert('2'); break;
@@ -242,6 +246,10 @@ dokey(SDL_Event *event)
 	case SDLK_x: insert(shift ? 'X' : 'x'); break;
 	case SDLK_y: insert(shift ? 'Y' : 'y'); break;
 	case SDLK_z: insert(shift ? 'Z' : 'z'); break;
+	case SDLK_ASTERISK: insert('*'); break;
+	case SDLK_HASH: insert('#'); break;
+	case SDLK_PERIOD: insert('.'); break;
+	case SDLK_COLON: insert(':'); break;
 	case SDLK_UP: move(0, -1); break;
 	case SDLK_DOWN: move(0, 1); break;
 	case SDLK_LEFT: move(-1, 0); break;
