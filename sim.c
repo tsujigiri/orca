@@ -529,6 +529,8 @@ run(Grid *g)
 		y = i / g->w;
 		if(c == '.' || g->lock[i])
 			continue;
+		if(cinu(c))
+			continue;
 		if(cilc(c) && !bang(g, x, y))
 			continue;
 		operate(g, x, y, c);

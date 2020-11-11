@@ -5,12 +5,12 @@
 #define HOR 32
 #define VER 16
 #define PAD 8
-#define ZOOM 1
+#define ZOOM 2
 #define color1 0x000000
-#define color2 0xFFFFFF
-#define color3 0x72DEC2
-#define color4 0xFFFFFF
-#define color0 0x222222
+#define color2 0x72DEC2
+#define color3 0xFFFFFF
+#define color4 0x444444
+#define color0 0x111111
 
 #define PLIMIT 256
 #define SZ (HOR * VER * 16)
@@ -94,11 +94,17 @@ getfont(int x, int y, char c, int type)
 	if(c >= 'A' && c <= 'Z')
 		return c - 'A' + 36;
 	if(c >= 'a' && c <= 'z')
-		return c - 'a' + 9;
+		return c - 'a' + 10;
 	if(c >= '0' && c <= '9')
 		return c - '0';
-	if(x % 8 == 0 && y % 8 == 0)
+	if(c == '*')
+		return 62;
+	if(c == '#')
+		return 63;
+	if(c == ':')
 		return 65;
+	if(x % 8 == 0 && y % 8 == 0)
+		return 68;
 	if(c == '.' && type != 0)
 		return 64;
 	if(c == '.')
@@ -118,7 +124,7 @@ drawtile(uint32_t *dst, int x, int y, char c, int type)
 			int ch2 = font[offset + v + 8];
 			int clr = ((ch1 >> h) & 0x1) + ((ch2 << h) & 0x1);
 			int key = (py + PAD) * WIDTH + (px + PAD);
-			dst[key] = selected(x, y) ? colors[(clr + 2) % 5] : colors[clr];
+			dst[key] = selected(x, y) ? colors[(clr + 2) % 5] : colors[(clr + type) % 5];
 		}
 }
 
@@ -221,10 +227,14 @@ dokey(SDL_Event *event)
 	int shift = SDL_GetModState() & KMOD_LSHIFT || SDL_GetModState() & KMOD_RSHIFT;
 	switch(event->key.keysym.sym) {
 	case SDLK_BACKSPACE: insert('.'); break;
+	case SDLK_ASTERISK: insert('*'); break;
+	case SDLK_HASH: insert('#'); break;
+	case SDLK_PERIOD: insert('.'); break;
+	case SDLK_COLON: insert(':'); break;
 	case SDLK_0: insert('0'); break;
 	case SDLK_1: insert('1'); break;
 	case SDLK_2: insert('2'); break;
-	case SDLK_3: insert('3'); break;
+	case SDLK_3: insert(shift ? '#' : '3'); break;
 	case SDLK_4: insert('4'); break;
 	case SDLK_5: insert('5'); break;
 	case SDLK_6: insert('6'); break;
@@ -257,10 +267,6 @@ dokey(SDL_Event *event)
 	case SDLK_x: insert(shift ? 'X' : 'x'); break;
 	case SDLK_y: insert(shift ? 'Y' : 'y'); break;
 	case SDLK_z: insert(shift ? 'Z' : 'z'); break;
-	case SDLK_ASTERISK: insert('*'); break;
-	case SDLK_HASH: insert('#'); break;
-	case SDLK_PERIOD: insert('.'); break;
-	case SDLK_COLON: insert(':'); break;
 	case SDLK_UP: shift ? scale(0, -1) : move(0, -1); break;
 	case SDLK_DOWN: shift ? scale(0, 1) : move(0, 1); break;
 	case SDLK_LEFT: shift ? scale(-1, 0) : move(-1, 0); break;
@@ -343,7 +349,7 @@ main(int argc, char *argv[])
 			SDL_Delay(ticknext - tick);
 		ticknext = tick + (1000 / FPS);
 
-		if(tickrun == 10) {
+		if(tickrun == 8) {
 			run(&g);
 			draw(pixels);
 			tickrun = 0;
