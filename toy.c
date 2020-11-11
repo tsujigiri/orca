@@ -56,6 +56,38 @@ clampt(Point2d p, int step)
 	return p;
 }
 
+void
+select(int x, int y, int w, int h)
+{
+	selection.x = x;
+	selection.y = y;
+	selection.w = w;
+	selection.h = h;
+	draw(pixels);
+}
+
+int
+selected(int x, int y)
+{
+	return selection.x == x && selection.y == y;
+}
+
+void
+move(int x, int y)
+{
+	int reqdraw = 0;
+	if((x < 0 && selection.x > 0) || (x > 0 && selection.x < HOR - 1)) {
+		selection.x += x;
+		reqdraw = 1;
+	}
+	if((y < 0 && selection.y > 0) || (y > 0 && selection.y < VER - 1)) {
+		selection.y += y;
+		reqdraw = 1;
+	}
+	if(reqdraw)
+		draw(pixels);
+}
+
 /* misc */
 
 int
@@ -79,14 +111,11 @@ drawtile(uint32_t *dst, int x, int y, char c, int type)
 		for(h = 7; h >= 0; h--) {
 			int px = (x * 8) + h;
 			int py = (y * 8) + v;
-			if(x == selection.x && y == selection.y)
-				dst[(py + PAD) * WIDTH + (px + PAD)] = colors[1];
-			else {
-				int ch1 = font[v];
-				int clr = ((ch1 >> x) & 0x1);
-				/* printf("%d ", ch1); */
-				dst[(py + PAD) * WIDTH + (px / 8 + PAD)] = colors[clr];
-			}
+			int ch1 = font[v];
+			int ch2 = font[v + 8];
+			int clr = ((ch1 >> h) & 0x1) + (((ch2 >> h) & 0x1) << 1);
+			int key = (py + PAD) * WIDTH + (px + PAD);
+			dst[key] = selected(x, y) ? colors[(clr + 1) % 5] : colors[clr];
 		}
 }
 
@@ -94,64 +123,13 @@ void
 draw(uint32_t *dst)
 {
 	int x, y;
-	for(y = 0; y < VER; ++y) {
-		for(x = 0; x < HOR; ++x) {
+	for(y = 0; y < VER; ++y)
+		for(x = 0; x < HOR; ++x)
 			drawtile(dst, x, y, get(&g, x, y), gettype(&g, x, y));
-		}
-	}
-
-	/*
-	int b, i, j, id = 0;
-	for(b = 0; b < SZ; b += 16) {
-		int ti = id / 64;
-		int tx = ti % HOR;
-		int ty = ti / HOR;
-		for(i = 0; i < 8; i++)
-			for(j = 7; j >= 0; j--) {
-				int ch1 = chrbuf[b + i];
-				int ch2 = chrbuf[b + i + 8];
-				int color = ((ch1 >> j) & 0x1) + (((ch2 >> j) & 0x1) << 1);
-				int odd = (ti + (ti / HOR + 2)) % 2 == 0;
-				int px = (ti / (HOR * VER)) * (8 * HOR) + tx * 8 + (id % 8);
-				int py = ((ti / HOR) * 8) + ((id % 64) / 8);
-				if(tx == selection.x && ty == selection.y)
-					dst[(py + PAD) * WIDTH + (px + PAD)] = colors[1];
-				else
-					dst[(py + PAD) * WIDTH + (px + PAD)] = colors[GUIDES && odd && color == 0 ? 4 : color];
-				id++;
-			}
-	}
-	*/
 	SDL_UpdateTexture(gTexture, NULL, dst, WIDTH * sizeof(uint32_t));
 	SDL_RenderClear(gRenderer);
 	SDL_RenderCopy(gRenderer, gTexture, NULL, NULL);
 	SDL_RenderPresent(gRenderer);
-}
-
-void
-select(int x, int y, int w, int h)
-{
-	selection.x = x;
-	selection.y = y;
-	selection.w = w;
-	selection.h = h;
-	draw(pixels);
-}
-
-void
-move(int x, int y)
-{
-	int reqdraw = 0;
-	if((x < 0 && selection.x > 0) || (x > 0 && selection.x < HOR - 1)) {
-		selection.x += x;
-		reqdraw = 1;
-	}
-	if((y < 0 && selection.y > 0) || (y > 0 && selection.y < VER - 1)) {
-		selection.y += y;
-		reqdraw = 1;
-	}
-	if(reqdraw)
-		draw(pixels);
 }
 
 int
@@ -275,9 +253,6 @@ loadfont(void)
 		return error("Font", "Invalid input file");
 	if(!fread(font, sizeof(font), 1, f))
 		return error("Font", "Invalid input size");
-	for(i = 0; i < 10; ++i) {
-		printf("%d\n", font[i]);
-	}
 	fclose(f);
 	return 1;
 }
@@ -299,9 +274,7 @@ main(int argc, char *argv[])
 	set(&g, 4, 6, 'a');
 	set(&g, 7, 2, '0');
 	set(&g, 8, 7, '0');
-
 	run(&g);
-	print(&g);
 
 	select(0, 0, 0, 0);
 	draw(pixels);
