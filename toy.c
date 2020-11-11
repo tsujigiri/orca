@@ -10,7 +10,7 @@
 #define color2 0x72DEC2
 #define color3 0xFFFFFF
 #define color4 0x444444
-#define color0 0x111111
+#define color0 0xffb545
 
 #define PLIMIT 256
 #define SZ (HOR * VER * 16)
@@ -89,7 +89,7 @@ guide(int x, int y)
 }
 
 int
-getfont(int x, int y, char c, int type)
+getfont(int x, int y, char c, int type, int sel)
 {
 	if(c >= 'A' && c <= 'Z')
 		return c - 'A' + 36;
@@ -105,17 +105,37 @@ getfont(int x, int y, char c, int type)
 		return 65;
 	if(x % 8 == 0 && y % 8 == 0)
 		return 68;
-	if(c == '.' && type != 0)
+	if(c == '.' && type)
 		return 64;
-	if(c == '.')
+	if(c == '.' && !sel)
 		return 70;
-	return 0;
+	if(sel)
+		return 66;
+	return 70;
+}
+
+int
+getstyle(int clr, int type, int sel)
+{
+	if(sel)
+		return colors[clr == 0 ? 4 : 0];
+	if(type == 2)
+		return colors[clr == 0 ? 0 : 1];
+	if(type == 3)
+		return colors[clr == 0 ? 1 : 0];
+	if(type == 4)
+		return colors[clr == 0 ? 0 : 2];
+	if(type == 5)
+		return colors[clr == 0 ? 2 : 0];
+	return colors[clr == 0 ? 0 : 3];
 }
 
 void
 drawtile(uint32_t *dst, int x, int y, char c, int type)
 {
-	int v, h, offset = getfont(x, y, c, type) * 8 * 2;
+	int v, h;
+	int sel = selected(x, y);
+	int offset = getfont(x, y, c, type, sel) * 8 * 2;
 	for(v = 0; v < 8; v++)
 		for(h = 0; h < 8; h++) {
 			int px = (x * 8) + (8 - h);
@@ -124,7 +144,7 @@ drawtile(uint32_t *dst, int x, int y, char c, int type)
 			int ch2 = font[offset + v + 8];
 			int clr = ((ch1 >> h) & 0x1) + ((ch2 << h) & 0x1);
 			int key = (py + PAD) * WIDTH + (px + PAD);
-			dst[key] = selected(x, y) ? colors[(clr + 2) % 5] : colors[(clr + type) % 5];
+			dst[key] = getstyle(clr, type, sel);
 		}
 }
 
@@ -169,7 +189,6 @@ scale(int w, int h)
 	selection.w = clamp(selection.w, 1, 8);
 	selection.h = clamp(selection.h, 1, 8);
 	draw(pixels);
-	printf("%d,%d %d:%d\n", selection.x, selection.y, selection.w, selection.h);
 }
 
 int
@@ -231,6 +250,8 @@ dokey(SDL_Event *event)
 	case SDLK_HASH: insert('#'); break;
 	case SDLK_PERIOD: insert('.'); break;
 	case SDLK_COLON: insert(':'); break;
+	case SDLK_SEMICOLON: insert(':'); break;
+	case SDLK_ESCAPE: select(selection.x, selection.y, 1, 1); break;
 	case SDLK_0: insert('0'); break;
 	case SDLK_1: insert('1'); break;
 	case SDLK_2: insert('2'); break;
