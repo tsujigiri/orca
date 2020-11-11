@@ -62,6 +62,12 @@ selected(int x, int y)
 	return selection.x == x && selection.y == y;
 }
 
+void
+insert(char c)
+{
+	set(&g, selection.x, selection.y, c);
+}
+
 /* misc */
 
 int
@@ -198,28 +204,48 @@ domouse(SDL_Event *event)
 void
 dokey(SDL_Event *event)
 {
+	int shift = SDL_GetModState() & KMOD_LSHIFT || SDL_GetModState() & KMOD_RSHIFT;
 	switch(event->key.keysym.sym) {
-	case SDLK_s: set(&g, selection.x, selection.y, 'S'); break;
-	case SDLK_0: set(&g, selection.x, selection.y, '0'); break;
-	case SDLK_1: set(&g, selection.x, selection.y, '1'); break;
-	case SDLK_2: set(&g, selection.x, selection.y, '2'); break;
-	case SDLK_3: set(&g, selection.x, selection.y, '3'); break;
-	case SDLK_UP:
-		move(0, -1);
-		printf("up\n");
-		break;
-	case SDLK_DOWN:
-		move(0, 1);
-		printf("down\n");
-		break;
-	case SDLK_LEFT:
-		move(-1, 0);
-		printf("left\n");
-		break;
-	case SDLK_RIGHT:
-		move(1, 0);
-		printf("right\n");
-		break;
+	case SDLK_0: insert('0'); break;
+	case SDLK_1: insert('1'); break;
+	case SDLK_2: insert('2'); break;
+	case SDLK_3: insert('3'); break;
+	case SDLK_4: insert('4'); break;
+	case SDLK_5: insert('5'); break;
+	case SDLK_6: insert('6'); break;
+	case SDLK_7: insert('7'); break;
+	case SDLK_8: insert('8'); break;
+	case SDLK_9: insert('9'); break;
+	case SDLK_a: insert(shift ? 'A' : 'a'); break;
+	case SDLK_b: insert(shift ? 'B' : 'b'); break;
+	case SDLK_c: insert(shift ? 'C' : 'c'); break;
+	case SDLK_d: insert(shift ? 'D' : 'd'); break;
+	case SDLK_e: insert(shift ? 'E' : 'e'); break;
+	case SDLK_f: insert(shift ? 'F' : 'f'); break;
+	case SDLK_g: insert(shift ? 'G' : 'g'); break;
+	case SDLK_h: insert(shift ? 'H' : 'h'); break;
+	case SDLK_i: insert(shift ? 'I' : 'i'); break;
+	case SDLK_j: insert(shift ? 'J' : 'j'); break;
+	case SDLK_k: insert(shift ? 'K' : 'k'); break;
+	case SDLK_l: insert(shift ? 'L' : 'l'); break;
+	case SDLK_m: insert(shift ? 'M' : 'm'); break;
+	case SDLK_n: insert(shift ? 'N' : 'n'); break;
+	case SDLK_o: insert(shift ? 'O' : 'o'); break;
+	case SDLK_p: insert(shift ? 'P' : 'p'); break;
+	case SDLK_q: insert(shift ? 'Q' : 'q'); break;
+	case SDLK_r: insert(shift ? 'R' : 'r'); break;
+	case SDLK_s: insert(shift ? 'S' : 's'); break;
+	case SDLK_t: insert(shift ? 'T' : 't'); break;
+	case SDLK_u: insert(shift ? 'U' : 'u'); break;
+	case SDLK_v: insert(shift ? 'V' : 'v'); break;
+	case SDLK_w: insert(shift ? 'W' : 'w'); break;
+	case SDLK_x: insert(shift ? 'X' : 'x'); break;
+	case SDLK_y: insert(shift ? 'Y' : 'y'); break;
+	case SDLK_z: insert(shift ? 'Z' : 'z'); break;
+	case SDLK_UP: move(0, -1); break;
+	case SDLK_DOWN: move(0, 1); break;
+	case SDLK_LEFT: move(-1, 0); break;
+	case SDLK_RIGHT: move(1, 0); break;
 	}
 	/* update(); */
 }
