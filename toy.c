@@ -5,10 +5,10 @@
 #define HOR 32
 #define VER 16
 #define PAD 8
-#define ZOOM 1
+#define ZOOM 2
 #define color1 0x000000
-#define color2 0x72DEC2
-#define color3 0x888888
+#define color2 0xFFFFFF
+#define color3 0x72DEC2
 #define color4 0xFFFFFF
 #define color0 0x222222
 
@@ -23,7 +23,7 @@ typedef struct {
 	int x, y, w, h;
 } Rect2d;
 
-unsigned char font[80];
+unsigned char font[1200];
 int colors[] = {color1, color2, color3, color4, color0};
 int WIDTH = 8 * HOR + PAD * 2;
 int HEIGHT = 8 * VER + PAD * 2;
@@ -56,36 +56,10 @@ clampt(Point2d p, int step)
 	return p;
 }
 
-void
-select(int x, int y, int w, int h)
-{
-	selection.x = x;
-	selection.y = y;
-	selection.w = w;
-	selection.h = h;
-	draw(pixels);
-}
-
 int
 selected(int x, int y)
 {
 	return selection.x == x && selection.y == y;
-}
-
-void
-move(int x, int y)
-{
-	int reqdraw = 0;
-	if((x < 0 && selection.x > 0) || (x > 0 && selection.x < HOR - 1)) {
-		selection.x += x;
-		reqdraw = 1;
-	}
-	if((y < 0 && selection.y > 0) || (y > 0 && selection.y < VER - 1)) {
-		selection.y += y;
-		reqdraw = 1;
-	}
-	if(reqdraw)
-		draw(pixels);
 }
 
 /* misc */
@@ -102,20 +76,34 @@ guide(int x, int y)
 	return 0;
 }
 
+int
+getfont(char c)
+{
+	if(c >= 'A' && c <= 'Z')
+		return c - 'A' + 36;
+	if(c >= 'a' && c <= 'z')
+		return c - 'a' + 9;
+	if(c >= '0' && c <= '9')
+		return c - '0';
+	if(c == '.')
+		return 64;
+	return 0;
+}
+
 void
 drawtile(uint32_t *dst, int x, int y, char c, int type)
 {
-	int v, h;
-	int target = 0;
+	int v, h, offset = getfont(c) * 8 * 2;
 	for(v = 0; v < 8; v++)
-		for(h = 7; h >= 0; h--) {
-			int px = (x * 8) + h;
+		for(h = 0; h < 8; h++) {
+			int px = (x * 8) + (8 - h);
 			int py = (y * 8) + v;
-			int ch1 = font[v];
-			int ch2 = font[v + 8];
-			int clr = ((ch1 >> h) & 0x1) + (((ch2 >> h) & 0x1) << 1);
+			int ch1 = font[offset + v];
+			int ch2 = font[offset + v + 8];
+			int clr = ((ch1 >> h) & 0x1) + ((ch2 << h) & 0x1);
 			int key = (py + PAD) * WIDTH + (px + PAD);
-			dst[key] = selected(x, y) ? colors[(clr + 1) % 5] : colors[clr];
+
+			dst[key] = selected(x, y) ? colors[(clr + 2) % 5] : colors[clr];
 		}
 }
 
@@ -130,6 +118,32 @@ draw(uint32_t *dst)
 	SDL_RenderClear(gRenderer);
 	SDL_RenderCopy(gRenderer, gTexture, NULL, NULL);
 	SDL_RenderPresent(gRenderer);
+}
+
+void
+select(int x, int y, int w, int h)
+{
+	selection.x = x;
+	selection.y = y;
+	selection.w = w;
+	selection.h = h;
+	draw(pixels);
+}
+
+void
+move(int x, int y)
+{
+	int reqdraw = 0;
+	if((x < 0 && selection.x > 0) || (x > 0 && selection.x < HOR - 1)) {
+		selection.x += x;
+		reqdraw = 1;
+	}
+	if((y < 0 && selection.y > 0) || (y > 0 && selection.y < VER - 1)) {
+		selection.y += y;
+		reqdraw = 1;
+	}
+	if(reqdraw)
+		draw(pixels);
 }
 
 int
@@ -185,12 +199,11 @@ void
 dokey(SDL_Event *event)
 {
 	switch(event->key.keysym.sym) {
-	case SDLK_s:
-		set(&g, selection.x, selection.y, 'S');
-		break;
-	case SDLK_0:
-		set(&g, selection.x, selection.y, '0');
-		break;
+	case SDLK_s: set(&g, selection.x, selection.y, 'S'); break;
+	case SDLK_0: set(&g, selection.x, selection.y, '0'); break;
+	case SDLK_1: set(&g, selection.x, selection.y, '1'); break;
+	case SDLK_2: set(&g, selection.x, selection.y, '2'); break;
+	case SDLK_3: set(&g, selection.x, selection.y, '3'); break;
 	case SDLK_UP:
 		move(0, -1);
 		printf("up\n");
@@ -217,7 +230,7 @@ init(void)
 	int i, j;
 	if(SDL_Init(SDL_INIT_VIDEO) < 0)
 		return error("Init", SDL_GetError());
-	gWindow = SDL_CreateWindow("Toy",
+	gWindow = SDL_CreateWindow("Orca",
 		SDL_WINDOWPOS_UNDEFINED,
 		SDL_WINDOWPOS_UNDEFINED,
 		WIDTH * ZOOM,
@@ -247,7 +260,6 @@ init(void)
 int
 loadfont(void)
 {
-	int i;
 	FILE *f = fopen("font.chr", "rb");
 	if(f == NULL)
 		return error("Font", "Invalid input file");
@@ -270,8 +282,8 @@ main(int argc, char *argv[])
 
 	create(&g, HOR, VER);
 	set(&g, 3, 3, 'S');
-	set(&g, 3, 6, 'A');
-	set(&g, 4, 6, 'a');
+	set(&g, 3, 6, 'B');
+	set(&g, 4, 6, '2');
 	set(&g, 7, 2, '0');
 	set(&g, 8, 7, '0');
 	run(&g);
