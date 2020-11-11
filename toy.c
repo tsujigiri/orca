@@ -57,9 +57,15 @@ clampt(Point2d p, int step)
 }
 
 int
+clamp(int val, int min, int max)
+{
+	return (val >= min) ? (val <= max) ? val : max : min;
+}
+
+int
 selected(int x, int y)
 {
-	return selection.x == x && selection.y == y;
+	return x < selection.x + selection.w && x >= selection.x && y < selection.y + selection.h && y >= selection.y;
 }
 
 void
@@ -142,17 +148,22 @@ select(int x, int y, int w, int h)
 void
 move(int x, int y)
 {
-	int reqdraw = 0;
-	if((x < 0 && selection.x > 0) || (x > 0 && selection.x < HOR - 1)) {
-		selection.x += x;
-		reqdraw = 1;
-	}
-	if((y < 0 && selection.y > 0) || (y > 0 && selection.y < VER - 1)) {
-		selection.y += y;
-		reqdraw = 1;
-	}
-	if(reqdraw)
-		draw(pixels);
+	selection.x += x;
+	selection.y += y;
+	selection.x = clamp(selection.x, 0, HOR);
+	selection.y = clamp(selection.y, 0, VER);
+	draw(pixels);
+}
+
+void
+scale(int w, int h)
+{
+	selection.w += w;
+	selection.h += h;
+	selection.w = clamp(selection.w, 1, 8);
+	selection.h = clamp(selection.h, 1, 8);
+	draw(pixels);
+	printf("%d,%d %d:%d\n", selection.x, selection.y, selection.w, selection.h);
 }
 
 int
@@ -250,10 +261,10 @@ dokey(SDL_Event *event)
 	case SDLK_HASH: insert('#'); break;
 	case SDLK_PERIOD: insert('.'); break;
 	case SDLK_COLON: insert(':'); break;
-	case SDLK_UP: move(0, -1); break;
-	case SDLK_DOWN: move(0, 1); break;
-	case SDLK_LEFT: move(-1, 0); break;
-	case SDLK_RIGHT: move(1, 0); break;
+	case SDLK_UP: shift ? scale(0, -1) : move(0, -1); break;
+	case SDLK_DOWN: shift ? scale(0, 1) : move(0, 1); break;
+	case SDLK_LEFT: shift ? scale(-1, 0) : move(-1, 0); break;
+	case SDLK_RIGHT: shift ? scale(1, 0) : move(1, 0); break;
 	}
 	/* update(); */
 }
@@ -322,7 +333,7 @@ main(int argc, char *argv[])
 	set(&g, 8, 7, '0');
 	run(&g);
 
-	select(0, 0, 0, 0);
+	select(0, 0, 1, 1);
 	draw(pixels);
 
 	while(1) {
