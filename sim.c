@@ -497,6 +497,7 @@ operate(Grid *g, int x, int y, char c)
 void
 print(Grid *g)
 {
+	/* TODO: only print once, merge into a buf */
 	int x, y;
 	for(y = 0; y < g->h; ++y)
 		for(x = 0; x < g->w; ++x) {

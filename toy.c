@@ -23,7 +23,7 @@ typedef struct {
 	int x, y, w, h;
 } Rect2d;
 
-unsigned char chrbuf[SZ];
+unsigned char font[80];
 int colors[] = {color1, color2, color3, color4, color0};
 int WIDTH = 8 * HOR + PAD * 2;
 int HEIGHT = 8 * VER + PAD * 2;
@@ -56,57 +56,6 @@ clampt(Point2d p, int step)
 	return p;
 }
 
-/* chr */
-
-int
-rowchr(int x, int y)
-{
-	return (y % 8) + ((x / 8 + y / 8 * HOR) * 16);
-}
-
-int
-getchr(int x, int y)
-{
-	int ch1, ch2;
-	int r = rowchr(x, y);
-	int px = x % 8;
-	if(r < 0 || r > SZ - 8)
-		return 0;
-	ch1 = (chrbuf[r] >> (7 - px)) & 1;
-	ch2 = (chrbuf[r + 8] >> (7 - px)) & 1;
-	return ch1 && !ch2 ? 1 : !ch1 && ch2 ? 2 : ch1 && ch2 ? 3 : 0;
-}
-
-void
-putchr(int x, int y, int color)
-{
-	int r = rowchr(x, y);
-	int px = x % 8;
-	if(x < 0 || y < 0 || x > 8 * HOR || y > 8 * VER || r > SZ - 8)
-		return;
-	if(color == 0) {
-		chrbuf[r] &= ~(1UL << (7 - px));
-		chrbuf[r + 8] &= ~(1UL << (7 - px));
-	} else if(color == 2) {
-		chrbuf[r] |= 1UL << (7 - px);
-		chrbuf[r + 8] &= ~(1UL << (7 - px));
-	} else if(color == 1) {
-		chrbuf[r] &= ~(1UL << (7 - px));
-		chrbuf[r + 8] |= 1UL << (7 - px);
-	} else if(color == 3) {
-		chrbuf[r] |= 1UL << (7 - px);
-		chrbuf[r + 8] |= 1UL << (7 - px);
-	}
-}
-
-void
-newchr(void)
-{
-	int i;
-	for(i = 0; i < SZ; ++i)
-		chrbuf[i] = 0x00;
-}
-
 /* misc */
 
 int
@@ -125,15 +74,19 @@ void
 drawtile(uint32_t *dst, int x, int y, char c, int type)
 {
 	int v, h;
-	/*printf("%d,%d = %c(%d)\n", x, y, get(&g, x, y));*/
+	int target = 0;
 	for(v = 0; v < 8; v++)
 		for(h = 7; h >= 0; h--) {
 			int px = (x * 8) + h;
 			int py = (y * 8) + v;
 			if(x == selection.x && y == selection.y)
 				dst[(py + PAD) * WIDTH + (px + PAD)] = colors[1];
-			else
-				dst[(py + PAD) * WIDTH + (px + PAD)] = colors[type % 5];
+			else {
+				int ch1 = font[v];
+				int clr = ((ch1 >> x) & 0x1);
+				/* printf("%d ", ch1); */
+				dst[(py + PAD) * WIDTH + (px / 8 + PAD)] = colors[clr];
+			}
 		}
 }
 
@@ -225,7 +178,6 @@ quit(void)
 void
 render(void)
 {
-	newchr();
 	draw(pixels);
 }
 
@@ -315,6 +267,22 @@ init(void)
 }
 
 int
+loadfont(void)
+{
+	int i;
+	FILE *f = fopen("font.chr", "rb");
+	if(f == NULL)
+		return error("Font", "Invalid input file");
+	if(!fread(font, sizeof(font), 1, f))
+		return error("Font", "Invalid input size");
+	for(i = 0; i < 10; ++i) {
+		printf("%d\n", font[i]);
+	}
+	fclose(f);
+	return 1;
+}
+
+int
 main(int argc, char *argv[])
 {
 	int ticknext = 0;
@@ -322,15 +290,19 @@ main(int argc, char *argv[])
 
 	if(!init())
 		return error("Init", "Failure");
+	if(!loadfont())
+		return error("Font", "Failure");
 
 	create(&g, HOR, VER);
 	set(&g, 3, 3, 'S');
 	set(&g, 3, 6, 'A');
 	set(&g, 4, 6, 'a');
+	set(&g, 7, 2, '0');
+	set(&g, 8, 7, '0');
+
 	run(&g);
 	print(&g);
 
-	newchr();
 	select(0, 0, 0, 0);
 	draw(pixels);
 
