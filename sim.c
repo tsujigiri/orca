@@ -275,7 +275,7 @@ opj(Grid *g, int x, int y, char c)
 	char link = getport(g, x, y - 1, 0);
 	int i;
 	if(link != c) {
-		for(i = 1; y + i < g->h; ++i)
+		for(i = 1; y + i < 256; ++i)
 			if(get(g, x, y + i) != c)
 				break;
 		setport(g, x, y + i, link);
@@ -453,7 +453,7 @@ opy(Grid *g, int x, int y, char c)
 	char link = getport(g, x - 1, y, 0);
 	int i;
 	if(link != c) {
-		for(i = 1; x + i < g->w; ++i)
+		for(i = 1; x + i < 256; ++i)
 			if(get(g, x + i, y) != c)
 				break;
 		setport(g, x + i, y, link);
@@ -477,7 +477,7 @@ void
 opcomment(Grid *g, int x, int y)
 {
 	int i;
-	for(i = 1; x + i < g->w; ++i) {
+	for(i = 1; x + i < 256; ++i) {
 		lock(g, x + i, y);
 		if(get(g, x + i, y) == '#')
 			break;
@@ -488,15 +488,14 @@ void
 opspecial(Grid *g, int x, int y)
 {
 	int i, b = bang(g, x, y);
-	for(i = 0; x + i < g->w; ++i) {
+	for(i = 0; x + i < 256; ++i) {
 		char c = getport(g, x + i, y, 1);
 		if(c == '.')
 			break;
 		if(b)
-			printf("%c", c);
+			g->msg[g->msg_len++] = c;
 	}
-	if(b)
-		printf("\n");
+	settype(g, x, y, b ? 3 : 2);
 }
 
 void
@@ -542,7 +541,7 @@ void
 print(Grid *g)
 {
 	/* TODO: only print once, merge into a buf */
-	int x, y;
+	int x, y, i = 0;
 	for(y = 0; y < g->h; ++y)
 		for(x = 0; x < g->w; ++x) {
 			putchar(get(g, x, y));
@@ -557,6 +556,9 @@ print(Grid *g)
 				putchar('\n');
 		}
 	putchar('\n');
+	while(g->msg[i])
+		putchar(g->msg[i++]);
+	putchar('\n');
 }
 
 int
@@ -567,6 +569,8 @@ run(Grid *g)
 		g->lock[i] = 0;
 		g->type[i] = 0;
 	}
+	g->msg[0] = '\0';
+	g->msg_len = 0;
 	for(i = 0; i < g->l; ++i) {
 		char c = g->data[i];
 		x = i % g->w;
@@ -613,4 +617,6 @@ create(Grid *g, int w, int h)
 	for(i = 0; i < w * h; ++i) {
 		g->data[i] = '.';
 	}
+	g->msg[0] = '\0';
+	g->msg_len = 0;
 }

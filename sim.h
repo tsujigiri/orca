@@ -10,6 +10,8 @@ typedef struct Grid {
 	int type[MAXSZ];
 	char vars[36];
 	char data[MAXSZ];
+	char msg[36];
+	int msg_len;
 } Grid;
 
 char get(Grid *g, int x, int y);

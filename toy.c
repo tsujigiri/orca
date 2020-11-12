@@ -109,13 +109,11 @@ getfont(int x, int y, char c, int type, int sel)
 		return 65;
 	if(x % 8 == 0 && y % 8 == 0)
 		return 68;
-	if(c == '.' && type)
-		return 64;
-	if(c == '.' && !sel)
-		return 70;
 	if(selection.x == x && selection.y == y)
 		return 66;
-	if(sel)
+	if(sel || type)
+		return 64;
+	if(x % 2 == 0 && y % 2 == 0)
 		return 64;
 	return 70;
 }
@@ -205,6 +203,15 @@ error(char *msg, const char *err)
 }
 
 void
+play(void)
+{
+	int i;
+	for(i = 0; i < g.msg_len; ++i) {
+		printf("%c", g.msg[i]);
+	}
+}
+
+void
 quit(void)
 {
 	free(pixels);
@@ -216,12 +223,6 @@ quit(void)
 	gWindow = NULL;
 	SDL_Quit();
 	exit(0);
-}
-
-void
-render(void)
-{
-	draw(pixels);
 }
 
 void
@@ -336,7 +337,7 @@ init(void)
 int
 loadfont(void)
 {
-	FILE *f = fopen("font.chr", "rb");
+	FILE *f = fopen("font-bold.chr", "rb");
 	if(f == NULL)
 		return error("Font", "Invalid input file");
 	if(!fread(font, sizeof(font), 1, f))
@@ -369,6 +370,7 @@ main(int argc, char *argv[])
 
 		if(tickrun == 8) {
 			run(&g);
+			play();
 			draw(pixels);
 			tickrun = 0;
 		}
