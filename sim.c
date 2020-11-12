@@ -91,17 +91,6 @@ set(Grid *g, int x, int y, char c)
 		g->data[x + (y * g->w)] = c;
 }
 
-/* Locks */
-
-void
-lock(Grid *g, int x, int y)
-{
-	if(valid(g, x, y)) {
-		g->lock[x + (y * g->w)] = 1;
-		g->type[x + (y * g->w)] = 1;
-	}
-}
-
 /* Variables */
 
 void
@@ -131,6 +120,18 @@ settype(Grid *g, int x, int y, int t)
 {
 	if(valid(g, x, y))
 		g->type[x + (y * g->w)] = t;
+}
+
+/* Locks */
+
+void
+lock(Grid *g, int x, int y)
+{
+	if(valid(g, x, y)) {
+		g->lock[x + (y * g->w)] = 1;
+		if(!gettype(g, x, y))
+			settype(g, x, y, 1);
+	}
 }
 
 /* Port Setters */
@@ -220,6 +221,7 @@ ope(Grid *g, int x, int y, char c)
 		settype(g, x, y, 0);
 		setport(g, x + 1, y, c);
 		lock(g, x + 1, y);
+		settype(g, x + 1, y, 0);
 	}
 }
 
@@ -325,6 +327,7 @@ opn(Grid *g, int x, int y, char c)
 		settype(g, x, y, 0);
 		setport(g, x, y - 1, c);
 		lock(g, x, y - 1);
+		settype(g, x, y - 1, 0);
 	}
 }
 
@@ -369,9 +372,11 @@ opq(Grid *g, int x, int y, char c)
 void
 opr(Grid *g, int x, int y, char c)
 {
-	int min = cint(getport(g, x - 1, y, 0));
+	char min = getport(g, x - 1, y, 0);
 	char max = getport(g, x + 1, y, 1);
-	setport(g, x, y + 1, cchr((random(g) % ((cint(max) - min) || 1)) + min, ciuc(max)));
+	int min_ = cint(min);
+	int max_ = cint(max);
+	setport(g, x, y + 1, cchr((random(g) % ((cint(max_) - min_) || 1)) + min_, ciuc(max)));
 	(void)c;
 }
 
@@ -405,10 +410,17 @@ opt(Grid *g, int x, int y, char c)
 void
 opu(Grid *g, int x, int y, char c)
 {
-	int max = cint(getport(g, x - 1, y, 0));
-	int step = cint(getport(g, x + 1, y, 1));
-	int bucket = (step * (g->f + max - 1)) % max + step;
-	setport(g, x, y + 1, bucket >= max ? '*' : '.');
+	char step = getport(g, x - 1, y, 1);
+	char max = getport(g, x + 1, y, 0);
+	int step_ = cint(step);
+	int max_ = cint(max);
+	int bucket;
+	if(!step_)
+		step_ = 1;
+	if(!max_)
+		max_ = 8;
+	bucket = (step_ * (g->f + max_ - 1)) % max_ + step_;
+	setport(g, x, y + 1, bucket >= max_ ? '*' : '.');
 	(void)c;
 }
 
@@ -434,6 +446,7 @@ opw(Grid *g, int x, int y, char c)
 		settype(g, x, y, 0);
 		setport(g, x - 1, y, c);
 		lock(g, x - 1, y);
+		settype(g, x - 1, y, 0);
 	}
 }
 
@@ -469,7 +482,11 @@ opz(Grid *g, int x, int y, char c)
 	int rate_ = cint(rate);
 	int target_ = cint(target);
 	int val_ = cint(val);
-	setport(g, x, y + 1, cchr(val_ + val_ < target_ ? rate_ : val_ > target_ ? -rate_ : 0, ciuc(target)));
+	int mod;
+	if(!rate_)
+		rate_ = 1;
+	mod = val_ <= target_ - rate_ ? rate_ : val_ >= target_ + rate_ ? -rate_ : target_ - val_;
+	setport(g, x, y + 1, cchr(val_ + mod, ciuc(target)));
 	(void)c;
 }
 

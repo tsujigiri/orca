@@ -1,6 +1,7 @@
 #include <SDL2/SDL.h>
 #include <stdio.h>
 #include "sim.h"
+#include "midi.h"
 
 #define HOR 32
 #define VER 16
@@ -35,6 +36,7 @@ SDL_Renderer *gRenderer = NULL;
 SDL_Texture *gTexture = NULL;
 uint32_t *pixels;
 
+int down = 0;
 Rect2d selection;
 Grid g;
 
@@ -168,10 +170,10 @@ draw(uint32_t *dst)
 void
 select(int x, int y, int w, int h)
 {
-	selection.x = x;
-	selection.y = y;
-	selection.w = w;
-	selection.h = h;
+	selection.x = clamp(x, 0, HOR - 1);
+	selection.y = clamp(y, 0, VER - 1);
+	selection.w = clamp(w, 1, 36);
+	selection.h = clamp(h, 1, 36);
 	draw(pixels);
 }
 
@@ -180,8 +182,8 @@ move(int x, int y)
 {
 	selection.x += x;
 	selection.y += y;
-	selection.x = clamp(selection.x, 0, HOR);
-	selection.y = clamp(selection.y, 0, VER);
+	selection.x = clamp(selection.x, 0, HOR - 1);
+	selection.y = clamp(selection.y, 0, VER - 1);
 	draw(pixels);
 }
 
@@ -209,6 +211,7 @@ play(void)
 	for(i = 0; i < g.msg_len; ++i) {
 		printf("%c", g.msg[i]);
 	}
+	fflush(stdout);
 }
 
 void
@@ -236,11 +239,15 @@ domouse(SDL_Event *event)
 	switch(event->type) {
 	case SDL_MOUSEBUTTONUP:
 		select(selection.x, selection.y, touch.x / 8 - selection.x + 1, touch.y / 8 - selection.y + 1);
+		down = 0;
 		break;
 	case SDL_MOUSEBUTTONDOWN:
 		select(touch.x / 8, touch.y / 8, 1, 1);
+		down = 1;
 		break;
 	case SDL_MOUSEMOTION:
+		if(down)
+			select(selection.x, selection.y, touch.x / 8 - selection.x + 1, touch.y / 8 - selection.y + 1);
 		break;
 	}
 }
@@ -337,7 +344,7 @@ init(void)
 int
 loadfont(void)
 {
-	FILE *f = fopen("font-bold.chr", "rb");
+	FILE *f = fopen("font-light.chr", "rb");
 	if(f == NULL)
 		return error("Font", "Invalid input file");
 	if(!fread(font, sizeof(font), 1, f))
