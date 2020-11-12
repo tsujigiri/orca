@@ -109,8 +109,10 @@ getfont(int x, int y, char c, int type, int sel)
 		return 64;
 	if(c == '.' && !sel)
 		return 70;
-	if(sel)
+	if(selection.x == x && selection.y == y)
 		return 66;
+	if(sel)
+		return 64;
 	return 70;
 }
 

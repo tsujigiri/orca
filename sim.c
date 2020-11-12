@@ -183,9 +183,15 @@ opb(Grid *g, int x, int y, char c)
 void
 opc(Grid *g, int x, int y, char c)
 {
+	char mod = getport(g, x + 1, y, 0);
 	char rate = getport(g, x - 1, y, 0);
-	char mod = getport(g, x + 1, y, 1);
-	setport(g, x, y + 1, cchr(g->f / rate % mod, ciuc(mod)));
+	int mod_ = cint(mod);
+	int rate_ = cint(rate);
+	if(!rate_)
+		rate_ = 1;
+	if(!mod_)
+		mod_ = 8;
+	setport(g, x, y + 1, cchr(g->f / rate_ % mod_, ciuc(mod)));
 	(void)c;
 }
 
@@ -193,8 +199,14 @@ void
 opd(Grid *g, int x, int y, char c)
 {
 	char rate = getport(g, x - 1, y, 0);
-	char mod = getport(g, x + 1, y, 1);
-	setport(g, x, y + 1, g->f % (rate * mod) == 0 ? '*' : '.');
+	char mod = getport(g, x + 1, y, 0);
+	int rate_ = cint(rate);
+	int mod_ = cint(mod);
+	if(!rate_)
+		rate_ = 1;
+	if(!mod_)
+		mod_ = 8;
+	setport(g, x, y + 1, g->f % (rate_ * mod_) == 0 ? '*' : '.');
 	(void)c;
 }
 
@@ -212,18 +224,23 @@ ope(Grid *g, int x, int y, char c)
 void
 opf(Grid *g, int x, int y, char c)
 {
-	setport(g, x, y + 1, getport(g, x - 1, y, 0) == getport(g, x + 1, y, 1) ? '*' : '.');
+	char a = getport(g, x - 1, y, 0);
+	char b = getport(g, x + 1, y, 1);
+	setport(g, x, y + 1, a == b ? '*' : '.');
 	(void)c;
 }
 
 void
 opg(Grid *g, int x, int y, char c)
 {
-	int tx = cint(getport(g, x - 3, y, 0));
-	int ty = cint(getport(g, x - 2, y, 0));
-	int i, len = cint(getport(g, x - 1, y, 0));
-	for(i = 0; i < len; ++i)
-		setport(g, x + i + tx, y + 1 + ty, getport(g, x + 1 + i, y, 1));
+	char px = getport(g, x - 3, y, 0);
+	char py = getport(g, x - 2, y, 0);
+	char len = getport(g, x - 1, y, 0);
+	int i, len_ = cint(len);
+	if(!len_)
+		len_ = 1;
+	for(i = 0; i < len_; ++i)
+		setport(g, x + i + cint(px), y + 1 + cint(py), getport(g, x + 1 + i, y, 1));
 	(void)c;
 }
 
@@ -237,18 +254,24 @@ oph(Grid *g, int x, int y, char c)
 void
 opi(Grid *g, int x, int y, char c)
 {
-	char step = getport(g, x - 1, y, 0);
+	char rate = getport(g, x - 1, y, 0);
 	char mod = getport(g, x + 1, y, 1);
 	char val = getport(g, x, y + 1, 1);
-	setport(g, x, y + 1, cchr((cint(val) + cint(step)) % (cint(mod) || 1), ciuc(mod)));
+	int rate_ = cint(rate);
+	int mod_ = cint(mod);
+	if(!rate_)
+		rate_ = 1;
+	if(!mod_)
+		mod_ = 36;
+	setport(g, x, y + 1, cchr((cint(val) + rate_) % mod_, ciuc(mod)));
 	(void)c;
 }
 
 void
 opj(Grid *g, int x, int y, char c)
 {
-	int i;
 	char link = getport(g, x, y - 1, 0);
+	int i;
 	if(link != c) {
 		for(i = 1; y + i < g->h; ++i)
 			if(get(g, x, y + i) != c)
@@ -260,12 +283,14 @@ opj(Grid *g, int x, int y, char c)
 void
 opk(Grid *g, int x, int y, char c)
 {
-	int i, len = cint(getport(g, x - 1, y, 0));
-	for(i = 0; i < len; ++i) {
+	char len = getport(g, x - 1, y, 0);
+	int i, len_ = cint(len);
+	if(!len_)
+		len_ = 1;
+	for(i = 0; i < len_; ++i) {
 		char key = getport(g, x + 1 + i, y, 1);
-		if(key == '.')
-			continue;
-		setport(g, x + 1 + i, y + 1, load(g, key));
+		if(key != '.')
+			setport(g, x + 1 + i, y + 1, load(g, key));
 	}
 	(void)c;
 }
@@ -302,9 +327,9 @@ opn(Grid *g, int x, int y, char c)
 void
 opo(Grid *g, int x, int y, char c)
 {
-	int tx = cint(getport(g, x - 2, y, 0));
-	int ty = cint(getport(g, x - 1, y, 0));
-	setport(g, x, y + 1, getport(g, x + 1 + tx, y + ty, 1));
+	char px = getport(g, x - 2, y, 0);
+	char py = getport(g, x - 1, y, 0);
+	setport(g, x, y + 1, getport(g, x + 1 + cint(px), y + cint(py), 1));
 	(void)c;
 }
 
@@ -407,8 +432,8 @@ opx(Grid *g, int x, int y, char c)
 void
 opy(Grid *g, int x, int y, char c)
 {
-	int i;
 	char link = getport(g, x - 1, y, 0);
+	int i;
 	if(link != c) {
 		for(i = 1; x + i < g->w; ++i)
 			if(get(g, x + i, y) != c)
