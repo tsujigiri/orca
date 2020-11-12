@@ -36,7 +36,6 @@ SDL_Texture *gTexture = NULL;
 uint32_t *pixels;
 
 Rect2d selection;
-
 Grid g;
 
 Point2d
@@ -71,7 +70,12 @@ selected(int x, int y)
 void
 insert(char c)
 {
-	set(&g, selection.x, selection.y, c);
+	int x, y;
+	for(x = 0; x < selection.w; ++x) {
+		for(y = 0; y < selection.h; ++y) {
+			set(&g, selection.x + x, selection.y + y, c);
+		}
+	}
 }
 
 /* misc */
@@ -230,12 +234,10 @@ domouse(SDL_Event *event)
 		8);
 	switch(event->type) {
 	case SDL_MOUSEBUTTONUP:
-		printf("mouse-up\n");
+		select(selection.x, selection.y, touch.x / 8 - selection.x + 1, touch.y / 8 - selection.y + 1);
 		break;
 	case SDL_MOUSEBUTTONDOWN:
-		printf("%d,%d\n", touch.x / 8, touch.y / 8);
 		select(touch.x / 8, touch.y / 8, 1, 1);
-		printf("mouse-down\n");
 		break;
 	case SDL_MOUSEMOTION:
 		break;
@@ -355,13 +357,6 @@ main(int argc, char *argv[])
 		return error("Font", "Failure");
 
 	create(&g, HOR, VER);
-	set(&g, 3, 3, 'S');
-	set(&g, 3, 6, 'B');
-	set(&g, 4, 6, '2');
-	set(&g, 7, 2, '0');
-	set(&g, 8, 7, '0');
-	run(&g);
-
 	select(0, 0, 1, 1);
 	draw(pixels);
 

@@ -60,7 +60,7 @@ cchr(int v, int cap)
 int
 valid(Grid *g, int x, int y)
 {
-	return x >= 0 && x <= g->w && y >= 0 && y <= g->h;
+	return x >= 0 && x <= g->w - 1 && y >= 0 && y <= g->h;
 }
 
 int
@@ -213,11 +213,13 @@ opd(Grid *g, int x, int y, char c)
 void
 ope(Grid *g, int x, int y, char c)
 {
-	if(x == g->w || get(g, x + 1, y) != '.')
+	if(!valid(g, x + 1, y) || get(g, x + 1, y) != '.')
 		set(g, x, y, '*');
 	else {
 		set(g, x, y, '.');
+		settype(g, x, y, 0);
 		setport(g, x + 1, y, c);
+		lock(g, x + 1, y);
 	}
 }
 
@@ -316,11 +318,13 @@ opm(Grid *g, int x, int y, char c)
 void
 opn(Grid *g, int x, int y, char c)
 {
-	if(y == 0 || get(g, x, y - 1) != '.')
+	if(!valid(g, x, y - 1) || get(g, x, y - 1) != '.')
 		set(g, x, y, '*');
 	else {
 		set(g, x, y, '.');
+		settype(g, x, y, 0);
 		setport(g, x, y - 1, c);
+		lock(g, x, y - 1);
 	}
 }
 
@@ -374,11 +378,13 @@ opr(Grid *g, int x, int y, char c)
 void
 ops(Grid *g, int x, int y, char c)
 {
-	if(y == g->h || get(g, x, y + 1) != '.')
+	if(!valid(g, x, y + 1) || get(g, x, y + 1) != '.')
 		set(g, x, y, '*');
 	else {
 		set(g, x, y, '.');
-		setport(g, x, y + 1, c);
+		settype(g, x, y, 0);
+		set(g, x, y + 1, c);
+		lock(g, x, y + 1);
 	}
 }
 
@@ -421,11 +427,13 @@ opv(Grid *g, int x, int y, char c)
 void
 opw(Grid *g, int x, int y, char c)
 {
-	if(x == 0 || get(g, x - 1, y) != '.')
+	if(!valid(g, x - 1, y) || get(g, x - 1, y) != '.')
 		set(g, x, y, '*');
 	else {
 		set(g, x, y, '.');
+		settype(g, x, y, 0);
 		setport(g, x - 1, y, c);
+		lock(g, x - 1, y);
 	}
 }
 
@@ -434,7 +442,8 @@ opx(Grid *g, int x, int y, char c)
 {
 	char px = getport(g, x - 2, y, 0);
 	char py = getport(g, x - 1, y, 0);
-	setport(g, x + cint(px), y + cint(py) + 1, getport(g, x + 1, y, 1));
+	char val = getport(g, x + 1, y, 1);
+	setport(g, x + cint(px), y + cint(py) + 1, val);
 	(void)c;
 }
 
@@ -454,12 +463,13 @@ opy(Grid *g, int x, int y, char c)
 void
 opz(Grid *g, int x, int y, char c)
 {
-	int rate = cint(getport(g, x - 1, y, 0));
+	char rate = getport(g, x - 1, y, 0);
 	char target = getport(g, x + 1, y, 1);
-	char val = cint(getport(g, x, y + 1, 1));
-	int t = cint(target);
-	int mod = val < t ? rate : val > t ? -rate : 0;
-	setport(g, x, y + 1, cchr(val + mod, ciuc(target)));
+	char val = getport(g, x, y + 1, 1);
+	int rate_ = cint(rate);
+	int target_ = cint(target);
+	int val_ = cint(val);
+	setport(g, x, y + 1, cchr(val_ + val_ < target_ ? rate_ : val_ > target_ ? -rate_ : 0, ciuc(target)));
 	(void)c;
 }
 
@@ -492,6 +502,7 @@ opspecial(Grid *g, int x, int y)
 void
 operate(Grid *g, int x, int y, char c)
 {
+	settype(g, x, y, 3);
 	switch(clca(c)) {
 	case 'a': opa(g, x, y, c); break;
 	case 'b': opb(g, x, y, c); break;
@@ -523,7 +534,6 @@ operate(Grid *g, int x, int y, char c)
 	case '#': opcomment(g, x, y); break;
 	default: opspecial(g, x, y);
 	}
-	settype(g, x, y, 3);
 }
 
 /* General */

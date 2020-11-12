@@ -45,10 +45,6 @@ To display the list of operators inside of Orca, use `CmdOrCtrl+G`.
 - `4` port(right)
 - `5` port(output)
 
-## TODOs
-
-- Default values
-
 ## Notes
 
 ### SDL Mod Codes
