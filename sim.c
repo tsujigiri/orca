@@ -336,23 +336,29 @@ opo(Grid *g, int x, int y, char c)
 void
 opp(Grid *g, int x, int y, char c)
 {
-	int key = cint(getport(g, x - 2, y, 0));
-	int i, len = cint(getport(g, x - 1, y, 0));
-	/* TODO */
-	for(i = 0; i < len; ++i)
+	char key = getport(g, x - 2, y, 0);
+	char len = getport(g, x - 1, y, 0);
+	char val = getport(g, x + 1, y, 1);
+	int i, len_ = cint(len);
+	if(!len_)
+		len_ = 1;
+	for(i = 0; i < len_; ++i)
 		lock(g, x + i, y + 1);
-	setport(g, x + (key % len), y + 1, get(g, x + 1, y));
+	setport(g, x + (cint(key) % len_), y + 1, val);
 	(void)c;
 }
 
 void
 opq(Grid *g, int x, int y, char c)
 {
-	int tx = cint(getport(g, x - 3, y, 0));
-	int ty = cint(getport(g, x - 2, y, 0));
-	int i, len = cint(getport(g, x - 1, y, 0));
-	for(i = 0; i < len; ++i)
-		setport(g, x + 1 - len + i, y + 1, getport(g, x + 1 + tx + i, y + ty, 1));
+	char px = getport(g, x - 3, y, 0);
+	char py = getport(g, x - 2, y, 0);
+	char len = getport(g, x - 1, y, 0);
+	int i, len_ = cint(len);
+	if(!len_)
+		len_ = 1;
+	for(i = 0; i < len_; ++i)
+		setport(g, x + 1 - len_ + i, y + 1, getport(g, x + 1 + cint(px) + i, y + cint(py), 1));
 	(void)c;
 }
 
@@ -379,11 +385,14 @@ ops(Grid *g, int x, int y, char c)
 void
 opt(Grid *g, int x, int y, char c)
 {
-	int key = cint(getport(g, x - 2, y, 0));
-	int i, len = cint(getport(g, x - 1, y, 0));
-	for(i = 0; i < len; ++i)
+	char key = getport(g, x - 2, y, 0);
+	char len = getport(g, x - 1, y, 0);
+	int i, len_ = cint(len);
+	if(!len_)
+		len_ = 1;
+	for(i = 0; i < len_; ++i)
 		lock(g, x + 1 + i, y);
-	setport(g, x, y + 1, getport(g, x + 1 + (key % len), y, 1));
+	setport(g, x, y + 1, getport(g, x + 1 + (cint(key) % len_), y, 1));
 	(void)c;
 }
 
@@ -423,9 +432,9 @@ opw(Grid *g, int x, int y, char c)
 void
 opx(Grid *g, int x, int y, char c)
 {
-	int tx = cint(getport(g, x - 2, y, 0));
-	int ty = cint(getport(g, x - 1, y, 0));
-	setport(g, x + tx, y + ty + 1, getport(g, x + 1, y, 1));
+	char px = getport(g, x - 2, y, 0);
+	char py = getport(g, x - 1, y, 0);
+	setport(g, x + cint(px), y + cint(py) + 1, getport(g, x + 1, y, 1));
 	(void)c;
 }
 
