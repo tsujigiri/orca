@@ -1,7 +1,7 @@
 #include <SDL2/SDL.h>
 #include <stdio.h>
 #include "sim.h"
-#include "midi.h"
+/* #include "midi.h" */
 
 #define HOR 32
 #define VER 16

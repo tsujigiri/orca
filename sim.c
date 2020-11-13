@@ -218,11 +218,11 @@ ope(Grid *g, int x, int y, char c)
 		set(g, x, y, '*');
 	else {
 		set(g, x, y, '.');
-		settype(g, x, y, 0);
 		setport(g, x + 1, y, c);
 		lock(g, x + 1, y);
 		settype(g, x + 1, y, 0);
 	}
+	settype(g, x, y, 0);
 }
 
 void
@@ -324,11 +324,11 @@ opn(Grid *g, int x, int y, char c)
 		set(g, x, y, '*');
 	else {
 		set(g, x, y, '.');
-		settype(g, x, y, 0);
 		setport(g, x, y - 1, c);
 		lock(g, x, y - 1);
 		settype(g, x, y - 1, 0);
 	}
+	settype(g, x, y, 0);
 }
 
 void
@@ -387,10 +387,10 @@ ops(Grid *g, int x, int y, char c)
 		set(g, x, y, '*');
 	else {
 		set(g, x, y, '.');
-		settype(g, x, y, 0);
 		set(g, x, y + 1, c);
 		lock(g, x, y + 1);
 	}
+	settype(g, x, y, 0);
 }
 
 void
@@ -443,11 +443,11 @@ opw(Grid *g, int x, int y, char c)
 		set(g, x, y, '*');
 	else {
 		set(g, x, y, '.');
-		settype(g, x, y, 0);
 		setport(g, x - 1, y, c);
 		lock(g, x - 1, y);
 		settype(g, x - 1, y, 0);
 	}
+	settype(g, x, y, 0);
 }
 
 void
