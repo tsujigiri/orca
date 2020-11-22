@@ -34,7 +34,7 @@ int COLOR = 3;
 SDL_Window *gWindow = NULL;
 SDL_Renderer *gRenderer = NULL;
 SDL_Texture *gTexture = NULL;
-uint32_t *pixels;
+Uint32 *pixels;
 
 int down = 0;
 Rect2d selection;
@@ -137,7 +137,7 @@ getstyle(int clr, int type, int sel)
 }
 
 void
-drawtile(uint32_t *dst, int x, int y, char c, int type)
+drawtile(Uint32 *dst, int x, int y, char c, int type)
 {
 	int v, h;
 	int sel = selected(x, y);
@@ -155,13 +155,13 @@ drawtile(uint32_t *dst, int x, int y, char c, int type)
 }
 
 void
-draw(uint32_t *dst)
+draw(Uint32 *dst)
 {
 	int x, y;
 	for(y = 0; y < VER; ++y)
 		for(x = 0; x < HOR; ++x)
 			drawtile(dst, x, y, get(&g, x, y), gettype(&g, x, y));
-	SDL_UpdateTexture(gTexture, NULL, dst, WIDTH * sizeof(uint32_t));
+	SDL_UpdateTexture(gTexture, NULL, dst, WIDTH * sizeof(Uint32));
 	SDL_RenderClear(gRenderer);
 	SDL_RenderCopy(gRenderer, gTexture, NULL, NULL);
 	SDL_RenderPresent(gRenderer);
@@ -332,7 +332,7 @@ init(void)
 		HEIGHT);
 	if(gTexture == NULL)
 		return error("Texture", SDL_GetError());
-	pixels = (uint32_t *)malloc(WIDTH * HEIGHT * sizeof(uint32_t));
+	pixels = (Uint32 *)malloc(WIDTH * HEIGHT * sizeof(Uint32));
 	if(pixels == NULL)
 		return error("Pixels", "Failed to allocate memory");
 	for(i = 0; i < HEIGHT; i++)
