@@ -38,14 +38,14 @@ unsigned char font[1200];
 int colors[] = {color1, color2, color3, color4, color0};
 int WIDTH = 8 * HOR + PAD * 2;
 int HEIGHT = 8 * VER + PAD * 2;
-int FPS = 30, GUIDES = 1, DOWN = 0;
+int FPS = 30, DOWN = 0;
 
 SDL_Window *gWindow = NULL;
 SDL_Renderer *gRenderer = NULL;
 SDL_Texture *gTexture = NULL;
 Uint32 *pixels;
 
-Rect2d selection;
+Rect2d cursor;
 Grid g;
 
 Point2d
@@ -66,31 +66,19 @@ clamp(int val, int min, int max)
 int
 selected(int x, int y)
 {
-	return x < selection.x + selection.w && x >= selection.x && y < selection.y + selection.h && y >= selection.y;
+	return x < cursor.x + cursor.w && x >= cursor.x && y < cursor.y + cursor.h && y >= cursor.y;
 }
 
 void
 insert(char c)
 {
 	int x, y;
-	for(x = 0; x < selection.w; ++x)
-		for(y = 0; y < selection.h; ++y)
-			set(&g, selection.x + x, selection.y + y, c);
+	for(x = 0; x < cursor.w; ++x)
+		for(y = 0; y < cursor.h; ++y)
+			set(&g, cursor.x + x, cursor.y + y, c);
 }
 
 /* misc */
-
-int
-guide(int x, int y)
-{
-	if(!GUIDES)
-		return 0;
-	if(x % 32 == 0 && y % 32 == 0)
-		return 3;
-	else if(x % 8 == 0 && y % 8 == 0)
-		return 4;
-	return 0;
-}
 
 int
 getfont(int x, int y, char c, int type, int sel)
@@ -109,11 +97,9 @@ getfont(int x, int y, char c, int type, int sel)
 		return 65;
 	if(x % 8 == 0 && y % 8 == 0)
 		return 68;
-	if(selection.x == x && selection.y == y)
+	if(cursor.x == x && cursor.y == y)
 		return 66;
-	if(sel || type)
-		return 64;
-	if(x % 2 == 0 && y % 2 == 0)
+	if(sel || type || (x % 2 == 0 && y % 2 == 0))
 		return 64;
 	return 70;
 }
@@ -165,28 +151,6 @@ draw(Uint32 *dst)
 	SDL_RenderPresent(gRenderer);
 }
 
-void
-select(int x, int y, int w, int h)
-{
-	selection.x = clamp(x, 0, HOR - 1);
-	selection.y = clamp(y, 0, VER - 1);
-	selection.w = clamp(w, 1, 36);
-	selection.h = clamp(h, 1, 36);
-	draw(pixels);
-}
-
-void
-move(int x, int y)
-{
-	select(selection.x + x, selection.y + y, selection.w, selection.h);
-}
-
-void
-scale(int w, int h)
-{
-	select(selection.x, selection.y, selection.w + w, selection.h + h);
-}
-
 /* etc */
 
 int
@@ -194,6 +158,28 @@ error(char *msg, const char *err)
 {
 	printf("Error %s: %s\n", msg, err);
 	return 1;
+}
+
+void
+select(int x, int y, int w, int h)
+{
+	cursor.x = clamp(x, 0, HOR - 1);
+	cursor.y = clamp(y, 0, VER - 1);
+	cursor.w = clamp(w, 1, 36);
+	cursor.h = clamp(h, 1, 36);
+	draw(pixels);
+}
+
+void
+move(int x, int y)
+{
+	select(cursor.x + x, cursor.y + y, cursor.w, cursor.h);
+}
+
+void
+scale(int w, int h)
+{
+	select(cursor.x, cursor.y, cursor.w + w, cursor.h + h);
 }
 
 void
@@ -236,7 +222,11 @@ domouse(SDL_Event *event)
 		break;
 	case SDL_MOUSEMOTION:
 		if(DOWN)
-			select(selection.x, selection.y, touch.x / 8 - selection.x + 1, touch.y / 8 - selection.y + 1);
+			select(
+				cursor.x,
+				cursor.y,
+				touch.x / 8 - cursor.x + 1,
+				touch.y / 8 - cursor.y + 1);
 		break;
 	}
 }
@@ -246,13 +236,17 @@ dokey(SDL_Event *event)
 {
 	int shift = SDL_GetModState() & KMOD_LSHIFT || SDL_GetModState() & KMOD_RSHIFT;
 	switch(event->key.keysym.sym) {
+	case SDLK_UP: shift ? scale(0, -1) : move(0, -1); break;
+	case SDLK_DOWN: shift ? scale(0, 1) : move(0, 1); break;
+	case SDLK_LEFT: shift ? scale(-1, 0) : move(-1, 0); break;
+	case SDLK_RIGHT: shift ? scale(1, 0) : move(1, 0); break;
 	case SDLK_BACKSPACE: insert('.'); break;
 	case SDLK_ASTERISK: insert('*'); break;
 	case SDLK_HASH: insert('#'); break;
 	case SDLK_PERIOD: insert('.'); break;
 	case SDLK_COLON: insert(':'); break;
 	case SDLK_SEMICOLON: insert(':'); break;
-	case SDLK_ESCAPE: select(selection.x, selection.y, 1, 1); break;
+	case SDLK_ESCAPE: select(cursor.x, cursor.y, 1, 1); break;
 	case SDLK_0: insert('0'); break;
 	case SDLK_1: insert('1'); break;
 	case SDLK_2: insert('2'); break;
@@ -289,10 +283,6 @@ dokey(SDL_Event *event)
 	case SDLK_x: insert(shift ? 'X' : 'x'); break;
 	case SDLK_y: insert(shift ? 'Y' : 'y'); break;
 	case SDLK_z: insert(shift ? 'Z' : 'z'); break;
-	case SDLK_UP: shift ? scale(0, -1) : move(0, -1); break;
-	case SDLK_DOWN: shift ? scale(0, 1) : move(0, 1); break;
-	case SDLK_LEFT: shift ? scale(-1, 0) : move(-1, 0); break;
-	case SDLK_RIGHT: shift ? scale(1, 0) : move(1, 0); break;
 	}
 }
 
@@ -342,29 +332,25 @@ loadfont(void)
 }
 
 int
-tryload(FILE *f)
+loadorca(FILE *f)
 {
 	char c;
 	if(!f)
 		return error("Load", "Invalid input file");
 	while((c = fgetc(f)) != EOF) {
 		if(c == '\n') {
-			selection.x = 0;
-			selection.y += 1;
-		} else {
-			set(&g, selection.x, selection.y, c);
-			selection.x += 1;
-		}
+			cursor.x = 0;
+			cursor.y += 1;
+		} else
+			set(&g, cursor.x++, cursor.y, c);
 	}
-	select(0, 0, 1, 1);
 	return 1;
 }
 
 int
 main(int argc, char *argv[])
 {
-	int ticknext = 0;
-	int tickrun = 0;
+	int ticknext = 0, tickrun = 0;
 
 	if(!init())
 		return error("Init", "Failure");
@@ -373,9 +359,12 @@ main(int argc, char *argv[])
 
 	create(&g, HOR, VER);
 	select(0, 0, 1, 1);
+
 	if(argc > 0)
-		tryload(fopen(argv[1], "r"));
-	draw(pixels);
+		if(!loadorca(fopen(argv[1], "r")))
+			return error("Load", "Failure");
+
+	select(0, 0, 1, 1);
 
 	while(1) {
 		int tick = SDL_GetTicks();

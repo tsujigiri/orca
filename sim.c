@@ -184,8 +184,8 @@ opb(Grid *g, int x, int y, char c)
 void
 opc(Grid *g, int x, int y, char c)
 {
-	char mod = getport(g, x + 1, y, 0);
 	char rate = getport(g, x - 1, y, 0);
+	char mod = getport(g, x + 1, y, 1);
 	int mod_ = cint(mod);
 	int rate_ = cint(rate);
 	if(!rate_)
@@ -200,7 +200,7 @@ void
 opd(Grid *g, int x, int y, char c)
 {
 	char rate = getport(g, x - 1, y, 0);
-	char mod = getport(g, x + 1, y, 0);
+	char mod = getport(g, x + 1, y, 1);
 	int rate_ = cint(rate);
 	int mod_ = cint(mod);
 	if(!rate_)
@@ -219,7 +219,6 @@ ope(Grid *g, int x, int y, char c)
 	else {
 		set(g, x, y, '.');
 		setport(g, x + 1, y, c);
-		lock(g, x + 1, y);
 		settype(g, x + 1, y, 0);
 	}
 	settype(g, x, y, 0);
@@ -325,7 +324,6 @@ opn(Grid *g, int x, int y, char c)
 	else {
 		set(g, x, y, '.');
 		setport(g, x, y - 1, c);
-		lock(g, x, y - 1);
 		settype(g, x, y - 1, 0);
 	}
 	settype(g, x, y, 0);
@@ -387,8 +385,8 @@ ops(Grid *g, int x, int y, char c)
 		set(g, x, y, '*');
 	else {
 		set(g, x, y, '.');
-		set(g, x, y + 1, c);
-		lock(g, x, y + 1);
+		setport(g, x, y + 1, c);
+		settype(g, x, y + 1, 0);
 	}
 	settype(g, x, y, 0);
 }
@@ -411,7 +409,7 @@ void
 opu(Grid *g, int x, int y, char c)
 {
 	char step = getport(g, x - 1, y, 1);
-	char max = getport(g, x + 1, y, 0);
+	char max = getport(g, x + 1, y, 1);
 	int step_ = cint(step);
 	int max_ = cint(max);
 	int bucket;
@@ -444,7 +442,6 @@ opw(Grid *g, int x, int y, char c)
 	else {
 		set(g, x, y, '.');
 		setport(g, x - 1, y, c);
-		lock(g, x - 1, y);
 		settype(g, x - 1, y, 0);
 	}
 	settype(g, x, y, 0);

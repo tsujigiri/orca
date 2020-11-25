@@ -4,8 +4,6 @@ clang-format -i sim.c
 clang-format -i sim.h
 clang-format -i cli.c
 clang-format -i toy.c
-clang-format -i midi.c
-clang-format -i midi.h
 
 ## Cleanup
 rm -f ./cli
