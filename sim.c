@@ -499,6 +499,7 @@ opcomment(Grid *g, int x, int y)
 		if(get(g, x + i, y) == '#')
 			break;
 	}
+	settype(g, x, y, 1);
 }
 
 void

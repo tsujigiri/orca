@@ -1,7 +1,17 @@
 #include <SDL2/SDL.h>
 #include <stdio.h>
 #include "sim.h"
-/* #include "midi.h" */
+
+/* 
+Copyright (c) 2020 Devine Lu Linvega
+
+Permission to use, copy, modify, and distribute this software for any
+purpose with or without fee is hereby granted, provided that the above
+copyright notice and this permission notice appear in all copies.
+
+THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+WITH REGARD TO THIS SOFTWARE.
+*/
 
 #define HOR 32
 #define VER 16
@@ -28,15 +38,13 @@ unsigned char font[1200];
 int colors[] = {color1, color2, color3, color4, color0};
 int WIDTH = 8 * HOR + PAD * 2;
 int HEIGHT = 8 * VER + PAD * 2;
-int FPS = 30;
-int GUIDES = 1;
-int COLOR = 3;
+int FPS = 30, GUIDES = 1, DOWN = 0;
+
 SDL_Window *gWindow = NULL;
 SDL_Renderer *gRenderer = NULL;
 SDL_Texture *gTexture = NULL;
 Uint32 *pixels;
 
-int down = 0;
 Rect2d selection;
 Grid g;
 
@@ -46,14 +54,6 @@ Pt2d(int x, int y)
 	Point2d p;
 	p.x = x;
 	p.y = y;
-	return p;
-}
-
-Point2d
-clampt(Point2d p, int step)
-{
-	p.x = abs((p.x + step / 2) / step) * step;
-	p.y = abs((p.y + step / 2) / step) * step;
 	return p;
 }
 
@@ -73,11 +73,9 @@ void
 insert(char c)
 {
 	int x, y;
-	for(x = 0; x < selection.w; ++x) {
-		for(y = 0; y < selection.h; ++y) {
+	for(x = 0; x < selection.w; ++x)
+		for(y = 0; y < selection.h; ++y)
 			set(&g, selection.x + x, selection.y + y, c);
-		}
-	}
 }
 
 /* misc */
@@ -180,22 +178,16 @@ select(int x, int y, int w, int h)
 void
 move(int x, int y)
 {
-	selection.x += x;
-	selection.y += y;
-	selection.x = clamp(selection.x, 0, HOR - 1);
-	selection.y = clamp(selection.y, 0, VER - 1);
-	draw(pixels);
+	select(selection.x + x, selection.y + y, selection.w, selection.h);
 }
 
 void
 scale(int w, int h)
 {
-	selection.w += w;
-	selection.h += h;
-	selection.w = clamp(selection.w, 1, 8);
-	selection.h = clamp(selection.h, 1, 8);
-	draw(pixels);
+	select(selection.x, selection.y, selection.w + w, selection.h + h);
 }
+
+/* etc */
 
 int
 error(char *msg, const char *err)
@@ -208,9 +200,9 @@ void
 play(void)
 {
 	int i;
-	for(i = 0; i < g.msg_len; ++i) {
+	/* TODO: Implement midi stuff */
+	for(i = 0; i < g.msg_len; ++i)
 		printf("%c", g.msg[i]);
-	}
 	fflush(stdout);
 }
 
@@ -231,22 +223,19 @@ quit(void)
 void
 domouse(SDL_Event *event)
 {
-	Point2d touch = clampt(
-		Pt2d(
-			(event->motion.x - (PAD * ZOOM) - (8 * ZOOM / 2)) / ZOOM,
-			(event->motion.y - (PAD * ZOOM) - (8 * ZOOM / 2)) / ZOOM),
-		8);
+	Point2d touch = Pt2d(
+		(event->motion.x - (PAD * ZOOM)) / ZOOM,
+		(event->motion.y - (PAD * ZOOM)) / ZOOM);
 	switch(event->type) {
 	case SDL_MOUSEBUTTONUP:
-		select(selection.x, selection.y, touch.x / 8 - selection.x + 1, touch.y / 8 - selection.y + 1);
-		down = 0;
+		DOWN = 0;
 		break;
 	case SDL_MOUSEBUTTONDOWN:
 		select(touch.x / 8, touch.y / 8, 1, 1);
-		down = 1;
+		DOWN = 1;
 		break;
 	case SDL_MOUSEMOTION:
-		if(down)
+		if(DOWN)
 			select(selection.x, selection.y, touch.x / 8 - selection.x + 1, touch.y / 8 - selection.y + 1);
 		break;
 	}
@@ -305,7 +294,6 @@ dokey(SDL_Event *event)
 	case SDLK_LEFT: shift ? scale(-1, 0) : move(-1, 0); break;
 	case SDLK_RIGHT: shift ? scale(1, 0) : move(1, 0); break;
 	}
-	/* update(); */
 }
 
 int
@@ -346,10 +334,29 @@ loadfont(void)
 {
 	FILE *f = fopen("font-light.chr", "rb");
 	if(f == NULL)
-		return error("Font", "Invalid input file");
+		return error("Font", "Invalid font file");
 	if(!fread(font, sizeof(font), 1, f))
-		return error("Font", "Invalid input size");
+		return error("Font", "Invalid font size");
 	fclose(f);
+	return 1;
+}
+
+int
+tryload(FILE *f)
+{
+	char c;
+	if(!f)
+		return error("Load", "Invalid input file");
+	while((c = fgetc(f)) != EOF) {
+		if(c == '\n') {
+			selection.x = 0;
+			selection.y += 1;
+		} else {
+			set(&g, selection.x, selection.y, c);
+			selection.x += 1;
+		}
+	}
+	select(0, 0, 1, 1);
 	return 1;
 }
 
@@ -366,6 +373,8 @@ main(int argc, char *argv[])
 
 	create(&g, HOR, VER);
 	select(0, 0, 1, 1);
+	if(argc > 0)
+		tryload(fopen(argv[1], "r"));
 	draw(pixels);
 
 	while(1) {
