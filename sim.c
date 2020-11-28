@@ -482,7 +482,8 @@ opz(Grid *g, int x, int y, char c)
 	int mod;
 	if(!rate_)
 		rate_ = 1;
-	mod = val_ <= target_ - rate_ ? rate_ : val_ >= target_ + rate_ ? -rate_ : target_ - val_;
+	mod = val_ <= target_ - rate_ ? rate_ : val_ >= target_ + rate_ ? -rate_
+																	: target_ - val_;
 	setport(g, x, y + 1, cchr(val_ + mod, ciuc(target)));
 	(void)c;
 }
