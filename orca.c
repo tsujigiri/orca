@@ -1,5 +1,7 @@
-#include <SDL2/SDL.h>
 #include <stdio.h>
+#include <SDL2/SDL.h>
+#include <portmidi.h>
+#include <porttime.h>
 #include "sim.h"
 
 /* 
@@ -24,6 +26,7 @@ WITH REGARD TO THIS SOFTWARE.
 
 #define PLIMIT 256
 #define SZ (HOR * VER * 16)
+#define DEVICE 0
 
 typedef struct {
 	int x, y;
@@ -32,6 +35,8 @@ typedef struct {
 typedef struct {
 	int x, y, w, h;
 } Rect2d;
+
+char OCTAVE[] = {'C', 'c', 'D', 'd', 'E', 'F', 'f', 'G', 'g', 'A', 'a', 'B'};
 
 unsigned char font[1200];
 int colors[] = {color1, color2, color3, color4, color0};
@@ -42,6 +47,7 @@ SDL_Window *gWindow = NULL;
 SDL_Renderer *gRenderer = NULL;
 SDL_Texture *gTexture = NULL;
 Uint32 *pixels;
+PmStream *midi;
 
 Rect2d cursor;
 Grid g;
@@ -189,13 +195,102 @@ scale(int w, int h)
 	select(cursor.x, cursor.y, cursor.w + w, cursor.h + h);
 }
 
+int
+getoffset(int o, char n)
+{
+	int i;
+	for(i = 0; i < 12; ++i)
+		if(n == OCTAVE[i])
+			return o * 12 + i;
+	return 0;
+}
+
+int
+getnote(int o, char n)
+{
+	int offset = 0;
+	switch(n) {
+	case 'A': offset = getoffset(0, 'A'); break;
+	case 'a': offset = getoffset(0, 'a'); break;
+	case 'B': offset = getoffset(0, 'B'); break;
+	case 'C': offset = getoffset(0, 'C'); break;
+	case 'c': offset = getoffset(0, 'c'); break;
+	case 'D': offset = getoffset(0, 'D'); break;
+	case 'd': offset = getoffset(0, 'd'); break;
+	case 'E': offset = getoffset(0, 'E'); break;
+	case 'F': offset = getoffset(0, 'F'); break;
+	case 'f': offset = getoffset(0, 'f'); break;
+	case 'G': offset = getoffset(0, 'G'); break;
+	case 'g': offset = getoffset(0, 'g'); break;
+	case 'H': offset = getoffset(0, 'A'); break;
+	case 'h': offset = getoffset(0, 'a'); break;
+	case 'I': offset = getoffset(0, 'B'); break;
+	case 'J': offset = getoffset(1, 'C'); break;
+	case 'j': offset = getoffset(1, 'c'); break;
+	case 'K': offset = getoffset(1, 'D'); break;
+	case 'k': offset = getoffset(1, 'd'); break;
+	case 'L': offset = getoffset(1, 'E'); break;
+	case 'M': offset = getoffset(1, 'F'); break;
+	case 'm': offset = getoffset(1, 'f'); break;
+	case 'N': offset = getoffset(1, 'G'); break;
+	case 'n': offset = getoffset(1, 'g'); break;
+	case 'O': offset = getoffset(1, 'A'); break;
+	case 'o': offset = getoffset(1, 'a'); break;
+	case 'P': offset = getoffset(1, 'B'); break;
+	case 'Q': offset = getoffset(2, 'C'); break;
+	case 'q': offset = getoffset(2, 'c'); break;
+	case 'R': offset = getoffset(2, 'D'); break;
+	case 'r': offset = getoffset(2, 'd'); break;
+	case 'S': offset = getoffset(2, 'E'); break;
+	case 'T': offset = getoffset(2, 'F'); break;
+	case 't': offset = getoffset(2, 'f'); break;
+	case 'U': offset = getoffset(2, 'G'); break;
+	case 'u': offset = getoffset(2, 'g'); break;
+	case 'V': offset = getoffset(2, 'A'); break;
+	case 'v': offset = getoffset(2, 'a'); break;
+	case 'W': offset = getoffset(2, 'B'); break;
+	case 'X': offset = getoffset(3, 'C'); break;
+	case 'x': offset = getoffset(3, 'c'); break;
+	case 'Y': offset = getoffset(3, 'D'); break;
+	case 'y': offset = getoffset(3, 'd'); break;
+	case 'Z': offset = getoffset(3, 'E'); break;
+	case 'e': offset = getoffset(0, 'F'); break;
+	case 'l': offset = getoffset(1, 'F'); break;
+	case 's': offset = getoffset(2, 'F'); break;
+	case 'z': offset = getoffset(3, 'F'); break;
+	case 'b': offset = getoffset(1, 'C'); break;
+	case 'i': offset = getoffset(1, 'C'); break;
+	case 'p': offset = getoffset(2, 'C'); break;
+	case 'w': offset = getoffset(3, 'C'); break;
+	}
+	return o + offset;
+}
+
+void
+playmidi(int channel, int octave, int note)
+{
+	Pm_WriteShort(midi,
+		Pt_Time(),
+		Pm_Message(0x90 + channel, (octave * 12) + note, 100));
+	Pm_WriteShort(midi,
+		Pt_Time(),
+		Pm_Message(0x90 + channel, (octave * 12) + note, 0));
+	printf("%d -> %d\n", channel, (octave * 12) + note);
+}
+
 void
 play(void)
 {
 	int i;
-	/* TODO: Implement midi stuff */
-	for(i = 0; i < g.msg_len; ++i)
-		printf("%c", g.msg[i]);
+	for(i = 0; i < g.msg_len; ++i) {
+		char c, o, n;
+		if(i < 1 || g.msg[i - 1] != ':')
+			continue;
+		if(sscanf(g.msg + 1, "%c%c%c", &c, &o, &n) > 0) {
+			playmidi(c - '0', o - '0', getnote(o - '0', n));
+			i += 3;
+		}
+	}
 	fflush(stdout);
 }
 
@@ -242,6 +337,7 @@ void
 dokey(SDL_Event *event)
 {
 	int shift = SDL_GetModState() & KMOD_LSHIFT || SDL_GetModState() & KMOD_RSHIFT;
+	int ctrl = SDL_GetModState() & KMOD_LCTRL || SDL_GetModState() & KMOD_RCTRL;
 	switch(event->key.keysym.sym) {
 	case SDLK_EQUALS:
 	case SDLK_PLUS: modzoom(1); break;
@@ -268,7 +364,7 @@ dokey(SDL_Event *event)
 	case SDLK_7: insert('7'); break;
 	case SDLK_8: insert('8'); break;
 	case SDLK_9: insert('9'); break;
-	case SDLK_a: insert(shift ? 'A' : 'a'); break;
+	case SDLK_a: ctrl ? select(0, 0, g.w, g.h) : insert(shift ? 'A' : 'a'); break;
 	case SDLK_b: insert(shift ? 'B' : 'b'); break;
 	case SDLK_c: insert(shift ? 'C' : 'c'); break;
 	case SDLK_d: insert(shift ? 'D' : 'd'); break;
@@ -295,6 +391,18 @@ dokey(SDL_Event *event)
 	case SDLK_y: insert(shift ? 'Y' : 'y'); break;
 	case SDLK_z: insert(shift ? 'Z' : 'z'); break;
 	}
+}
+
+void
+initmidi(void)
+{
+	int i;
+	Pm_Initialize();
+	for(i = 0; i < Pm_CountDevices(); ++i) {
+		char const *name = Pm_GetDeviceInfo(i)->name;
+		printf("Device #%d -> %s%s\n", i, name, i == DEVICE ? "[x]" : "[ ]");
+	}
+	Pm_OpenOutput(&midi, DEVICE, NULL, 128, 0, NULL, 1);
 }
 
 int
@@ -327,6 +435,7 @@ init(void)
 	for(i = 0; i < HEIGHT; i++)
 		for(j = 0; j < WIDTH; j++)
 			pixels[i * WIDTH + j] = color1;
+	initmidi();
 	return 1;
 }
 
