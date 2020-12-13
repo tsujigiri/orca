@@ -42,7 +42,7 @@ unsigned char font[1200];
 int colors[] = {color1, color2, color3, color4, color0};
 int WIDTH = 8 * HOR + PAD * 2;
 int HEIGHT = 8 * VER + PAD * 2;
-int FPS = 30, DOWN = 0, ZOOM = 2;
+int FPS = 30, DOWN = 0, ZOOM = 2, PAUSE = 0;
 SDL_Window *gWindow = NULL;
 SDL_Renderer *gRenderer = NULL;
 SDL_Texture *gTexture = NULL;
@@ -171,6 +171,12 @@ modzoom(int mod)
 		ZOOM += mod;
 		SDL_SetWindowSize(gWindow, WIDTH * ZOOM, HEIGHT * ZOOM);
 	}
+}
+
+void
+setplay(int val)
+{
+	PAUSE = val;
 }
 
 void
@@ -347,6 +353,7 @@ dokey(SDL_Event *event)
 	case SDLK_DOWN: shift ? scale(0, 1) : move(0, 1); break;
 	case SDLK_LEFT: shift ? scale(-1, 0) : move(-1, 0); break;
 	case SDLK_RIGHT: shift ? scale(1, 0) : move(1, 0); break;
+	case SDLK_SPACE: setplay(!PAUSE); break;
 	case SDLK_BACKSPACE: insert('.'); break;
 	case SDLK_ASTERISK: insert('*'); break;
 	case SDLK_HASH: insert('#'); break;
@@ -493,7 +500,7 @@ main(int argc, char *argv[])
 			SDL_Delay(ticknext - tick);
 		ticknext = tick + (1000 / FPS);
 
-		if(tickrun == 8) {
+		if(!PAUSE && tickrun >= 8) {
 			run(&g);
 			play();
 			draw(pixels);
