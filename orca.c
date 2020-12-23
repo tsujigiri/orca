@@ -44,7 +44,7 @@ Uint32 theme[] = {
 	0xFFFFFF,
 	0x72DEC2,
 	0x666666,
-	0x222222};
+	0xffb545};
 
 Uint8 icons[][8] = {
 	{0x38, 0x7c, 0xfe, 0xfe, 0xfe, 0x7c, 0x38, 0x00},
@@ -521,7 +521,7 @@ main(int argc, char *argv[])
 	initgrid(&g, HOR, VER);
 	select(0, 0, 1, 1);
 
-	if(argc > 0)
+	if(argc > 1)
 		if(!loadgrid(&g, fopen(argv[1], "r")))
 			return error("Load", "Failure");
 

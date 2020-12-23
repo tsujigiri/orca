@@ -1,8 +1,16 @@
 # Orca(toy)
 
-Orca is an [esoteric programming language](https://en.wikipedia.org/wiki/Esoteric_programming_language) designed to quickly create procedural sequencers, in which every letter of the alphabet is an operation, where lowercase letters operate on bang, uppercase letters operate each frame.
+Orca is an [esoteric programming language](https://wiki.xxiivv.com/orca) designed to quickly create procedural sequencers, in which every letter of the alphabet is an operation, where lowercase letters operate on bang, uppercase letters operate each frame.
 
-This is a single-file implementation of the basic operators created for educational purposes. To try a complete environment with client and server, see [Orca](https://git.sr.ht/~rabbits/orca).
+This is a minimalist implementation of the basic operators created for educational purposes. To try a complete environment with client and server, see [Orca](https://git.sr.ht/~rabbits/orca).
+
+## Build
+
+You must have [SDL2](https://wiki.libsdl.org/) and [portmidi](http://portmedia.sourceforge.net/portmidi/).
+
+```
+cc orca.c sim.c -std=c89 -O2 -DNDEBUG -g0 -s -Wall -L/usr/local/lib -lSDL2 -o orca
+```
 
 ## Operators
 

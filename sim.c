@@ -582,19 +582,20 @@ rungrid(Grid *g)
 int
 loadgrid(Grid *g, FILE *f)
 {
+	int x = 0, y = 0;
 	char c;
-	g->l = 0;
+	if(!f)
+		return 0;
 	while((c = fgetc(f)) != EOF && g->l < MAXSZ) {
 		if(c == '\n') {
-			if(g->w == 0)
-				g->w = g->l;
-			g->h = g->l / g->w;
+			x = 0;
+			y++;
 		} else {
-			g->type[g->l] = 0;
-			g->data[g->l++] = c;
+			set(g, x, y, c);
+			x++;
 		}
 	}
-	return g->w > 2 && g->h > 2;
+	return 1;
 }
 
 void
@@ -611,4 +612,5 @@ initgrid(Grid *g, int w, int h)
 	}
 	g->msg[0] = '\0';
 	g->msg_len = 0;
+	printf("Resize: %dx%d\n", g->w, g->h);
 }
