@@ -18,48 +18,54 @@ WITH REGARD TO THIS SOFTWARE.
 #define HOR 32
 #define VER 16
 #define PAD 8
-#define color1 0x000000
-#define color2 0x72DEC2
-#define color3 0xFFFFFF
-#define color4 0x444444
-#define color0 0xffb545
+#define SZ (HOR * VER * 16)
+
+typedef unsigned char Uint8;
 
 #define PLIMIT 256
 #define SZ (HOR * VER * 16)
 #define DEVICE 0
 
 typedef struct {
-	int x, y;
-} Point2d;
-
-typedef struct {
 	int x, y, w, h;
 } Rect2d;
 
+Rect2d cursor;
+Grid g;
+
+int WIDTH = 8 * HOR + PAD * 2;
+int HEIGHT = 8 * (VER + 2) + PAD * 2;
+int FPS = 30, DOWN = 0, ZOOM = 2, PAUSE = 0;
+
 char OCTAVE[] = {'C', 'c', 'D', 'd', 'E', 'F', 'f', 'G', 'g', 'A', 'a', 'B'};
 
-unsigned char font[1200];
-int colors[] = {color1, color2, color3, color4, color0};
-int WIDTH = 8 * HOR + PAD * 2;
-int HEIGHT = 8 * VER + PAD * 2;
-int FPS = 30, DOWN = 0, ZOOM = 2, PAUSE = 0;
+Uint32 theme[] = {
+	0x000000,
+	0xFFFFFF,
+	0x72DEC2,
+	0x666666,
+	0x222222};
+
+Uint8 icons[][8] = {
+	{0x38, 0x7c, 0xfe, 0xfe, 0xfe, 0x7c, 0x38, 0x00},
+	{0x38, 0x44, 0x82, 0x82, 0x82, 0x44, 0x38, 0x00},
+	{0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x00},
+	{0x06, 0x18, 0x20, 0x40, 0x40, 0x80, 0x80, 0x00},
+	{0x02, 0x02, 0x04, 0x38, 0x40, 0x80, 0x80, 0x00},
+	{0xfe, 0x82, 0x82, 0x82, 0x82, 0x82, 0xfe, 0x00},
+	{0x1e, 0x06, 0x0a, 0x12, 0x20, 0x40, 0x80, 0x00},
+	{0x06, 0x18, 0x22, 0x40, 0x42, 0x80, 0xaa, 0x00},
+	{0x00, 0x00, 0x00, 0x82, 0x44, 0x38, 0x00, 0x00}, /* eye open */
+	{0x00, 0x38, 0x44, 0x92, 0x28, 0x10, 0x00, 0x00}  /* eye closed */
+};
+
+Uint8 font[1200];
+
 SDL_Window *gWindow = NULL;
 SDL_Renderer *gRenderer = NULL;
 SDL_Texture *gTexture = NULL;
 Uint32 *pixels;
 PmStream *midi;
-
-Rect2d cursor;
-Grid g;
-
-Point2d
-Pt2d(int x, int y)
-{
-	Point2d p;
-	p.x = x;
-	p.y = y;
-	return p;
-}
 
 int
 clamp(int val, int min, int max)
@@ -112,16 +118,16 @@ int
 getstyle(int clr, int type, int sel)
 {
 	if(sel)
-		return colors[clr == 0 ? 4 : 0];
+		return clr == 0 ? 4 : 0;
 	if(type == 2)
-		return colors[clr == 0 ? 0 : 1];
+		return clr == 0 ? 0 : 1;
 	if(type == 3)
-		return colors[clr == 0 ? 1 : 0];
+		return clr == 0 ? 1 : 0;
 	if(type == 4)
-		return colors[clr == 0 ? 0 : 2];
+		return clr == 0 ? 0 : 2;
 	if(type == 5)
-		return colors[clr == 0 ? 2 : 0];
-	return colors[clr == 0 ? 0 : 3];
+		return clr == 0 ? 2 : 0;
+	return clr == 0 ? 0 : 3;
 }
 
 void
@@ -138,17 +144,49 @@ drawtile(Uint32 *dst, int x, int y, char c, int type)
 			int ch2 = font[offset + v + 8];
 			int clr = ((ch1 >> h) & 0x1) + ((ch2 << h) & 0x1);
 			int key = (py + PAD) * WIDTH + (px + PAD);
-			dst[key] = getstyle(clr, type, sel);
+			dst[key] = theme[getstyle(clr, type, sel)];
+		}
+}
+
+int
+keypixel(int x, int y)
+{
+	return (y + PAD) * WIDTH + (x + PAD);
+}
+
+void
+putpixel(Uint32 *dst, int x, int y, int color)
+{
+	if(x >= 0 && x < WIDTH - 8 && y >= 0 && y < HEIGHT - 8)
+		dst[keypixel(x, y)] = theme[color];
+}
+
+void
+drawicon(Uint32 *dst, int x, int y, Uint8 *icon, int color)
+{
+	int v, h;
+	for(v = 0; v < 8; v++)
+		for(h = 0; h < 8; h++) {
+			int c = (icon[v] >> (8 - h)) & 0x1;
+			putpixel(dst, x + h, y + v, c ? color : 0);
 		}
 }
 
 void
-draw(Uint32 *dst)
+drawui(Uint32 *dst)
+{
+	int bottom = VER * 8 + 8;
+	drawicon(dst, 0, bottom, icons[PAUSE == 1 ? 4 : 0], 1);
+}
+
+void
+redraw(Uint32 *dst)
 {
 	int x, y;
 	for(y = 0; y < VER; ++y)
 		for(x = 0; x < HOR; ++x)
 			drawtile(dst, x, y, get(&g, x, y), gettype(&g, x, y));
+	drawui(dst);
 	SDL_UpdateTexture(gTexture, NULL, dst, WIDTH * sizeof(Uint32));
 	SDL_RenderClear(gRenderer);
 	SDL_RenderCopy(gRenderer, gTexture, NULL, NULL);
@@ -177,6 +215,7 @@ void
 setplay(int val)
 {
 	PAUSE = val;
+	redraw(pixels);
 }
 
 void
@@ -186,7 +225,7 @@ select(int x, int y, int w, int h)
 	cursor.y = clamp(y, 0, VER - 1);
 	cursor.w = clamp(w, 1, 36);
 	cursor.h = clamp(h, 1, 36);
-	draw(pixels);
+	redraw(pixels);
 }
 
 void
@@ -282,6 +321,7 @@ playmidi(int channel, int octave, int note)
 		Pt_Time(),
 		Pm_Message(0x90 + channel, (octave * 12) + note, 0));
 	printf("%d -> %d\n", channel, (octave * 12) + note);
+	fflush(stdout);
 }
 
 void
@@ -297,7 +337,14 @@ play(void)
 			i += 3;
 		}
 	}
-	fflush(stdout);
+}
+
+void
+selectoption(int option)
+{
+	switch(option) {
+	case 0: setplay(!PAUSE); break;
+	}
 }
 
 void
@@ -317,24 +364,27 @@ quit(void)
 void
 domouse(SDL_Event *event)
 {
-	Point2d touch = Pt2d(
-		(event->motion.x - (PAD * ZOOM)) / ZOOM,
-		(event->motion.y - (PAD * ZOOM)) / ZOOM);
+	int cx = event->motion.x / ZOOM / 8;
+	int cy = event->motion.y / ZOOM / 8;
 	switch(event->type) {
 	case SDL_MOUSEBUTTONUP:
 		DOWN = 0;
 		break;
 	case SDL_MOUSEBUTTONDOWN:
-		select(touch.x / 8, touch.y / 8, 1, 1);
-		DOWN = 1;
+		if(cy == VER + 2)
+			selectoption(cx - 1);
+		else {
+			select(cx - 1, cy - 1, 1, 1);
+			DOWN = 1;
+		}
 		break;
 	case SDL_MOUSEMOTION:
 		if(DOWN)
 			select(
 				cursor.x,
 				cursor.y,
-				touch.x / 8 - cursor.x + 1,
-				touch.y / 8 - cursor.y + 1);
+				cx - cursor.x,
+				cy - cursor.y);
 		break;
 	}
 }
@@ -441,7 +491,7 @@ init(void)
 		return error("Pixels", "Failed to allocate memory");
 	for(i = 0; i < HEIGHT; i++)
 		for(j = 0; j < WIDTH; j++)
-			pixels[i * WIDTH + j] = color1;
+			pixels[i * WIDTH + j] = theme[0];
 	initmidi();
 	return 1;
 }
@@ -449,28 +499,12 @@ init(void)
 int
 loadfont(void)
 {
-	FILE *f = fopen("font-light.chr", "rb");
+	FILE *f = fopen("font.chr", "rb");
 	if(f == NULL)
 		return error("Font", "Invalid font file");
 	if(!fread(font, sizeof(font), 1, f))
 		return error("Font", "Invalid font size");
 	fclose(f);
-	return 1;
-}
-
-int
-loadorca(FILE *f)
-{
-	char c;
-	if(!f)
-		return error("Load", "Invalid input file");
-	while((c = fgetc(f)) != EOF) {
-		if(c == '\n') {
-			cursor.x = 0;
-			cursor.y += 1;
-		} else
-			set(&g, cursor.x++, cursor.y, c);
-	}
 	return 1;
 }
 
@@ -484,11 +518,11 @@ main(int argc, char *argv[])
 	if(!loadfont())
 		return error("Font", "Failure");
 
-	create(&g, HOR, VER);
+	initgrid(&g, HOR, VER);
 	select(0, 0, 1, 1);
 
 	if(argc > 0)
-		if(!loadorca(fopen(argv[1], "r")))
+		if(!loadgrid(&g, fopen(argv[1], "r")))
 			return error("Load", "Failure");
 
 	select(0, 0, 1, 1);
@@ -501,9 +535,9 @@ main(int argc, char *argv[])
 		ticknext = tick + (1000 / FPS);
 
 		if(!PAUSE && tickrun >= 8) {
-			run(&g);
+			rungrid(&g);
 			play();
-			draw(pixels);
+			redraw(pixels);
 			tickrun = 0;
 		}
 		tickrun++;
@@ -513,13 +547,13 @@ main(int argc, char *argv[])
 				quit();
 			else if(event.type == SDL_MOUSEBUTTONUP ||
 					event.type == SDL_MOUSEBUTTONDOWN ||
-					event.type == SDL_MOUSEMOTION) {
+					event.type == SDL_MOUSEMOTION)
 				domouse(&event);
-			} else if(event.type == SDL_KEYDOWN)
+			else if(event.type == SDL_KEYDOWN)
 				dokey(&event);
 			else if(event.type == SDL_WINDOWEVENT)
 				if(event.window.event == SDL_WINDOWEVENT_EXPOSED)
-					draw(pixels);
+					redraw(pixels);
 		}
 	}
 	quit();

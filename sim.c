@@ -553,32 +553,8 @@ operate(Grid *g, int x, int y, char c)
 
 /* General */
 
-void
-print(Grid *g)
-{
-	/* TODO: only print once, merge into a buf */
-	int x, y, i = 0;
-	for(y = 0; y < g->h; ++y)
-		for(x = 0; x < g->w; ++x) {
-			putchar(get(g, x, y));
-			if(x == g->w - 1)
-				putchar('\n');
-		}
-	putchar('\n');
-	for(y = 0; y < g->h; ++y)
-		for(x = 0; x < g->w; ++x) {
-			printf("%d", gettype(g, x, y));
-			if(x == g->w - 1)
-				putchar('\n');
-		}
-	putchar('\n');
-	while(g->msg[i])
-		putchar(g->msg[i++]);
-	putchar('\n');
-}
-
 int
-run(Grid *g)
+rungrid(Grid *g)
 {
 	int i, x, y;
 	for(i = 0; i < g->l; ++i) {
@@ -604,7 +580,7 @@ run(Grid *g)
 }
 
 int
-disk(FILE *f, Grid *g)
+loadgrid(Grid *g, FILE *f)
 {
 	char c;
 	g->l = 0;
@@ -622,7 +598,7 @@ disk(FILE *f, Grid *g)
 }
 
 void
-create(Grid *g, int w, int h)
+initgrid(Grid *g, int w, int h)
 {
 	int i;
 	g->w = w;

@@ -8,6 +8,30 @@ error(char *name)
 	return 0;
 }
 
+void
+printgrid(Grid *g)
+{
+	/* TODO: only print once, merge into a buf */
+	int x, y, i = 0;
+	for(y = 0; y < g->h; ++y)
+		for(x = 0; x < g->w; ++x) {
+			putchar(get(g, x, y));
+			if(x == g->w - 1)
+				putchar('\n');
+		}
+	putchar('\n');
+	for(y = 0; y < g->h; ++y)
+		for(x = 0; x < g->w; ++x) {
+			printf("%d", gettype(g, x, y));
+			if(x == g->w - 1)
+				putchar('\n');
+		}
+	putchar('\n');
+	while(g->msg[i])
+		putchar(g->msg[i++]);
+	putchar('\n');
+}
+
 int
 main(int argc, char *argv[])
 {
@@ -23,11 +47,11 @@ main(int argc, char *argv[])
 	f = fopen(argv[1], "r");
 	if(!f)
 		return error("Missing input.");
-	if(!disk(f, &g))
+	if(!loadgrid(&g, f))
 		return error("Invalid grid");
 	while(g.f < limit) {
-		run(&g);
-		print(&g);
+		rungrid(&g);
+		printgrid(&g);
 	}
 	return 0;
 }
