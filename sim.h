@@ -10,6 +10,9 @@ typedef struct Grid {
 	char data[MAXSZ], vars[36], msg[16];
 } Grid;
 
+int base36(char c);
+int cisp(char c);
+
 char get(Grid *g, int x, int y);
 void set(Grid *g, int x, int y, char c);
 int gettype(Grid *g, int x, int y);

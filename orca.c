@@ -30,14 +30,18 @@ typedef struct {
 	int x, y, w, h;
 } Rect2d;
 
+typedef struct {
+	int channel, octave, note, gate;
+} Note;
+
+char OCTAVE[] = {'C', 'c', 'D', 'd', 'E', 'F', 'f', 'G', 'g', 'A', 'a', 'B'};
+
 Rect2d cursor;
 Grid g;
 
 int WIDTH = 8 * HOR + PAD * 2;
 int HEIGHT = 8 * (VER + 2) + PAD * 2;
 int FPS = 30, DOWN = 0, ZOOM = 2, PAUSE = 0;
-
-char OCTAVE[] = {'C', 'c', 'D', 'd', 'E', 'F', 'f', 'G', 'g', 'A', 'a', 'B'};
 
 Uint32 theme[] = {
 	0x000000,
@@ -59,14 +63,15 @@ Uint8 icons[][8] = {
 	{0x00, 0x38, 0x44, 0x92, 0x28, 0x10, 0x00, 0x00}  /* eye closed */
 };
 
+char clip[1024];
 Uint8 font[1200];
+Note playing[16];
 
 SDL_Window *gWindow = NULL;
 SDL_Renderer *gRenderer = NULL;
 SDL_Texture *gTexture = NULL;
 Uint32 *pixels;
 PmStream *midi;
-char clip[1024];
 
 int
 clamp(int val, int min, int max)
@@ -241,105 +246,6 @@ scale(int w, int h)
 	select(cursor.x, cursor.y, cursor.w + w, cursor.h + h);
 }
 
-int
-getoffset(int o, char n)
-{
-	int i;
-	for(i = 0; i < 12; ++i)
-		if(n == OCTAVE[i])
-			return o * 12 + i;
-	return 0;
-}
-
-int
-getnote(int o, char n)
-{
-	int offset = 0;
-	switch(n) {
-	case 'A': offset = getoffset(0, 'A'); break;
-	case 'a': offset = getoffset(0, 'a'); break;
-	case 'B': offset = getoffset(0, 'B'); break;
-	case 'C': offset = getoffset(0, 'C'); break;
-	case 'c': offset = getoffset(0, 'c'); break;
-	case 'D': offset = getoffset(0, 'D'); break;
-	case 'd': offset = getoffset(0, 'd'); break;
-	case 'E': offset = getoffset(0, 'E'); break;
-	case 'F': offset = getoffset(0, 'F'); break;
-	case 'f': offset = getoffset(0, 'f'); break;
-	case 'G': offset = getoffset(0, 'G'); break;
-	case 'g': offset = getoffset(0, 'g'); break;
-	case 'H': offset = getoffset(0, 'A'); break;
-	case 'h': offset = getoffset(0, 'a'); break;
-	case 'I': offset = getoffset(0, 'B'); break;
-	case 'J': offset = getoffset(1, 'C'); break;
-	case 'j': offset = getoffset(1, 'c'); break;
-	case 'K': offset = getoffset(1, 'D'); break;
-	case 'k': offset = getoffset(1, 'd'); break;
-	case 'L': offset = getoffset(1, 'E'); break;
-	case 'M': offset = getoffset(1, 'F'); break;
-	case 'm': offset = getoffset(1, 'f'); break;
-	case 'N': offset = getoffset(1, 'G'); break;
-	case 'n': offset = getoffset(1, 'g'); break;
-	case 'O': offset = getoffset(1, 'A'); break;
-	case 'o': offset = getoffset(1, 'a'); break;
-	case 'P': offset = getoffset(1, 'B'); break;
-	case 'Q': offset = getoffset(2, 'C'); break;
-	case 'q': offset = getoffset(2, 'c'); break;
-	case 'R': offset = getoffset(2, 'D'); break;
-	case 'r': offset = getoffset(2, 'd'); break;
-	case 'S': offset = getoffset(2, 'E'); break;
-	case 'T': offset = getoffset(2, 'F'); break;
-	case 't': offset = getoffset(2, 'f'); break;
-	case 'U': offset = getoffset(2, 'G'); break;
-	case 'u': offset = getoffset(2, 'g'); break;
-	case 'V': offset = getoffset(2, 'A'); break;
-	case 'v': offset = getoffset(2, 'a'); break;
-	case 'W': offset = getoffset(2, 'B'); break;
-	case 'X': offset = getoffset(3, 'C'); break;
-	case 'x': offset = getoffset(3, 'c'); break;
-	case 'Y': offset = getoffset(3, 'D'); break;
-	case 'y': offset = getoffset(3, 'd'); break;
-	case 'Z': offset = getoffset(3, 'E'); break;
-	case 'e': offset = getoffset(0, 'F'); break;
-	case 'l': offset = getoffset(1, 'F'); break;
-	case 's': offset = getoffset(2, 'F'); break;
-	case 'z': offset = getoffset(3, 'F'); break;
-	case 'b': offset = getoffset(1, 'C'); break;
-	case 'i': offset = getoffset(1, 'C'); break;
-	case 'p': offset = getoffset(2, 'C'); break;
-	case 'w': offset = getoffset(3, 'C'); break;
-	}
-	return o + offset;
-}
-
-void
-playmidi(int channel, int octave, int note)
-{
-	Pm_WriteShort(midi,
-		Pt_Time(),
-		Pm_Message(0x90 + channel, (octave * 12) + note, 100));
-	Pm_WriteShort(midi,
-		Pt_Time(),
-		Pm_Message(0x90 + channel, (octave * 12) + note, 0));
-	printf("%d -> %d\n", channel, (octave * 12) + note);
-	fflush(stdout);
-}
-
-void
-play(void)
-{
-	int i;
-	for(i = 0; i < g.msg_len; ++i) {
-		char c, o, n;
-		if(i < 1 || g.msg[i - 1] != ':')
-			continue;
-		if(sscanf(g.msg + 1, "%c%c%c", &c, &o, &n) > 0) {
-			playmidi(c - '0', o - '0', getnote(o - '0', n));
-			i += 3;
-		}
-	}
-}
-
 void
 selectoption(int option)
 {
@@ -406,6 +312,117 @@ moveclip(Rect2d *r, char *c, int x, int y)
 	move(x, y);
 	pasteclip(r, c);
 }
+
+/* midi */
+
+int
+nteval(int o, char c)
+{
+	switch(c) {
+	case 'A': return 9;
+	case 'a': return 10;
+	case 'B': return 11;
+	case 'b':
+	case 'C': return 0;
+	case 'c': return 1;
+	case 'D': return 2;
+	case 'd': return 3;
+	case 'E': return 4;
+	case 'e':
+	case 'F': return 5;
+	case 'f': return 6;
+	case 'G': return 7;
+	case 'g': return 8;
+	default:
+		if(c >= '0' && c <= '9')
+			return c - '0';
+		else
+			return nteval(o + 12, c - 7);
+	}
+	return 0;
+}
+
+Note *
+setnote(Note *n, int channel, int octave, int note, int gate)
+{
+	n->channel = channel;
+	n->octave = octave;
+	n->note = note;
+	n->gate = gate;
+	return n;
+}
+
+Note *
+pushmidi(int chn, int val, int vel, int len)
+{
+	printf("%d %d %d %d\n", chn, val, vel, len);
+	/*
+	int i = 0;
+	for(i = 0; i < 16; ++i)
+		if(!playing[i].gate)
+			return setnote(&playing[i], channel, octave, note, gate);
+	return NULL;
+	*/
+	return NULL;
+}
+
+void
+playmidi(int channel, int octave, int note, int len)
+{
+	Pm_WriteShort(midi,
+		Pt_Time(),
+		Pm_Message(0x90 + channel, (octave * 12) + note, 100));
+	Pm_WriteShort(midi,
+		Pt_Time(),
+		Pm_Message(0x90 + channel, (octave * 12) + note, 0));
+	printf("%d -> %d\n", channel, (octave * 12) + note);
+	pushmidi(channel, octave, note, len);
+	fflush(stdout);
+}
+
+void
+parsemidi(char *msg, int msglen)
+{
+	char chn, oct, nte, vel = 'z', len = '1';
+	if(msglen < 3)
+		return;
+	chn = msg[0];
+	oct = msg[1];
+	nte = msg[2];
+	if(msglen > 3)
+		vel = msg[3];
+	if(msglen > 4)
+		len = msg[4];
+	pushmidi(
+		base36(chn),
+		12 * base36(oct) + nteval(0, nte),
+		base36(vel),
+		base36(len));
+}
+
+void
+play(void)
+{
+	int i, j = 0;
+	char buf[128];
+	/* release */
+	for(i = 0; i < 16; ++i) {
+		if(playing[i].gate > 0) {
+			playing[i].gate--;
+			printf("release: #%d[%d]\n", i, playing[i].gate);
+		}
+	}
+	/* split messages */
+	for(i = 0; i < g.msg_len + 1; ++i)
+		if(!g.msg[i] || cisp(g.msg[i])) {
+			buf[j] = '\0';
+			parsemidi(buf, j);
+			j = 0;
+		} else
+			buf[j++] = g.msg[i];
+}
+
+/* triggers */
 
 void
 domouse(SDL_Event *event)
