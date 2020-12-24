@@ -66,6 +66,7 @@ SDL_Renderer *gRenderer = NULL;
 SDL_Texture *gTexture = NULL;
 Uint32 *pixels;
 PmStream *midi;
+char clip[1024];
 
 int
 clamp(int val, int min, int max)
@@ -361,6 +362,51 @@ quit(void)
 	exit(0);
 }
 
+/* clip */
+
+void
+copyclip(Rect2d *r, char *c)
+{
+	int x, y, i = 0;
+	for(y = 0; y < r->h; ++y) {
+		for(x = 0; x < r->w; ++x)
+			if(i < 1024)
+				c[i++] = get(&g, r->x + x, r->y + y);
+		c[i++] = '\n';
+	}
+	c[i] = '\0';
+}
+
+void
+cutclip(Rect2d *r, char *c)
+{
+	copyclip(r, c);
+	insert('.');
+}
+
+void
+pasteclip(Rect2d *r, char *c)
+{
+	int i = 0, x = r->x, y = r->y;
+	char ch;
+	while((ch = c[i++])) {
+		if(ch == '\n') {
+			x = r->x;
+			y++;
+		} else
+			set(&g, x++, y, ch);
+	}
+}
+
+void
+moveclip(Rect2d *r, char *c, int x, int y)
+{
+	copyclip(r, c);
+	insert('.');
+	move(x, y);
+	pasteclip(r, c);
+}
+
 void
 domouse(SDL_Event *event)
 {
@@ -399,10 +445,38 @@ dokey(SDL_Event *event)
 	case SDLK_PLUS: modzoom(1); break;
 	case SDLK_UNDERSCORE:
 	case SDLK_MINUS: modzoom(-1); break;
-	case SDLK_UP: shift ? scale(0, -1) : move(0, -1); break;
-	case SDLK_DOWN: shift ? scale(0, 1) : move(0, 1); break;
-	case SDLK_LEFT: shift ? scale(-1, 0) : move(-1, 0); break;
-	case SDLK_RIGHT: shift ? scale(1, 0) : move(1, 0); break;
+	case SDLK_UP:
+		if(ctrl)
+			moveclip(&cursor, clip, 0, -1);
+		else if(shift)
+			scale(0, -1);
+		else
+			move(0, -1);
+		break;
+	case SDLK_DOWN:
+		if(ctrl)
+			moveclip(&cursor, clip, 0, 1);
+		else if(shift)
+			scale(0, 1);
+		else
+			move(0, 1);
+		break;
+	case SDLK_LEFT:
+		if(ctrl)
+			moveclip(&cursor, clip, -1, 0);
+		else if(shift)
+			scale(-1, 0);
+		else
+			move(-1, 0);
+		break;
+	case SDLK_RIGHT:
+		if(ctrl)
+			moveclip(&cursor, clip, 1, 0);
+		else if(shift)
+			scale(1, 0);
+		else
+			move(1, 0);
+		break;
 	case SDLK_SPACE: setplay(!PAUSE); break;
 	case SDLK_BACKSPACE: insert('.'); break;
 	case SDLK_ASTERISK: insert('*'); break;
@@ -423,7 +497,7 @@ dokey(SDL_Event *event)
 	case SDLK_9: insert('9'); break;
 	case SDLK_a: ctrl ? select(0, 0, g.w, g.h) : insert(shift ? 'A' : 'a'); break;
 	case SDLK_b: insert(shift ? 'B' : 'b'); break;
-	case SDLK_c: insert(shift ? 'C' : 'c'); break;
+	case SDLK_c: ctrl ? copyclip(&cursor, clip) : insert(shift ? 'C' : 'c'); break;
 	case SDLK_d: insert(shift ? 'D' : 'd'); break;
 	case SDLK_e: insert(shift ? 'E' : 'e'); break;
 	case SDLK_f: insert(shift ? 'F' : 'f'); break;
@@ -442,9 +516,9 @@ dokey(SDL_Event *event)
 	case SDLK_s: insert(shift ? 'S' : 's'); break;
 	case SDLK_t: insert(shift ? 'T' : 't'); break;
 	case SDLK_u: insert(shift ? 'U' : 'u'); break;
-	case SDLK_v: insert(shift ? 'V' : 'v'); break;
+	case SDLK_v: ctrl ? pasteclip(&cursor, clip) : insert(shift ? 'V' : 'v'); break;
 	case SDLK_w: insert(shift ? 'W' : 'w'); break;
-	case SDLK_x: insert(shift ? 'X' : 'x'); break;
+	case SDLK_x: ctrl ? cutclip(&cursor, clip) : insert(shift ? 'X' : 'x'); break;
 	case SDLK_y: insert(shift ? 'Y' : 'y'); break;
 	case SDLK_z: insert(shift ? 'Z' : 'z'); break;
 	}
