@@ -502,12 +502,12 @@ void
 opspecial(Grid *g, int x, int y)
 {
 	int i, b = bang(g, x, y);
-	for(i = 0; x + i < 256; ++i) {
+	for(i = 0; x + i < MAXMSG; ++i) {
 		char c = getport(g, x + i, y, 1);
 		if(c == '.')
 			break;
-		if(b)
-			g->msg[g->msg_len++] = c;
+		if(b && g->msglen < MAXMSG)
+			g->msg[g->msglen++] = c;
 	}
 	settype(g, x, y, b ? 3 : 2);
 }
@@ -560,7 +560,7 @@ rungrid(Grid *g)
 		g->type[i] = 0;
 	}
 	g->msg[0] = '\0';
-	g->msg_len = 0;
+	g->msglen = 0;
 	for(i = 0; i < g->l; ++i) {
 		char c = g->data[i];
 		x = i % g->w;
@@ -609,6 +609,6 @@ initgrid(Grid *g, int w, int h)
 		g->data[i] = '.';
 	}
 	g->msg[0] = '\0';
-	g->msg_len = 0;
+	g->msglen = 0;
 	printf("Resize: %dx%d\n", g->w, g->h);
 }

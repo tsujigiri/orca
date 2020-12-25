@@ -31,7 +31,7 @@ typedef struct {
 } Rect2d;
 
 typedef struct {
-	int channel, octave, note, gate;
+	int channel, value, velocity, length;
 } Note;
 
 char OCTAVE[] = {'C', 'c', 'D', 'd', 'E', 'F', 'f', 'G', 'g', 'A', 'a', 'B'};
@@ -343,41 +343,23 @@ nteval(int o, char c)
 }
 
 Note *
-setnote(Note *n, int channel, int octave, int note, int gate)
+sendmidi(int chn, int val, int vel, int len)
 {
-	n->channel = channel;
-	n->octave = octave;
-	n->note = note;
-	n->gate = gate;
-	return n;
-}
-
-Note *
-pushmidi(int chn, int val, int vel, int len)
-{
-	printf("%d %d %d %d\n", chn, val, vel, len);
-	/*
 	int i = 0;
-	for(i = 0; i < 16; ++i)
-		if(!playing[i].gate)
-			return setnote(&playing[i], channel, octave, note, gate);
+	for(i = 0; i < 16; ++i) {
+		Note *n = &playing[i];
+		if(n->length < 1) {
+			n->channel = chn;
+			n->value = val;
+			n->velocity = vel;
+			n->length = len;
+			Pm_WriteShort(midi,
+				Pt_Time(),
+				Pm_Message(0x90 + chn, val, vel * 3));
+			return n;
+		}
+	}
 	return NULL;
-	*/
-	return NULL;
-}
-
-void
-playmidi(int channel, int octave, int note, int len)
-{
-	Pm_WriteShort(midi,
-		Pt_Time(),
-		Pm_Message(0x90 + channel, (octave * 12) + note, 100));
-	Pm_WriteShort(midi,
-		Pt_Time(),
-		Pm_Message(0x90 + channel, (octave * 12) + note, 0));
-	printf("%d -> %d\n", channel, (octave * 12) + note);
-	pushmidi(channel, octave, note, len);
-	fflush(stdout);
 }
 
 void
@@ -393,7 +375,7 @@ parsemidi(char *msg, int msglen)
 		vel = msg[3];
 	if(msglen > 4)
 		len = msg[4];
-	pushmidi(
+	sendmidi(
 		base36(chn),
 		12 * base36(oct) + nteval(0, nte),
 		base36(vel),
@@ -401,19 +383,23 @@ parsemidi(char *msg, int msglen)
 }
 
 void
-play(void)
+runmsg(void)
 {
 	int i, j = 0;
 	char buf[128];
 	/* release */
 	for(i = 0; i < 16; ++i) {
-		if(playing[i].gate > 0) {
-			playing[i].gate--;
-			printf("release: #%d[%d]\n", i, playing[i].gate);
+		Note *n = &playing[i];
+		if(n->length > 0) {
+			n->length--;
+			if(n->length == 0)
+				Pm_WriteShort(midi,
+					Pt_Time(),
+					Pm_Message(0x90 + n->channel, n->value, 0));
 		}
 	}
 	/* split messages */
-	for(i = 0; i < g.msg_len + 1; ++i)
+	for(i = 0; i < g.msglen + 1; ++i)
 		if(!g.msg[i] || cisp(g.msg[i])) {
 			buf[j] = '\0';
 			parsemidi(buf, j);
@@ -627,7 +613,7 @@ main(int argc, char *argv[])
 
 		if(!PAUSE && tickrun >= 8) {
 			rungrid(&g);
-			play();
+			runmsg();
 			redraw(pixels);
 			tickrun = 0;
 		}
