@@ -33,6 +33,24 @@ printgrid(Grid *g)
 }
 
 int
+opengrid(Grid *g, FILE *f)
+{
+	char c;
+	g->l = 0;
+	while((c = fgetc(f)) != EOF && g->l < MAXSZ) {
+		if(c == '\n') {
+			if(g->w == 0)
+				g->w = g->l;
+			g->h = g->l / g->w;
+		} else {
+			g->type[g->l] = 0;
+			g->data[g->l++] = c;
+		}
+	}
+	return g->w > 2 && g->h > 2;
+}
+
+int
 main(int argc, char *argv[])
 {
 	FILE *f;
@@ -47,7 +65,7 @@ main(int argc, char *argv[])
 	f = fopen(argv[1], "r");
 	if(!f)
 		return error("Missing input.");
-	if(!loadgrid(&g, f))
+	if(!opengrid(&g, f))
 		return error("Invalid grid");
 	while(g.f < limit) {
 		rungrid(&g);

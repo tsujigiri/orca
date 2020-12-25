@@ -1,4 +1,4 @@
-# Orca(toy)
+# Orca
 
 Orca is an [esoteric programming language](https://wiki.xxiivv.com/orca) designed to quickly create procedural sequencers, in which every letter of the alphabet is an operation, where lowercase letters operate on bang, uppercase letters operate each frame.
 
