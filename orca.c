@@ -19,12 +19,10 @@ WITH REGARD TO THIS SOFTWARE.
 #define VER 16
 #define PAD 8
 #define SZ (HOR * VER * 16)
+#define CLIPSZ 1024
+#define DEVICE 0
 
 typedef unsigned char Uint8;
-
-#define PLIMIT 256
-#define SZ (HOR * VER * 16)
-#define DEVICE 0
 
 typedef struct {
 	int x, y, w, h;
@@ -34,8 +32,8 @@ typedef struct {
 	int channel, value, velocity, length;
 } Note;
 
-char OCTAVE[] = {'C', 'c', 'D', 'd', 'E', 'F', 'f', 'G', 'g', 'A', 'a', 'B'};
-
+char clip[CLIPSZ];
+Note voices[16];
 Rect2d cursor;
 Grid g;
 
@@ -135,9 +133,6 @@ Uint8 font[][8] = {
 	{0x00, 0x00, 0x00, 0x28, 0x00, 0x28, 0x00, 0x00},
 	{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
 	{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}};
-
-char clip[1024];
-Note playing[16];
 
 SDL_Window *gWindow = NULL;
 SDL_Renderer *gRenderer = NULL;
@@ -294,7 +289,7 @@ sendmidi(int chn, int val, int vel, int len)
 {
 	int i = 0;
 	for(i = 0; i < 16; ++i) {
-		Note *n = &playing[i];
+		Note *n = &voices[i];
 		if(n->length < 1) {
 			n->channel = chn;
 			n->value = val;
@@ -336,7 +331,7 @@ runmsg(void)
 	char buf[128];
 	/* release */
 	for(i = 0; i < 16; ++i) {
-		Note *n = &playing[i];
+		Note *n = &voices[i];
 		if(n->length > 0) {
 			n->length--;
 			if(n->length == 0)
@@ -454,7 +449,7 @@ copyclip(Rect2d *r, char *c)
 	int x, y, i = 0;
 	for(y = 0; y < r->h; ++y) {
 		for(x = 0; x < r->w; ++x)
-			if(i < 1024)
+			if(i < CLIPSZ)
 				c[i++] = get(&g, r->x + x, r->y + y);
 		c[i++] = '\n';
 	}

@@ -52,3 +52,14 @@ To display the list of operators inside of Orca, use `CmdOrCtrl+G`.
 - `3` operator
 - `4` port(right)
 - `5` port(output)
+
+## TODOs
+
+- True clock
+	- Display BMP in interface.
+	- Add clock controls.
+	- Makeup for render time.
+- Fix issue with some midi message being incomplete.
+- Add save shortcut.
+- Limit selection size to CLIPSZ.
+

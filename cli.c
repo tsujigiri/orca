@@ -11,7 +11,7 @@ error(char *name)
 void
 printgrid(Grid *g)
 {
-	/* TODO: only print once, merge into a buf */
+	/* TODO: only print once, merge into a single buf */
 	int x, y, i = 0;
 	for(y = 0; y < g->h; ++y)
 		for(x = 0; x < g->w; ++x) {

@@ -502,11 +502,11 @@ void
 opspecial(Grid *g, int x, int y)
 {
 	int i, b = bang(g, x, y);
-	for(i = 0; x + i < MAXMSG; ++i) {
+	for(i = 0; x + i < MSGSZ; ++i) {
 		char c = getport(g, x + i, y, 1);
 		if(c == '.')
 			break;
-		if(b && g->msglen < MAXMSG)
+		if(b && g->msglen < MSGSZ)
 			g->msg[g->msglen++] = c;
 	}
 	settype(g, x, y, b ? 3 : 2);
