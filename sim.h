@@ -11,7 +11,7 @@ typedef struct Grid {
 	char data[MAXSZ], vars[36], msg[MSGSZ];
 } Grid;
 
-int base36(char c);
+int cb36(char c);
 int cisp(char c);
 
 char get(Grid *g, int x, int y);
@@ -20,4 +20,5 @@ int gettype(Grid *g, int x, int y);
 
 int rungrid(Grid *g);
 int loadgrid(Grid *g, FILE *f);
+int savegrid(Grid *g);
 void initgrid(Grid *g, int w, int h);

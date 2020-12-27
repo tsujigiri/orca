@@ -307,10 +307,10 @@ parsemidi(char *msg, int msglen)
 	if(msglen > 4)
 		len = msg[4];
 	sendmidi(
-		base36(chn),
-		12 * base36(oct) + nteval(0, nte),
-		base36(vel),
-		base36(len));
+		cb36(chn),
+		12 * cb36(oct) + nteval(0, nte),
+		cb36(vel),
+		cb36(len));
 }
 
 void
@@ -382,8 +382,8 @@ select(int x, int y, int w, int h)
 {
 	cursor.x = clamp(x, 0, HOR - 1);
 	cursor.y = clamp(y, 0, VER - 1);
-	cursor.w = clamp(w, 1, HOR - cursor.x);
-	cursor.h = clamp(h, 1, VER - cursor.y);
+	cursor.w = clamp(w, 1, 36);
+	cursor.h = clamp(h, 1, 36);
 	redraw(pixels);
 }
 
@@ -599,7 +599,7 @@ dokey(SDL_Event *event)
 	case SDLK_p: insert(shift ? 'P' : 'p'); break;
 	case SDLK_q: insert(shift ? 'Q' : 'q'); break;
 	case SDLK_r: insert(shift ? 'R' : 'r'); break;
-	case SDLK_s: insert(shift ? 'S' : 's'); break;
+	case SDLK_s: ctrl ? savegrid(&g) : insert(shift ? 'S' : 's'); break;
 	case SDLK_t: insert(shift ? 'T' : 't'); break;
 	case SDLK_u: insert(shift ? 'U' : 'u'); break;
 	case SDLK_v: ctrl ? pasteclip(&cursor, clip) : insert(shift ? 'V' : 'v'); break;

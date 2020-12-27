@@ -61,7 +61,7 @@ random(Grid *g)
 }
 
 int
-base36(char c)
+cb36(char c)
 {
 	if(c >= 'A' && c <= 'Z')
 		return c - 'A' + 10;
@@ -94,13 +94,13 @@ set(Grid *g, int x, int y, char c)
 void
 save(Grid *g, char key, char val)
 {
-	g->vars[base36(key)] = val;
+	g->vars[cb36(key)] = val;
 }
 
 char
 load(Grid *g, char key)
 {
-	return g->vars[base36(key)];
+	return g->vars[cb36(key)];
 }
 
 /* Syntax */
@@ -166,7 +166,7 @@ opa(Grid *g, int x, int y, char c)
 {
 	char a = getport(g, x - 1, y, 0);
 	char b = getport(g, x + 1, y, 1);
-	setport(g, x, y + 1, cchr(base36(a) + base36(b), ciuc(b)));
+	setport(g, x, y + 1, cchr(cb36(a) + cb36(b), ciuc(b)));
 	(void)c;
 }
 
@@ -175,7 +175,7 @@ opb(Grid *g, int x, int y, char c)
 {
 	char a = getport(g, x - 1, y, 0);
 	char b = getport(g, x + 1, y, 1);
-	setport(g, x, y + 1, cchr(base36(a) - base36(b), ciuc(b)));
+	setport(g, x, y + 1, cchr(cb36(a) - cb36(b), ciuc(b)));
 	(void)c;
 }
 
@@ -184,8 +184,8 @@ opc(Grid *g, int x, int y, char c)
 {
 	char rate = getport(g, x - 1, y, 0);
 	char mod = getport(g, x + 1, y, 1);
-	int mod_ = base36(mod);
-	int rate_ = base36(rate);
+	int mod_ = cb36(mod);
+	int rate_ = cb36(rate);
 	if(!rate_)
 		rate_ = 1;
 	if(!mod_)
@@ -199,8 +199,8 @@ opd(Grid *g, int x, int y, char c)
 {
 	char rate = getport(g, x - 1, y, 0);
 	char mod = getport(g, x + 1, y, 1);
-	int rate_ = base36(rate);
-	int mod_ = base36(mod);
+	int rate_ = cb36(rate);
+	int mod_ = cb36(mod);
 	if(!rate_)
 		rate_ = 1;
 	if(!mod_)
@@ -237,11 +237,11 @@ opg(Grid *g, int x, int y, char c)
 	char px = getport(g, x - 3, y, 0);
 	char py = getport(g, x - 2, y, 0);
 	char len = getport(g, x - 1, y, 0);
-	int i, len_ = base36(len);
+	int i, len_ = cb36(len);
 	if(!len_)
 		len_ = 1;
 	for(i = 0; i < len_; ++i)
-		setport(g, x + i + base36(px), y + 1 + base36(py), getport(g, x + 1 + i, y, 1));
+		setport(g, x + i + cb36(px), y + 1 + cb36(py), getport(g, x + 1 + i, y, 1));
 	(void)c;
 }
 
@@ -258,13 +258,13 @@ opi(Grid *g, int x, int y, char c)
 	char rate = getport(g, x - 1, y, 0);
 	char mod = getport(g, x + 1, y, 1);
 	char val = getport(g, x, y + 1, 1);
-	int rate_ = base36(rate);
-	int mod_ = base36(mod);
+	int rate_ = cb36(rate);
+	int mod_ = cb36(mod);
 	if(!rate_)
 		rate_ = 1;
 	if(!mod_)
 		mod_ = 36;
-	setport(g, x, y + 1, cchr((base36(val) + rate_) % mod_, ciuc(mod)));
+	setport(g, x, y + 1, cchr((cb36(val) + rate_) % mod_, ciuc(mod)));
 	(void)c;
 }
 
@@ -285,7 +285,7 @@ void
 opk(Grid *g, int x, int y, char c)
 {
 	char len = getport(g, x - 1, y, 0);
-	int i, len_ = base36(len);
+	int i, len_ = cb36(len);
 	if(!len_)
 		len_ = 1;
 	for(i = 0; i < len_; ++i) {
@@ -301,7 +301,7 @@ opl(Grid *g, int x, int y, char c)
 {
 	char a = getport(g, x - 1, y, 0);
 	char b = getport(g, x + 1, y, 1);
-	setport(g, x, y + 1, base36(a) < base36(b) ? a : b);
+	setport(g, x, y + 1, cb36(a) < cb36(b) ? a : b);
 	(void)c;
 }
 
@@ -310,7 +310,7 @@ opm(Grid *g, int x, int y, char c)
 {
 	char a = getport(g, x - 1, y, 0);
 	char b = getport(g, x + 1, y, 1);
-	setport(g, x, y + 1, cchr(base36(a) * base36(b), ciuc(b)));
+	setport(g, x, y + 1, cchr(cb36(a) * cb36(b), ciuc(b)));
 	(void)c;
 }
 
@@ -332,7 +332,7 @@ opo(Grid *g, int x, int y, char c)
 {
 	char px = getport(g, x - 2, y, 0);
 	char py = getport(g, x - 1, y, 0);
-	setport(g, x, y + 1, getport(g, x + 1 + base36(px), y + base36(py), 1));
+	setport(g, x, y + 1, getport(g, x + 1 + cb36(px), y + cb36(py), 1));
 	(void)c;
 }
 
@@ -342,12 +342,12 @@ opp(Grid *g, int x, int y, char c)
 	char key = getport(g, x - 2, y, 0);
 	char len = getport(g, x - 1, y, 0);
 	char val = getport(g, x + 1, y, 1);
-	int i, len_ = base36(len);
+	int i, len_ = cb36(len);
 	if(!len_)
 		len_ = 1;
 	for(i = 0; i < len_; ++i)
 		lock(g, x + i, y + 1);
-	setport(g, x + (base36(key) % len_), y + 1, val);
+	setport(g, x + (cb36(key) % len_), y + 1, val);
 	(void)c;
 }
 
@@ -357,11 +357,11 @@ opq(Grid *g, int x, int y, char c)
 	char px = getport(g, x - 3, y, 0);
 	char py = getport(g, x - 2, y, 0);
 	char len = getport(g, x - 1, y, 0);
-	int i, len_ = base36(len);
+	int i, len_ = cb36(len);
 	if(!len_)
 		len_ = 1;
 	for(i = 0; i < len_; ++i)
-		setport(g, x + 1 - len_ + i, y + 1, getport(g, x + 1 + base36(px) + i, y + base36(py), 1));
+		setport(g, x + 1 - len_ + i, y + 1, getport(g, x + 1 + cb36(px) + i, y + cb36(py), 1));
 	(void)c;
 }
 
@@ -370,9 +370,9 @@ opr(Grid *g, int x, int y, char c)
 {
 	char min = getport(g, x - 1, y, 0);
 	char max = getport(g, x + 1, y, 1);
-	int min_ = base36(min);
-	int max_ = base36(max);
-	setport(g, x, y + 1, cchr((random(g) % ((base36(max_) - min_) || 1)) + min_, ciuc(max)));
+	int min_ = cb36(min);
+	int max_ = cb36(max);
+	setport(g, x, y + 1, cchr((random(g) % ((cb36(max_) - min_) || 1)) + min_, ciuc(max)));
 	(void)c;
 }
 
@@ -394,12 +394,12 @@ opt(Grid *g, int x, int y, char c)
 {
 	char key = getport(g, x - 2, y, 0);
 	char len = getport(g, x - 1, y, 0);
-	int i, len_ = base36(len);
+	int i, len_ = cb36(len);
 	if(!len_)
 		len_ = 1;
 	for(i = 0; i < len_; ++i)
 		lock(g, x + 1 + i, y);
-	setport(g, x, y + 1, getport(g, x + 1 + (base36(key) % len_), y, 1));
+	setport(g, x, y + 1, getport(g, x + 1 + (cb36(key) % len_), y, 1));
 	(void)c;
 }
 
@@ -408,8 +408,8 @@ opu(Grid *g, int x, int y, char c)
 {
 	char step = getport(g, x - 1, y, 1);
 	char max = getport(g, x + 1, y, 1);
-	int step_ = base36(step);
-	int max_ = base36(max);
+	int step_ = cb36(step);
+	int max_ = cb36(max);
 	int bucket;
 	if(!step_)
 		step_ = 1;
@@ -451,7 +451,7 @@ opx(Grid *g, int x, int y, char c)
 	char px = getport(g, x - 2, y, 0);
 	char py = getport(g, x - 1, y, 0);
 	char val = getport(g, x + 1, y, 1);
-	setport(g, x + base36(px), y + base36(py) + 1, val);
+	setport(g, x + cb36(px), y + cb36(py) + 1, val);
 	(void)c;
 }
 
@@ -474,9 +474,9 @@ opz(Grid *g, int x, int y, char c)
 	char rate = getport(g, x - 1, y, 0);
 	char target = getport(g, x + 1, y, 1);
 	char val = getport(g, x, y + 1, 1);
-	int rate_ = base36(rate);
-	int target_ = base36(target);
-	int val_ = base36(val);
+	int rate_ = cb36(rate);
+	int target_ = cb36(target);
+	int val_ = cb36(val);
 	int mod;
 	if(!rate_)
 		rate_ = 1;
@@ -604,6 +604,21 @@ loadgrid(Grid *g, FILE *f)
 			x++;
 		}
 	}
+	return 1;
+}
+
+int
+savegrid(Grid *g)
+{
+	int x, y;
+	FILE *f = fopen("orca-grid.txt", "w");
+	for(y = 0; y < g->h; ++y) {
+		for(x = 0; x < g->w; ++x)
+			fputc(get(g, x, y), f);
+		fputc('\n', f);
+	}
+	fclose(f);
+	puts("Saved orca-grid.txt");
 	return 1;
 }
 

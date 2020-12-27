@@ -60,7 +60,6 @@ To display the list of operators inside of Orca, use `CmdOrCtrl+G`.
 	- Add clock controls.
 	- Makeup for render time.
 - Fix issue with some midi message being incomplete.
-- Add save shortcut.
-- Trigger release behaviour
+- Trigger release behaviour.
 - Reflect outgoing midi notes.
 - Selection right-to-left drag.
