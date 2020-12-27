@@ -480,8 +480,12 @@ opz(Grid *g, int x, int y, char c)
 	int mod;
 	if(!rate_)
 		rate_ = 1;
-	mod = val_ <= target_ - rate_ ? rate_ : val_ >= target_ + rate_ ? -rate_
-																	: target_ - val_;
+	if(val_ <= target_ - rate_)
+		mod = rate_;
+	else if(val_ >= target_ + rate_)
+		mod = -rate;
+	else
+		mod = target_ - val_;
 	setport(g, x, y + 1, cchr(val_ + mod, ciuc(target)));
 	(void)c;
 }
@@ -551,16 +555,23 @@ operate(Grid *g, int x, int y, char c)
 
 /* General */
 
-int
-rungrid(Grid *g)
+void
+initframe(Grid *g)
 {
-	int i, x, y;
+	int i;
 	for(i = 0; i < g->l; ++i) {
 		g->lock[i] = 0;
 		g->type[i] = 0;
 	}
 	g->msg[0] = '\0';
 	g->msglen = 0;
+}
+
+int
+rungrid(Grid *g)
+{
+	int i, x, y;
+	initframe(g);
 	for(i = 0; i < g->l; ++i) {
 		char c = g->data[i];
 		x = i % g->w;
@@ -605,10 +616,7 @@ initgrid(Grid *g, int w, int h)
 	g->l = w * h;
 	g->f = 0;
 	g->r = 1;
-	for(i = 0; i < w * h; ++i) {
+	for(i = 0; i < g->l; ++i)
 		g->data[i] = '.';
-	}
-	g->msg[0] = '\0';
-	g->msglen = 0;
-	printf("Resize: %dx%d\n", g->w, g->h);
+	initframe(g);
 }

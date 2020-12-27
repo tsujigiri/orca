@@ -18,9 +18,11 @@ WITH REGARD TO THIS SOFTWARE.
 #define HOR 32
 #define VER 16
 #define PAD 8
+#define VOICES 16
+#define DEVICE 0
+
 #define SZ (HOR * VER * 16)
 #define CLIPSZ 1024
-#define DEVICE 0
 
 typedef unsigned char Uint8;
 
@@ -33,7 +35,7 @@ typedef struct {
 } Note;
 
 char clip[CLIPSZ];
-Note voices[16];
+Note voices[VOICES];
 Rect2d cursor;
 Grid g;
 
@@ -146,12 +148,6 @@ clamp(int val, int min, int max)
 	return (val >= min) ? (val <= max) ? val : max : min;
 }
 
-int
-selected(int x, int y)
-{
-	return x < cursor.x + cursor.w && x >= cursor.x && y < cursor.y + cursor.h && y >= cursor.y;
-}
-
 /* misc */
 
 int
@@ -194,26 +190,19 @@ getstyle(int clr, int type, int sel)
 	return clr == 0 ? 0 : 3;
 }
 
-int
-keypixel(int x, int y)
-{
-	return (y + PAD) * WIDTH + (x + PAD);
-}
-
 void
 putpixel(Uint32 *dst, int x, int y, int color)
 {
 	if(x >= 0 && x < WIDTH - 8 && y >= 0 && y < HEIGHT - 8)
-		dst[keypixel(x, y)] = theme[color];
+		dst[(y + PAD) * WIDTH + (x + PAD)] = theme[color];
 }
 
 void
-drawtile(Uint32 *dst, int x, int y, char c, int type)
+drawtile(Uint32 *dst, int x, int y, char c, int type, Rect2d *r)
 {
 	int v, h;
-	int sel = selected(x, y);
-	int offset = getfont(x, y, c, type, sel);
-	Uint8 *icon = font[offset];
+	int sel = x < r->x + r->w && x >= r->x && y < r->y + r->h && y >= r->y;
+	Uint8 *icon = font[getfont(x, y, c, type, sel)];
 	for(v = 0; v < 8; v++)
 		for(h = 0; h < 8; h++) {
 			int style = getstyle((icon[v] >> (7 - h)) & 0x1, type, sel);
@@ -247,7 +236,7 @@ redraw(Uint32 *dst)
 	int x, y;
 	for(y = 0; y < VER; ++y)
 		for(x = 0; x < HOR; ++x)
-			drawtile(dst, x, y, get(&g, x, y), gettype(&g, x, y));
+			drawtile(dst, x, y, get(&g, x, y), gettype(&g, x, y), &cursor);
 	drawui(dst);
 	SDL_UpdateTexture(gTexture, NULL, dst, WIDTH * sizeof(Uint32));
 	SDL_RenderClear(gRenderer);
@@ -288,7 +277,7 @@ Note *
 sendmidi(int chn, int val, int vel, int len)
 {
 	int i = 0;
-	for(i = 0; i < 16; ++i) {
+	for(i = 0; i < VOICES; ++i) {
 		Note *n = &voices[i];
 		if(n->length < 1) {
 			n->channel = chn;
@@ -330,7 +319,7 @@ runmsg(void)
 	int i, j = 0;
 	char buf[128];
 	/* release */
-	for(i = 0; i < 16; ++i) {
+	for(i = 0; i < VOICES; ++i) {
 		Note *n = &voices[i];
 		if(n->length > 0) {
 			n->length--;
@@ -348,6 +337,19 @@ runmsg(void)
 			j = 0;
 		} else
 			buf[j++] = g.msg[i];
+}
+
+void
+initmidi(void)
+{
+	int i;
+	Pm_Initialize();
+	for(i = 0; i < Pm_CountDevices(); ++i)
+		printf("Device #%d -> %s%s\n",
+			i,
+			Pm_GetDeviceInfo(i)->name,
+			i == DEVICE ? "[x]" : "[ ]");
+	Pm_OpenOutput(&midi, DEVICE, NULL, 128, 0, NULL, 1);
 }
 
 /* options */
@@ -380,8 +382,8 @@ select(int x, int y, int w, int h)
 {
 	cursor.x = clamp(x, 0, HOR - 1);
 	cursor.y = clamp(y, 0, VER - 1);
-	cursor.w = clamp(w, 1, 36);
-	cursor.h = clamp(h, 1, 36);
+	cursor.w = clamp(w, 1, HOR - cursor.x);
+	cursor.h = clamp(h, 1, VER - cursor.y);
 	redraw(pixels);
 }
 
@@ -404,7 +406,8 @@ move(int x, int y)
 void
 scale(int w, int h)
 {
-	select(cursor.x, cursor.y, cursor.w + w, cursor.h + h);
+	if((cursor.w + w) * (cursor.h + h) < CLIPSZ)
+		select(cursor.x, cursor.y, cursor.w + w, cursor.h + h);
 }
 
 void
@@ -448,10 +451,12 @@ copyclip(Rect2d *r, char *c)
 {
 	int x, y, i = 0;
 	for(y = 0; y < r->h; ++y) {
-		for(x = 0; x < r->w; ++x)
-			if(i < CLIPSZ)
+		for(x = 0; x < r->w; ++x) {
+			if(i < CLIPSZ - 2)
 				c[i++] = get(&g, r->x + x, r->y + y);
-		c[i++] = '\n';
+		}
+		if(i < CLIPSZ - 2)
+			c[i++] = '\n';
 	}
 	c[i] = '\0';
 }
@@ -603,18 +608,6 @@ dokey(SDL_Event *event)
 	case SDLK_y: insert(shift ? 'Y' : 'y'); break;
 	case SDLK_z: insert(shift ? 'Z' : 'z'); break;
 	}
-}
-
-void
-initmidi(void)
-{
-	int i;
-	Pm_Initialize();
-	for(i = 0; i < Pm_CountDevices(); ++i) {
-		char const *name = Pm_GetDeviceInfo(i)->name;
-		printf("Device #%d -> %s%s\n", i, name, i == DEVICE ? "[x]" : "[ ]");
-	}
-	Pm_OpenOutput(&midi, DEVICE, NULL, 128, 0, NULL, 1);
 }
 
 int

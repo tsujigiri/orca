@@ -61,5 +61,6 @@ To display the list of operators inside of Orca, use `CmdOrCtrl+G`.
 	- Makeup for render time.
 - Fix issue with some midi message being incomplete.
 - Add save shortcut.
-- Limit selection size to CLIPSZ.
-
+- Trigger release behaviour
+- Reflect outgoing midi notes.
+- Selection right-to-left drag.
