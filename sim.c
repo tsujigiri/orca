@@ -46,7 +46,7 @@ cchr(int v, int cap)
 int
 valid(Grid *g, int x, int y)
 {
-	return x >= 0 && x <= g->w - 1 && y >= 0 && y <= g->h;
+	return x >= 0 && x <= g->w - 1 && y >= 0 && y <= g->h - 1;
 }
 
 int

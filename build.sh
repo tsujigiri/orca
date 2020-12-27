@@ -15,8 +15,8 @@ rm -f ./orca
 # ./cli demo.orca
 
 # client
-# cc -std=c89 -DDEBUG -Wall -Wpedantic -Wshadow -Wextra -Werror=implicit-int -Werror=incompatible-pointer-types -Werror=int-conversion -Wvla -g -Og -fsanitize=address -fsanitize=undefined -L/usr/local/lib -lSDL2 -lportmidi orca.c sim.c -o orca
-cc -std=c89 -O2 -DNDEBUG -g0 -s -Wall -L/usr/local/lib -lSDL2 -lportmidi orca.c sim.c -o orca
+cc -std=c89 -DDEBUG -Wall -Wpedantic -Wshadow -Wextra -Werror=implicit-int -Werror=incompatible-pointer-types -Werror=int-conversion -Wvla -g -Og -fsanitize=address -fsanitize=undefined -L/usr/local/lib -lSDL2 -lportmidi orca.c sim.c -o orca
+# cc -std=c89 -O2 -DNDEBUG -g0 -s -Wall -L/usr/local/lib -lSDL2 -lportmidi orca.c sim.c -o orca
 
 # Size
 echo "Size: $(du -sk ./orca)"
