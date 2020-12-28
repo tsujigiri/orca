@@ -510,8 +510,10 @@ opspecial(Grid *g, int x, int y)
 		char c = getport(g, x + i, y, 1);
 		if(c == '.')
 			break;
-		if(b && g->msglen < MSGSZ)
+		if(b && g->msglen < MSGSZ) {
 			g->msg[g->msglen++] = c;
+			g->msg[g->msglen] = '\0';
+		}
 	}
 	settype(g, x, y, b ? 3 : 2);
 }

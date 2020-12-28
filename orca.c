@@ -41,7 +41,7 @@ Grid g;
 
 int WIDTH = 8 * HOR + PAD * 2;
 int HEIGHT = 8 * (VER + 2) + PAD * 2;
-int BPM = 128, DOWN = 0, ZOOM = 2, PAUSE = 0;
+int BPM = 128, DOWN = 0, ZOOM = 2, PAUSE = 0, GUIDES = 1, MODE = 0;
 
 Uint32 theme[] = {
 	0x000000,
@@ -57,8 +57,8 @@ Uint8 icons[][8] = {
 	{0x00, 0x00, 0x10, 0x28, 0x10, 0x00, 0x00, 0x00}, /* bang */
 	{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}, /* null */
 	{0xfe, 0x82, 0x82, 0x82, 0x82, 0x82, 0xfe, 0x00},
-	{0x1e, 0x06, 0x0a, 0x12, 0x20, 0x40, 0x80, 0x00},
-	{0x06, 0x18, 0x22, 0x40, 0x42, 0x80, 0xaa, 0x00},
+	{0x38, 0x10, 0x10, 0x10, 0x10, 0x10, 0x38, 0x00}, /* mode:default */
+	{0x38, 0x10, 0x08, 0x04, 0x08, 0x10, 0x38, 0x00}, /* mode: insert */
 	{0x00, 0x00, 0x00, 0x82, 0x44, 0x38, 0x00, 0x00}, /* eye open */
 	{0x00, 0x38, 0x44, 0x92, 0x28, 0x10, 0x00, 0x00}  /* eye closed */
 };
@@ -165,12 +165,14 @@ getfont(int x, int y, char c, int type, int sel)
 		return 63;
 	if(c == ':')
 		return 65;
-	if(x % 8 == 0 && y % 8 == 0)
-		return 68;
 	if(cursor.x == x && cursor.y == y)
 		return 66;
-	if(sel || type || (x % 2 == 0 && y % 2 == 0))
-		return 64;
+	if(GUIDES) {
+		if(x % 8 == 0 && y % 8 == 0)
+			return 68;
+		if(sel || type || (x % 2 == 0 && y % 2 == 0))
+			return 64;
+	}
 	return 70;
 }
 
@@ -225,9 +227,12 @@ void
 drawui(Uint32 *dst)
 {
 	int bottom = VER * 8 + 8;
-	drawicon(dst, 0, bottom, icons[0], PAUSE ? 3 : 1);
-	drawicon(dst, 8, bottom, icons[2], PAUSE ? 1 : 3);
+	drawicon(dst, 0, bottom, icons[0], PAUSE ? 3 : 2);
+	drawicon(dst, 8, bottom, icons[2], PAUSE ? 2 : 3);
 	drawicon(dst, 8 * 3, bottom, icons[(g.f - 1) % 8 == 0 ? 3 : 4], 2);
+
+	drawicon(dst, 10 * 8, bottom, icons[MODE ? 7 : 6], MODE ? 1 : 2);
+	drawicon(dst, 11 * 8, bottom, icons[GUIDES ? 9 : 8], GUIDES ? 1 : 2);
 }
 
 void
@@ -277,6 +282,15 @@ Note *
 sendmidi(int chn, int val, int vel, int len)
 {
 	int i = 0;
+	for(i = 0; i < VOICES; ++i) {
+		Note *n = &voices[i];
+		if(!n->length || n->channel != chn || n->value != val)
+			continue;
+		Pm_WriteShort(midi,
+			Pt_Time(),
+			Pm_Message(0x90 + n->channel, n->value, 0));
+		n->length = 0;
+	}
 	for(i = 0; i < VOICES; ++i) {
 		Note *n = &voices[i];
 		if(n->length < 1) {
@@ -329,11 +343,14 @@ runmsg(void)
 					Pm_Message(0x90 + n->channel, n->value, 0));
 		}
 	}
+	if(g.msglen < 2)
+		return;
 	/* split messages */
 	for(i = 0; i < g.msglen + 1; ++i)
 		if(!g.msg[i] || cisp(g.msg[i])) {
 			buf[j] = '\0';
-			parsemidi(buf, j);
+			if(j > 0)
+				parsemidi(buf, j);
 			j = 0;
 		} else
 			buf[j++] = g.msg[i];
@@ -386,6 +403,20 @@ setplay(int val)
 }
 
 void
+setguides(int v)
+{
+	GUIDES = v;
+	redraw(pixels);
+}
+
+void
+setmode(int v)
+{
+	MODE = v;
+	redraw(pixels);
+}
+
+void
 select(int x, int y, int w, int h)
 {
 	cursor.x = clamp(x, 0, HOR - 1);
@@ -396,19 +427,21 @@ select(int x, int y, int w, int h)
 }
 
 void
+move(int x, int y)
+{
+	select(cursor.x + x, cursor.y + y, cursor.w, cursor.h);
+}
+
+void
 insert(char c)
 {
 	int x, y;
 	for(x = 0; x < cursor.w; ++x)
 		for(y = 0; y < cursor.h; ++y)
 			set(&g, cursor.x + x, cursor.y + y, c);
+	if(MODE)
+		move(1, 0);
 	redraw(pixels);
-}
-
-void
-move(int x, int y)
-{
-	select(cursor.x + x, cursor.y + y, cursor.w, cursor.h);
 }
 
 void
@@ -435,6 +468,8 @@ selectoption(int option)
 		setplay(1);
 		frame();
 		break;
+	case 10: setmode(!MODE); break;
+	case 11: setguides(!GUIDES); break;
 	}
 }
 
@@ -580,7 +615,11 @@ dokey(SDL_Event *event)
 	case SDLK_PERIOD: insert('.'); break;
 	case SDLK_COLON: insert(':'); break;
 	case SDLK_SEMICOLON: insert(':'); break;
-	case SDLK_ESCAPE: select(cursor.x, cursor.y, 1, 1); break;
+	case SDLK_ESCAPE:
+		select(cursor.x, cursor.y, 1, 1);
+		setmode(0);
+		setguides(1);
+		break;
 	case SDLK_0: insert('0'); break;
 	case SDLK_1: insert('1'); break;
 	case SDLK_2: insert('2'); break;
@@ -598,8 +637,8 @@ dokey(SDL_Event *event)
 	case SDLK_e: insert(shift ? 'E' : 'e'); break;
 	case SDLK_f: insert(shift ? 'F' : 'f'); break;
 	case SDLK_g: insert(shift ? 'G' : 'g'); break;
-	case SDLK_h: insert(shift ? 'H' : 'h'); break;
-	case SDLK_i: insert(shift ? 'I' : 'i'); break;
+	case SDLK_h: ctrl ? setguides(!GUIDES) : insert(shift ? 'H' : 'h'); break;
+	case SDLK_i: ctrl ? setmode(!MODE) : insert(shift ? 'I' : 'i'); break;
 	case SDLK_j: insert(shift ? 'J' : 'j'); break;
 	case SDLK_k: insert(shift ? 'K' : 'k'); break;
 	case SDLK_l: insert(shift ? 'L' : 'l'); break;
