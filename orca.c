@@ -41,7 +41,7 @@ Grid g;
 
 int WIDTH = 8 * HOR + PAD * 2;
 int HEIGHT = 8 * (VER + 2) + PAD * 2;
-int FPS = 30, DOWN = 0, ZOOM = 2, PAUSE = 0;
+int BPM = 128, DOWN = 0, ZOOM = 2, PAUSE = 0;
 
 Uint32 theme[] = {
 	0x000000,
@@ -371,6 +371,14 @@ modzoom(int mod)
 }
 
 void
+modbpm(int mod)
+{
+	BPM += mod;
+	printf("BPM: %d\n", BPM);
+	redraw(pixels);
+}
+
+void
 setplay(int val)
 {
 	PAUSE = val;
@@ -527,6 +535,8 @@ dokey(SDL_Event *event)
 	int shift = SDL_GetModState() & KMOD_LSHIFT || SDL_GetModState() & KMOD_RSHIFT;
 	int ctrl = SDL_GetModState() & KMOD_LCTRL || SDL_GetModState() & KMOD_RCTRL;
 	switch(event->key.keysym.sym) {
+	case SDLK_PAGEUP: modbpm(1); break;
+	case SDLK_PAGEDOWN: modbpm(-1); break;
 	case SDLK_EQUALS:
 	case SDLK_PLUS: modzoom(1); break;
 	case SDLK_UNDERSCORE:
@@ -647,8 +657,7 @@ init(void)
 int
 main(int argc, char *argv[])
 {
-	int ticknext = 0, tickrun = 0;
-
+	Uint8 tick = 0;
 	if(!init())
 		return error("Init", "Failure");
 
@@ -662,18 +671,15 @@ main(int argc, char *argv[])
 	select(0, 0, 1, 1);
 
 	while(1) {
-		int tick = SDL_GetTicks();
 		SDL_Event event;
-		if(tick < ticknext)
-			SDL_Delay(ticknext - tick);
-		ticknext = tick + (1000 / FPS);
-
-		if(!PAUSE && tickrun >= 8) {
-			frame();
-			tickrun = 0;
+		if(!PAUSE) {
+			if(tick > 3) {
+				frame();
+				tick = 0;
+			} else
+				tick++;
 		}
-		tickrun++;
-
+		SDL_Delay(60000 / BPM / 16);
 		while(SDL_PollEvent(&event) != 0) {
 			if(event.type == SDL_QUIT)
 				quit();
