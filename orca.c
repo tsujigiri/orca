@@ -461,8 +461,20 @@ select(int x, int y, int w, int h)
 {
 	cursor.x = clamp(x, 0, HOR - 1);
 	cursor.y = clamp(y, 0, VER - 1);
-	cursor.w = clamp(w, 1, 36);
-	cursor.h = clamp(h, 1, 36);
+	cursor.w = clamp(w, 1, HOR - x + 1);
+	cursor.h = clamp(h, 1, VER - y + 1);
+	redraw(pixels);
+}
+
+void
+comment(Rect2d *r)
+{
+	int y;
+	char c = get(&g, r->x, r->y) == '#' ? '.' : '#';
+	for(y = 0; y < r->h; ++y) {
+		set(&g, r->x, r->y + y, c);
+		set(&g, r->x + r->w - 1, r->y + y, c);
+	}
 	redraw(pixels);
 }
 
@@ -631,6 +643,10 @@ dokey(SDL_Event *event)
 	case SDLK_PLUS: modzoom(1); break;
 	case SDLK_UNDERSCORE:
 	case SDLK_MINUS: modzoom(-1); break;
+	case SDLK_SLASH:
+		if(ctrl)
+			comment(&cursor);
+		break;
 	case SDLK_UP:
 		if(ctrl)
 			moveclip(&cursor, clip, 0, -1);

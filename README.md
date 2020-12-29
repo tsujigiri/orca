@@ -45,6 +45,19 @@ To display the list of operators inside of Orca, use `CmdOrCtrl+G`.
 - `*` **bang**: Bangs neighboring operands.
 - `#` **comment**: Halts a line.
 
+## Controls
+
+- `PAGEUP`, incr. bpm.
+- `PAGEDOWN`, decr. bpm.
+- `+` zoom in.
+- `-` zoom out.
+- `SHIFT+ARROW` scale selection.
+- `CTRL+ARROW` drag selection.
+- `ARROW` move selection.
+- `SPACE` toggle play.
+- `BACKSPACE` erase.
+- `CTRL+/` comment block.
+
 ## Syntax Highlight
 
 - `1` locked
@@ -56,9 +69,6 @@ To display the list of operators inside of Orca, use `CmdOrCtrl+G`.
 ## TODOs
 
 - True clock
-	- Display BMP in interface.
-	- Add clock controls.
 	- Makeup for render time.
-- Trigger release behaviour.
-- Reflect outgoing midi notes.
 - Selection right-to-left drag.
+- Random
