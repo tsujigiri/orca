@@ -59,7 +59,6 @@ To display the list of operators inside of Orca, use `CmdOrCtrl+G`.
 	- Display BMP in interface.
 	- Add clock controls.
 	- Makeup for render time.
-- Fix issue with some midi message being incomplete.
 - Trigger release behaviour.
 - Reflect outgoing midi notes.
 - Selection right-to-left drag.

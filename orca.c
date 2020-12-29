@@ -51,12 +51,15 @@ Uint32 theme[] = {
 	0xffb545};
 
 Uint8 icons[][8] = {
-	{0x20, 0x30, 0x38, 0x3c, 0x38, 0x30, 0x20, 0x00}, /* play */
-	{0x38, 0x7c, 0xfe, 0xfe, 0xfe, 0x7c, 0x38, 0x00}, /* stop */
-	{0x86, 0xc6, 0xe6, 0xf6, 0xe6, 0xc6, 0x86, 0x00}, /* step */
-	{0x00, 0x00, 0x10, 0x28, 0x10, 0x00, 0x00, 0x00}, /* bang */
-	{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}, /* null */
-	{0xfe, 0x82, 0x82, 0x82, 0x82, 0x82, 0xfe, 0x00},
+	{0x00, 0x00, 0x10, 0x38, 0x7c, 0x38, 0x10, 0x00}, /* play */
+	{0x00, 0x00, 0x48, 0x24, 0x12, 0x24, 0x48, 0x00}, /* next */
+	{0x00, 0x00, 0x66, 0x42, 0x00, 0x42, 0x66, 0x00}, /* skip */
+	{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x3e, 0x00}, /* midi:1 */
+	{0x00, 0x00, 0x00, 0x00, 0x00, 0x3e, 0x3e, 0x00}, /* midi:2 */
+	{0x00, 0x00, 0x00, 0x00, 0x3e, 0x3e, 0x3e, 0x00}, /* midi:3 */
+	{0x00, 0x00, 0x00, 0x3e, 0x3e, 0x3e, 0x3e, 0x00}, /* midi:4 */
+	{0x00, 0x00, 0x3e, 0x3e, 0x3e, 0x3e, 0x3e, 0x00}, /* midi:5 */
+	{0x00, 0x3e, 0x3e, 0x3e, 0x3e, 0x3e, 0x3e, 0x00}, /* midi:6 */
 	{0x38, 0x10, 0x10, 0x10, 0x10, 0x10, 0x38, 0x00}, /* mode:default */
 	{0x38, 0x10, 0x08, 0x04, 0x08, 0x10, 0x38, 0x00}, /* mode: insert */
 	{0x00, 0x00, 0x00, 0x82, 0x44, 0x38, 0x00, 0x00}, /* eye open */
@@ -148,6 +151,25 @@ clamp(int val, int min, int max)
 	return (val >= min) ? (val <= max) ? val : max : min;
 }
 
+Uint8
+chex(char c)
+{
+	if(c >= 'a' && c <= 'f')
+		return 10 + c - 'a';
+	if(c >= 'A' && c <= 'F')
+		return 10 + c - 'A';
+	return (c - '0') & 0xF;
+}
+
+int
+shex(char *s, int len)
+{
+	int i, n = 0;
+	for(i = 0; i < len; ++i)
+		n |= (chex(s[i]) << ((len - i - 1) * 4));
+	return n;
+}
+
 /* misc */
 
 int
@@ -226,13 +248,31 @@ drawicon(Uint32 *dst, int x, int y, Uint8 *icon, int color)
 void
 drawui(Uint32 *dst)
 {
-	int bottom = VER * 8 + 8;
-	drawicon(dst, 0, bottom, icons[0], PAUSE ? 3 : 2);
-	drawicon(dst, 8, bottom, icons[2], PAUSE ? 2 : 3);
-	drawicon(dst, 8 * 3, bottom, icons[(g.f - 1) % 8 == 0 ? 3 : 4], 2);
+	int i, n = 0, bottom = VER * 8 + 8;
+	/* CURSOR */
+	drawicon(dst, 0 * 8, bottom, font[cursor.x % 36], 1);
+	drawicon(dst, 1 * 8, bottom, font[68], 1);
+	drawicon(dst, 2 * 8, bottom, font[cursor.y % 36], 1);
+	drawicon(dst, 3 * 8, bottom, icons[2], cursor.w > 1 || cursor.h > 1 ? 4 : 3);
+	/* FRAME */
+	drawicon(dst, 5 * 8, bottom, font[(g.f / 1296) % 36], 1);
+	drawicon(dst, 6 * 8, bottom, font[(g.f / 36) % 36], 1);
+	drawicon(dst, 7 * 8, bottom, font[g.f % 36], 1);
+	drawicon(dst, 8 * 8, bottom, icons[PAUSE ? 1 : 0], PAUSE ? 4 : (g.f - 1) % 8 == 0 ? 2
+																					  : 3);
+	/* SPEED */
+	drawicon(dst, 10 * 8, bottom, font[(BPM / 100) % 10], 1);
+	drawicon(dst, 11 * 8, bottom, font[(BPM / 10) % 10], 1);
+	drawicon(dst, 12 * 8, bottom, font[BPM % 10], 1);
 
-	drawicon(dst, 10 * 8, bottom, icons[MODE ? 7 : 6], MODE ? 1 : 2);
-	drawicon(dst, 11 * 8, bottom, icons[GUIDES ? 9 : 8], GUIDES ? 1 : 2);
+	for(i = 0; i < VOICES; ++i)
+		if(voices[i].length)
+			n++;
+
+	if(n > 0)
+		drawicon(dst, 13 * 8, bottom, icons[2 + clamp(n, 0, 6)], 2);
+	else
+		drawicon(dst, 13 * 8, bottom, font[70], 3);
 }
 
 void
@@ -460,11 +500,27 @@ frame(void)
 }
 
 void
+loadtheme(FILE *f)
+{
+	int id = 0;
+	char line[256];
+	if(!f)
+		return;
+	while(fgets(line, 256, f)) {
+		int i = 0;
+		while(line[i++] && id < 5) {
+			if(line[i] == '#')
+				theme[id++] = shex(line + i + 1, 6);
+		}
+	}
+	fclose(f);
+}
+
+void
 selectoption(int option)
 {
 	switch(option) {
-	case 0: setplay(!PAUSE); break;
-	case 1:
+	case 3:
 		setplay(1);
 		frame();
 		break;
@@ -697,6 +753,8 @@ int
 main(int argc, char *argv[])
 {
 	Uint8 tick = 0;
+
+	loadtheme(fopen("theme.svg", "r"));
 	if(!init())
 		return error("Init", "Failure");
 
