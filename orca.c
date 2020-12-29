@@ -520,12 +520,11 @@ void
 selectoption(int option)
 {
 	switch(option) {
-	case 3:
+	case 3: select(cursor.x, cursor.y, 1, 1); break;
+	case 8:
 		setplay(1);
 		frame();
 		break;
-	case 10: setmode(!MODE); break;
-	case 11: setguides(!GUIDES); break;
 	}
 }
 
