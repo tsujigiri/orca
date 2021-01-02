@@ -292,30 +292,15 @@ redraw(Uint32 *dst)
 /* midi */
 
 int
-nteval(int o, char c)
+nteval(char c)
 {
-	switch(c) {
-	case 'A': return 9;
-	case 'a': return 10;
-	case 'B': return 11;
-	case 'b':
-	case 'C': return 0;
-	case 'c': return 1;
-	case 'D': return 2;
-	case 'd': return 3;
-	case 'E': return 4;
-	case 'e':
-	case 'F': return 5;
-	case 'f': return 6;
-	case 'G': return 7;
-	case 'g': return 8;
-	default:
-		if(c >= '0' && c <= '9')
-			return c - '0';
-		else
-			return nteval(o + 12, c - 7);
-	}
-	return 0;
+	int sharp, uc, deg, notes[] = {0, 2, 4, 5, 7, 9, 11};
+	if(c >= '0' && c <= '9')
+		return c - '0';
+	sharp = c >= 'a' && c <= 'z';
+	uc = sharp ? c - 'a' + 'A' : c;
+	deg = uc <= 'B' ? 'G' - 'B' + uc - 'A' : uc - 'C';
+	return deg / 7 * 12 + notes[deg % 7] + sharp;
 }
 
 Note *
@@ -360,9 +345,10 @@ parsemidi(char *msg, int msglen)
 		vel = msg[3];
 	if(msglen > 4)
 		len = msg[4];
+	printf("%c ->%d\n", nte, nteval(nte));
 	sendmidi(
 		cb36(chn),
-		12 * cb36(oct) + nteval(0, nte),
+		12 * cb36(oct) + nteval(nte),
 		cb36(vel),
 		cb36(len));
 }
