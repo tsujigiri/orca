@@ -345,7 +345,6 @@ parsemidi(char *msg, int msglen)
 		vel = msg[3];
 	if(msglen > 4)
 		len = msg[4];
-	printf("%c ->%d\n", nte, nteval(nte));
 	sendmidi(
 		cb36(chn),
 		12 * cb36(oct) + nteval(nte),
@@ -569,7 +568,7 @@ cutclip(Rect2d *r, char *c)
 }
 
 void
-pasteclip(Rect2d *r, char *c)
+pasteclip(Rect2d *r, char *c, int insert)
 {
 	int i = 0, x = r->x, y = r->y;
 	char ch;
@@ -577,8 +576,10 @@ pasteclip(Rect2d *r, char *c)
 		if(ch == '\n') {
 			x = r->x;
 			y++;
-		} else
-			set(&g, x++, y, ch);
+		} else {
+			set(&g, x, y, insert && ch == '.' ? get(&g, x, y) : ch);
+			x++;
+		}
 	}
 }
 
@@ -588,7 +589,7 @@ moveclip(Rect2d *r, char *c, int x, int y)
 	copyclip(r, c);
 	insert('.');
 	move(x, y);
-	pasteclip(r, c);
+	pasteclip(r, c, 0);
 }
 
 /* triggers */
@@ -712,7 +713,7 @@ dokey(SDL_Event *event)
 	case SDLK_s: ctrl ? savegrid(&g) : insert(shift ? 'S' : 's'); break;
 	case SDLK_t: insert(shift ? 'T' : 't'); break;
 	case SDLK_u: insert(shift ? 'U' : 'u'); break;
-	case SDLK_v: ctrl ? pasteclip(&cursor, clip) : insert(shift ? 'V' : 'v'); break;
+	case SDLK_v: ctrl ? pasteclip(&cursor, clip, shift) : insert(shift ? 'V' : 'v'); break;
 	case SDLK_w: insert(shift ? 'W' : 'w'); break;
 	case SDLK_x: ctrl ? cutclip(&cursor, clip) : insert(shift ? 'X' : 'x'); break;
 	case SDLK_y: insert(shift ? 'Y' : 'y'); break;
