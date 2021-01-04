@@ -8,7 +8,7 @@
 typedef struct Grid {
 	int w, h, l, f, r, msglen;
 	int lock[MAXSZ], type[MAXSZ];
-	char data[MAXSZ], vars[36], msg[MSGSZ];
+	char data[MAXSZ], var[36], msg[MSGSZ];
 } Grid;
 
 int cb36(char c);
@@ -20,5 +20,5 @@ int gettype(Grid *g, int x, int y);
 
 int rungrid(Grid *g);
 int loadgrid(Grid *g, FILE *f);
-int savegrid(Grid *g);
+void savegrid(Grid *g);
 void initgrid(Grid *g, int w, int h);

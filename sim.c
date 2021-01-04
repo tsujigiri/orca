@@ -94,13 +94,13 @@ set(Grid *g, int x, int y, char c)
 void
 save(Grid *g, char key, char val)
 {
-	g->vars[cb36(key)] = val;
+	g->var[cb36(key)] = val;
 }
 
 char
 load(Grid *g, char key)
 {
-	return g->vars[cb36(key)];
+	return g->var[cb36(key)];
 }
 
 /* Syntax */
@@ -565,6 +565,8 @@ initframe(Grid *g)
 		g->lock[i] = 0;
 		g->type[i] = 0;
 	}
+	for(i = 0; i < 36; ++i) 
+		g->var[i] = '\0';
 	g->msg[0] = '\0';
 	g->msglen = 0;
 }
@@ -609,7 +611,7 @@ loadgrid(Grid *g, FILE *f)
 	return 1;
 }
 
-int
+void
 savegrid(Grid *g)
 {
 	int x, y;
@@ -621,7 +623,6 @@ savegrid(Grid *g)
 	}
 	fclose(f);
 	puts("Saved orca-grid.txt");
-	return 1;
 }
 
 void
