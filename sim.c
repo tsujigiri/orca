@@ -565,7 +565,7 @@ initframe(Grid *g)
 		g->lock[i] = 0;
 		g->type[i] = 0;
 	}
-	for(i = 0; i < 36; ++i) 
+	for(i = 0; i < 36; ++i)
 		g->var[i] = '\0';
 	g->msg[0] = '\0';
 	g->msglen = 0;

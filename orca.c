@@ -784,17 +784,17 @@ main(int argc, char *argv[])
 		}
 		SDL_Delay(60000 / BPM / 16);
 		while(SDL_PollEvent(&event) != 0) {
-			if(event.type == SDL_QUIT)
-				quit();
-			else if(event.type == SDL_MOUSEBUTTONUP ||
-					event.type == SDL_MOUSEBUTTONDOWN ||
-					event.type == SDL_MOUSEMOTION)
-				domouse(&event);
-			else if(event.type == SDL_KEYDOWN)
-				dokey(&event);
-			else if(event.type == SDL_WINDOWEVENT)
+			switch(event.type) {
+			case SDL_QUIT: quit(); break;
+			case SDL_MOUSEBUTTONUP:
+			case SDL_MOUSEBUTTONDOWN:
+			case SDL_MOUSEMOTION: domouse(&event); break;
+			case SDL_KEYDOWN: dokey(&event); break;
+			case SDL_WINDOWEVENT:
 				if(event.window.event == SDL_WINDOWEVENT_EXPOSED)
 					redraw(pixels);
+				break;
+			}
 		}
 	}
 	quit();
