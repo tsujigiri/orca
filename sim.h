@@ -19,6 +19,6 @@ void set(Grid *g, int x, int y, char c);
 int gettype(Grid *g, int x, int y);
 
 int rungrid(Grid *g);
-int loadgrid(Grid *g, FILE *f);
-void savegrid(Grid *g);
+int loadgrid(Grid *g, char *name);
+void savegrid(Grid *g, char *name);
 void initgrid(Grid *g, int w, int h);

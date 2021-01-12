@@ -17,7 +17,7 @@ WITH REGARD TO THIS SOFTWARE.
 
 #define HOR 32
 #define VER 16
-#define PAD 8
+#define PAD 1
 #define VOICES 16
 #define DEVICE 0
 
@@ -28,6 +28,7 @@ typedef unsigned char Uint8;
 
 typedef struct {
 	char name[256];
+	Grid grid;
 } Document;
 
 typedef struct {
@@ -42,10 +43,9 @@ Document doc;
 char clip[CLIPSZ];
 Note voices[VOICES];
 Rect2d cursor;
-Grid g;
 
-int WIDTH = 8 * HOR + PAD * 2;
-int HEIGHT = 8 * (VER + 2) + PAD * 2;
+int WIDTH = 8 * HOR + PAD * 8 * 2;
+int HEIGHT = 8 * (VER + 2) + PAD * 8 * 2;
 int BPM = 128, DOWN = 0, ZOOM = 2, PAUSE = 0, GUIDES = 1, MODE = 0;
 
 Uint32 theme[] = {
@@ -150,10 +150,22 @@ SDL_Texture *gTexture = NULL;
 Uint32 *pixels;
 PmStream *midi;
 
+/* helpers */
+
 int
 clamp(int val, int min, int max)
 {
 	return (val >= min) ? (val <= max) ? val : max : min;
+}
+
+char *
+scpy(char *src, char *dst, int len)
+{
+	int i = 0;
+	while((dst[i] = src[i]) && i < len - 2)
+		i++;
+	dst[i + 1] = '\0';
+	return dst;
 }
 
 /* misc */
@@ -184,50 +196,23 @@ getfont(int x, int y, char c, int type, int sel)
 	return 70;
 }
 
-int
-getstyle(int clr, int type, int sel)
-{
-	if(sel)
-		return clr == 0 ? 4 : 0;
-	if(type == 2)
-		return clr == 0 ? 0 : 1;
-	if(type == 3)
-		return clr == 0 ? 1 : 0;
-	if(type == 4)
-		return clr == 0 ? 0 : 2;
-	if(type == 5)
-		return clr == 0 ? 2 : 0;
-	return clr == 0 ? 0 : 3;
-}
+/* drawing */
 
 void
 putpixel(Uint32 *dst, int x, int y, int color)
 {
 	if(x >= 0 && x < WIDTH - 8 && y >= 0 && y < HEIGHT - 8)
-		dst[(y + PAD) * WIDTH + (x + PAD)] = theme[color];
+		dst[(y + PAD * 8) * WIDTH + (x + PAD * 8)] = theme[color];
 }
 
 void
-drawtile(Uint32 *dst, int x, int y, char c, int type, Rect2d *r)
-{
-	int v, h;
-	int sel = x < r->x + r->w && x >= r->x && y < r->y + r->h && y >= r->y;
-	Uint8 *icon = font[getfont(x, y, c, type, sel)];
-	for(v = 0; v < 8; v++)
-		for(h = 0; h < 8; h++) {
-			int style = getstyle((icon[v] >> (7 - h)) & 0x1, type, sel);
-			putpixel(dst, x * 8 + h, y * 8 + v, style);
-		}
-}
-
-void
-drawicon(Uint32 *dst, int x, int y, Uint8 *icon, int color)
+drawicon(Uint32 *dst, int x, int y, Uint8 *icon, int fg, int bg)
 {
 	int v, h;
 	for(v = 0; v < 8; v++)
 		for(h = 0; h < 8; h++) {
-			int c = (icon[v] >> (8 - h)) & 0x1;
-			putpixel(dst, x + h, y + v, c ? color : 0);
+			int clr = (icon[v] >> (7 - h)) & 0x1;
+			putpixel(dst, x + h, y + v, clr == 1 ? fg : bg);
 		}
 }
 
@@ -236,38 +221,57 @@ drawui(Uint32 *dst)
 {
 	int i, n = 0, bottom = VER * 8 + 8;
 	/* CURSOR */
-	drawicon(dst, 0 * 8, bottom, font[cursor.x % 36], 1);
-	drawicon(dst, 1 * 8, bottom, font[68], 1);
-	drawicon(dst, 2 * 8, bottom, font[cursor.y % 36], 1);
-	drawicon(dst, 3 * 8, bottom, icons[2], cursor.w > 1 || cursor.h > 1 ? 4 : 3);
+	drawicon(dst, 0 * 8, bottom, font[cursor.x % 36], 1, 0);
+	drawicon(dst, 1 * 8, bottom, font[68], 1, 0);
+	drawicon(dst, 2 * 8, bottom, font[cursor.y % 36], 1, 0);
+	drawicon(dst, 3 * 8, bottom, icons[2], cursor.w > 1 || cursor.h > 1 ? 4 : 3, 0);
 	/* FRAME */
-	drawicon(dst, 5 * 8, bottom, font[(g.f / 1296) % 36], 1);
-	drawicon(dst, 6 * 8, bottom, font[(g.f / 36) % 36], 1);
-	drawicon(dst, 7 * 8, bottom, font[g.f % 36], 1);
-	drawicon(dst, 8 * 8, bottom, icons[PAUSE ? 1 : 0], PAUSE ? 4 : (g.f - 1) % 8 == 0 ? 2
-																					  : 3);
+	drawicon(dst, 5 * 8, bottom, font[(doc.grid.f / 1296) % 36], 1, 0);
+	drawicon(dst, 6 * 8, bottom, font[(doc.grid.f / 36) % 36], 1, 0);
+	drawicon(dst, 7 * 8, bottom, font[doc.grid.f % 36], 1, 0);
+	if(!PAUSE)
+		drawicon(dst, 8 * 8, bottom, icons[PAUSE ? 1 : 0], (doc.grid.f - 1) % 8 == 0 ? 2 : 3, 0);
 	/* SPEED */
-	drawicon(dst, 10 * 8, bottom, font[(BPM / 100) % 10], 1);
-	drawicon(dst, 11 * 8, bottom, font[(BPM / 10) % 10], 1);
-	drawicon(dst, 12 * 8, bottom, font[BPM % 10], 1);
-
+	drawicon(dst, 10 * 8, bottom, font[(BPM / 100) % 10], 1, 0);
+	drawicon(dst, 11 * 8, bottom, font[(BPM / 10) % 10], 1, 0);
+	drawicon(dst, 12 * 8, bottom, font[BPM % 10], 1, 0);
 	for(i = 0; i < VOICES; ++i)
 		if(voices[i].length)
 			n++;
-
 	if(n > 0)
-		drawicon(dst, 13 * 8, bottom, icons[2 + clamp(n, 0, 6)], 2);
+		drawicon(dst, 13 * 8, bottom, icons[2 + clamp(n, 0, 6)], 2, 0);
 	else
-		drawicon(dst, 13 * 8, bottom, font[70], 3);
+		drawicon(dst, 13 * 8, bottom, font[70], 3, 0);
 }
 
 void
 redraw(Uint32 *dst)
 {
 	int x, y;
-	for(y = 0; y < VER; ++y)
-		for(x = 0; x < HOR; ++x)
-			drawtile(dst, x, y, get(&g, x, y), gettype(&g, x, y), &cursor);
+	Rect2d *r = &cursor;
+	for(y = 0; y < VER; ++y) {
+		for(x = 0; x < HOR; ++x) {
+			int sel = x < r->x + r->w && x >= r->x && y < r->y + r->h && y >= r->y;
+			int t = gettype(&doc.grid, x, y);
+			Uint8 *letter = font[getfont(x, y, get(&doc.grid, x, y), t, sel)];
+			int fg = 0, bg = 0;
+			if(sel) {
+				fg = 0;
+				bg = 4;
+			} else {
+				switch(t) {
+				case 1: fg = 3; break;
+				case 2: fg = 1; break;
+				case 3: bg = 1; break;
+				case 4: fg = 2; break;
+				case 5: bg = 2; break;
+				default:
+					fg = 3;
+				}
+			}
+			drawicon(dst, x * 8, y * 8, letter, fg, bg);
+		}
+	}
 	drawui(dst);
 	SDL_UpdateTexture(gTexture, NULL, dst, WIDTH * sizeof(Uint32));
 	SDL_RenderClear(gRenderer);
@@ -339,7 +343,7 @@ parsemidi(char *msg, int msglen)
 }
 
 void
-runmsg(void)
+runmsg(Grid *g)
 {
 	int i, j = 0;
 	char buf[128];
@@ -354,17 +358,17 @@ runmsg(void)
 					Pm_Message(0x90 + n->channel, n->value, 0));
 		}
 	}
-	if(g.msglen < 2)
+	if(g->msglen < 2)
 		return;
 	/* split messages */
-	for(i = 0; i < g.msglen + 1; ++i)
-		if(!g.msg[i] || cisp(g.msg[i])) {
+	for(i = 0; i < g->msglen + 1; ++i)
+		if(!g->msg[i] || cisp(g->msg[i])) {
 			buf[j] = '\0';
 			if(j > 0)
 				parsemidi(buf, j);
 			j = 0;
 		} else
-			buf[j++] = g.msg[i];
+			buf[j++] = g->msg[i];
 }
 
 void
@@ -390,20 +394,26 @@ error(char *msg, const char *err)
 }
 
 void
-makedoc(Document *d)
+makedoc(Document *d, char *name)
 {
-	initgrid(&g, HOR, VER);
+	initgrid(&d->grid, HOR, VER);
+	scpy(name, d->name, 256);
 	redraw(pixels);
 }
 
 void
-loaddoc(Document *d)
+loaddoc(Document *d, char *name)
 {
+	loadgrid(&d->grid, name);
+	scpy(name, d->name, 256);
+	redraw(pixels);
 }
 
 void
-savedoc(Document *d)
+savedoc(Document *d, char *name)
 {
+	savegrid(&d->grid, d->name);
+	scpy(name, d->name, 256);
 }
 
 void
@@ -429,31 +439,9 @@ reset(void)
 }
 
 void
-modbpm(int mod)
+setmode(int *i, int v)
 {
-	BPM += mod;
-	printf("BPM: %d\n", BPM);
-	redraw(pixels);
-}
-
-void
-setplay(int val)
-{
-	PAUSE = val;
-	redraw(pixels);
-}
-
-void
-setguides(int v)
-{
-	GUIDES = v;
-	redraw(pixels);
-}
-
-void
-setmode(int v)
-{
-	MODE = v;
+	*i = v;
 	redraw(pixels);
 }
 
@@ -461,10 +449,10 @@ void
 comment(Rect2d *r)
 {
 	int y;
-	char c = get(&g, r->x, r->y) == '#' ? '.' : '#';
+	char c = get(&doc.grid, r->x, r->y) == '#' ? '.' : '#';
 	for(y = 0; y < r->h; ++y) {
-		set(&g, r->x, r->y + y, c);
-		set(&g, r->x + r->w - 1, r->y + y, c);
+		set(&doc.grid, r->x, r->y + y, c);
+		set(&doc.grid, r->x + r->w - 1, r->y + y, c);
 	}
 	redraw(pixels);
 }
@@ -481,7 +469,7 @@ insert(char c)
 	int x, y;
 	for(x = 0; x < cursor.w; ++x)
 		for(y = 0; y < cursor.h; ++y)
-			set(&g, cursor.x + x, cursor.y + y, c);
+			set(&doc.grid, cursor.x + x, cursor.y + y, c);
 	if(MODE)
 		move(1, 0);
 	redraw(pixels);
@@ -497,8 +485,8 @@ scale(int w, int h)
 void
 frame(void)
 {
-	rungrid(&g);
-	runmsg();
+	rungrid(&doc.grid);
+	runmsg(&doc.grid);
 	redraw(pixels);
 }
 
@@ -508,7 +496,7 @@ selectoption(int option)
 	switch(option) {
 	case 3: select(cursor.x, cursor.y, 1, 1); break;
 	case 8:
-		setplay(1);
+		PAUSE = 1;
 		frame();
 		break;
 	}
@@ -537,7 +525,7 @@ copyclip(Rect2d *r, char *c)
 	for(y = 0; y < r->h; ++y) {
 		for(x = 0; x < r->w; ++x) {
 			if(i < CLIPSZ - 2)
-				c[i++] = get(&g, r->x + x, r->y + y);
+				c[i++] = get(&doc.grid, r->x + x, r->y + y);
 		}
 		if(i < CLIPSZ - 2)
 			c[i++] = '\n';
@@ -562,7 +550,7 @@ pasteclip(Rect2d *r, char *c, int insert)
 			x = r->x;
 			y++;
 		} else {
-			set(&g, x, y, insert && ch == '.' ? get(&g, x, y) : ch);
+			set(&doc.grid, x, y, insert && ch == '.' ? get(&doc.grid, x, y) : ch);
 			x++;
 		}
 	}
@@ -612,17 +600,16 @@ dokey(SDL_Event *event)
 {
 	int shift = SDL_GetModState() & KMOD_LSHIFT || SDL_GetModState() & KMOD_RSHIFT;
 	int ctrl = SDL_GetModState() & KMOD_LCTRL || SDL_GetModState() & KMOD_RCTRL;
-
 	if(ctrl) {
 		switch(event->key.keysym.sym) {
 		/* Generic */
-		case SDLK_n: makedoc(&doc); break;
-		case SDLK_r: loaddoc(&doc); break;
-		case SDLK_s: savedoc(&doc); break;
-		case SDLK_h: setguides(!GUIDES); break;
+		case SDLK_n: makedoc(&doc, "untitled.orca"); break;
+		case SDLK_r: loaddoc(&doc, doc.name); break;
+		case SDLK_s: savedoc(&doc, doc.name); break;
+		case SDLK_h: setmode(&GUIDES, !GUIDES); break;
 		/* Edit */
-		case SDLK_i: setmode(!MODE); break;
-		case SDLK_a: select(0, 0, g.w, g.h); break;
+		case SDLK_i: setmode(&MODE, !MODE); break;
+		case SDLK_a: select(0, 0, doc.grid.w, doc.grid.h); break;
 		case SDLK_x: cutclip(&cursor, clip); break;
 		case SDLK_c: copyclip(&cursor, clip); break;
 		case SDLK_v: pasteclip(&cursor, clip, shift); break;
@@ -635,13 +622,13 @@ dokey(SDL_Event *event)
 		}
 	} else {
 		switch(event->key.keysym.sym) {
-		case SDLK_PAGEUP: modbpm(1); break;
-		case SDLK_PAGEDOWN: modbpm(-1); break;
+		case SDLK_PAGEUP: setmode(&BPM, BPM + 1); break;
+		case SDLK_PAGEDOWN: setmode(&BPM, BPM - 1); break;
 		case SDLK_UP: shift ? scale(0, -1) : move(0, -1); break;
 		case SDLK_DOWN: shift ? scale(0, 1) : move(0, 1); break;
 		case SDLK_LEFT: shift ? scale(-1, 0) : move(-1, 0); break;
 		case SDLK_RIGHT: shift ? scale(1, 0) : move(1, 0); break;
-		case SDLK_SPACE: setplay(!PAUSE); break;
+		case SDLK_SPACE: setmode(&PAUSE, !PAUSE); break;
 		case SDLK_BACKSPACE: insert('.'); break;
 		}
 	}
@@ -697,19 +684,13 @@ int
 main(int argc, char *argv[])
 {
 	Uint8 tick = 0;
-
 	if(!init())
 		return error("Init", "Failure");
-
-	initgrid(&g, HOR, VER);
+	initgrid(&doc.grid, HOR, VER);
 	select(0, 0, 1, 1);
-
 	if(argc > 1)
-		if(!loadgrid(&g, fopen(argv[1], "r")))
-			return error("Load", "Failure");
-
+		loaddoc(&doc, argv[1]);
 	select(0, 0, 1, 1);
-
 	while(1) {
 		SDL_Event event;
 		if(!PAUSE) {

@@ -28,4 +28,4 @@ then
     echo "Installed: $HOME/bin" 
 fi
 
-./orca orca-grid.txt
+./orca demo.orca

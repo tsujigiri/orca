@@ -593,10 +593,11 @@ rungrid(Grid *g)
 }
 
 int
-loadgrid(Grid *g, FILE *f)
+loadgrid(Grid *g, char *name)
 {
 	int x = 0, y = 0;
 	char c;
+	FILE *f = fopen(name, "r");
 	if(!f)
 		return 0;
 	while((c = fgetc(f)) != EOF && g->l < MAXSZ) {
@@ -612,17 +613,17 @@ loadgrid(Grid *g, FILE *f)
 }
 
 void
-savegrid(Grid *g)
+savegrid(Grid *g, char *name)
 {
 	int x, y;
-	FILE *f = fopen("orca-grid.txt", "w");
+	FILE *f = fopen(name, "w");
 	for(y = 0; y < g->h; ++y) {
 		for(x = 0; x < g->w; ++x)
 			fputc(get(g, x, y), f);
 		fputc('\n', f);
 	}
 	fclose(f);
-	puts("Saved orca-grid.txt");
+	printf("Saved: %s\n", name);
 }
 
 void
