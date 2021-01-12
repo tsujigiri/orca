@@ -72,3 +72,6 @@ To display the list of operators inside of Orca, use `CmdOrCtrl+G`.
 	- Makeup for render time.
 - Selection right-to-left drag.
 - Random
+- Open/Save over file
+- Investigate issue with copy/paste
+- Investigate crash with opspecial(515)

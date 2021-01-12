@@ -27,6 +27,10 @@ WITH REGARD TO THIS SOFTWARE.
 typedef unsigned char Uint8;
 
 typedef struct {
+	char name[256];
+} Document;
+
+typedef struct {
 	int x, y, w, h;
 } Rect2d;
 
@@ -34,6 +38,7 @@ typedef struct {
 	int channel, value, velocity, length;
 } Note;
 
+Document doc;
 char clip[CLIPSZ];
 Note voices[VOICES];
 Rect2d cursor;
@@ -149,25 +154,6 @@ int
 clamp(int val, int min, int max)
 {
 	return (val >= min) ? (val <= max) ? val : max : min;
-}
-
-Uint8
-chex(char c)
-{
-	if(c >= 'a' && c <= 'f')
-		return 10 + c - 'a';
-	if(c >= 'A' && c <= 'F')
-		return 10 + c - 'A';
-	return (c - '0') & 0xF;
-}
-
-int
-shex(char *s, int len)
-{
-	int i, n = 0;
-	for(i = 0; i < len; ++i)
-		n |= (chex(s[i]) << ((len - i - 1) * 4));
-	return n;
 }
 
 /* misc */
@@ -404,12 +390,42 @@ error(char *msg, const char *err)
 }
 
 void
-modzoom(int mod)
+makedoc(Document *d)
 {
-	if((mod > 0 && ZOOM < 4) || (mod < 0 && ZOOM > 1)) {
-		ZOOM += mod;
-		SDL_SetWindowSize(gWindow, WIDTH * ZOOM, HEIGHT * ZOOM);
+	initgrid(&g, HOR, VER);
+	redraw(pixels);
+}
+
+void
+loaddoc(Document *d)
+{
+}
+
+void
+savedoc(Document *d)
+{
+}
+
+void
+select(int x, int y, int w, int h)
+{
+	Rect2d r;
+	r.x = clamp(x, 0, HOR - 1);
+	r.y = clamp(y, 0, VER - 1);
+	r.w = clamp(w, 1, HOR - x + 1);
+	r.h = clamp(h, 1, VER - y + 1);
+	if(r.x != cursor.x || r.y != cursor.y || r.w != cursor.w || r.h != cursor.h) {
+		cursor = r;
+		redraw(pixels);
 	}
+}
+
+void
+reset(void)
+{
+	MODE = 0;
+	GUIDES = 1;
+	select(cursor.x, cursor.y, 1, 1);
 }
 
 void
@@ -439,20 +455,6 @@ setmode(int v)
 {
 	MODE = v;
 	redraw(pixels);
-}
-
-void
-select(int x, int y, int w, int h)
-{
-	Rect2d r;
-	r.x = clamp(x, 0, HOR - 1);
-	r.y = clamp(y, 0, VER - 1);
-	r.w = clamp(w, 1, HOR - x + 1);
-	r.h = clamp(h, 1, VER - y + 1);
-	if(r.x != cursor.x || r.y != cursor.y || r.w != cursor.w || r.h != cursor.h) {
-		cursor = r;
-		redraw(pixels);
-	}
 }
 
 void
@@ -498,23 +500,6 @@ frame(void)
 	rungrid(&g);
 	runmsg();
 	redraw(pixels);
-}
-
-void
-loadtheme(FILE *f)
-{
-	int id = 0;
-	char line[256];
-	if(!f)
-		return;
-	while(fgets(line, 256, f)) {
-		int i = 0;
-		while(line[i++] && id < 5) {
-			if(line[i] == '#')
-				theme[id++] = shex(line + i + 1, 6);
-		}
-	}
-	fclose(f);
 }
 
 void
@@ -627,97 +612,50 @@ dokey(SDL_Event *event)
 {
 	int shift = SDL_GetModState() & KMOD_LSHIFT || SDL_GetModState() & KMOD_RSHIFT;
 	int ctrl = SDL_GetModState() & KMOD_LCTRL || SDL_GetModState() & KMOD_RCTRL;
-	switch(event->key.keysym.sym) {
-	case SDLK_PAGEUP: modbpm(1); break;
-	case SDLK_PAGEDOWN: modbpm(-1); break;
-	case SDLK_EQUALS:
-	case SDLK_PLUS: modzoom(1); break;
-	case SDLK_UNDERSCORE:
-	case SDLK_MINUS: modzoom(-1); break;
-	case SDLK_SLASH:
-		if(ctrl)
-			comment(&cursor);
-		break;
-	case SDLK_UP:
-		if(ctrl)
-			moveclip(&cursor, clip, 0, -1);
-		else if(shift)
-			scale(0, -1);
-		else
-			move(0, -1);
-		break;
-	case SDLK_DOWN:
-		if(ctrl)
-			moveclip(&cursor, clip, 0, 1);
-		else if(shift)
-			scale(0, 1);
-		else
-			move(0, 1);
-		break;
-	case SDLK_LEFT:
-		if(ctrl)
-			moveclip(&cursor, clip, -1, 0);
-		else if(shift)
-			scale(-1, 0);
-		else
-			move(-1, 0);
-		break;
-	case SDLK_RIGHT:
-		if(ctrl)
-			moveclip(&cursor, clip, 1, 0);
-		else if(shift)
-			scale(1, 0);
-		else
-			move(1, 0);
-		break;
-	case SDLK_SPACE: setplay(!PAUSE); break;
-	case SDLK_BACKSPACE: insert('.'); break;
-	case SDLK_ASTERISK: insert('*'); break;
-	case SDLK_HASH: insert('#'); break;
-	case SDLK_PERIOD: insert('.'); break;
-	case SDLK_COLON: insert(':'); break;
-	case SDLK_SEMICOLON: insert(':'); break;
-	case SDLK_ESCAPE:
-		select(cursor.x, cursor.y, 1, 1);
-		setmode(0);
-		setguides(1);
-		break;
-	case SDLK_0: insert('0'); break;
-	case SDLK_1: insert('1'); break;
-	case SDLK_2: insert('2'); break;
-	case SDLK_3: insert(shift ? '#' : '3'); break;
-	case SDLK_4: insert('4'); break;
-	case SDLK_5: insert('5'); break;
-	case SDLK_6: insert('6'); break;
-	case SDLK_7: insert('7'); break;
-	case SDLK_8: insert(shift ? '*' : '8'); break;
-	case SDLK_9: insert('9'); break;
-	case SDLK_a: ctrl ? select(0, 0, g.w, g.h) : insert(shift ? 'A' : 'a'); break;
-	case SDLK_b: insert(shift ? 'B' : 'b'); break;
-	case SDLK_c: ctrl ? copyclip(&cursor, clip) : insert(shift ? 'C' : 'c'); break;
-	case SDLK_d: insert(shift ? 'D' : 'd'); break;
-	case SDLK_e: insert(shift ? 'E' : 'e'); break;
-	case SDLK_f: insert(shift ? 'F' : 'f'); break;
-	case SDLK_g: insert(shift ? 'G' : 'g'); break;
-	case SDLK_h: ctrl ? setguides(!GUIDES) : insert(shift ? 'H' : 'h'); break;
-	case SDLK_i: ctrl ? setmode(!MODE) : insert(shift ? 'I' : 'i'); break;
-	case SDLK_j: insert(shift ? 'J' : 'j'); break;
-	case SDLK_k: insert(shift ? 'K' : 'k'); break;
-	case SDLK_l: insert(shift ? 'L' : 'l'); break;
-	case SDLK_m: insert(shift ? 'M' : 'm'); break;
-	case SDLK_n: insert(shift ? 'N' : 'n'); break;
-	case SDLK_o: insert(shift ? 'O' : 'o'); break;
-	case SDLK_p: insert(shift ? 'P' : 'p'); break;
-	case SDLK_q: insert(shift ? 'Q' : 'q'); break;
-	case SDLK_r: insert(shift ? 'R' : 'r'); break;
-	case SDLK_s: ctrl ? savegrid(&g) : insert(shift ? 'S' : 's'); break;
-	case SDLK_t: insert(shift ? 'T' : 't'); break;
-	case SDLK_u: insert(shift ? 'U' : 'u'); break;
-	case SDLK_v: ctrl ? pasteclip(&cursor, clip, shift) : insert(shift ? 'V' : 'v'); break;
-	case SDLK_w: insert(shift ? 'W' : 'w'); break;
-	case SDLK_x: ctrl ? cutclip(&cursor, clip) : insert(shift ? 'X' : 'x'); break;
-	case SDLK_y: insert(shift ? 'Y' : 'y'); break;
-	case SDLK_z: insert(shift ? 'Z' : 'z'); break;
+
+	if(ctrl) {
+		switch(event->key.keysym.sym) {
+		/* Generic */
+		case SDLK_n: makedoc(&doc); break;
+		case SDLK_r: loaddoc(&doc); break;
+		case SDLK_s: savedoc(&doc); break;
+		case SDLK_h: setguides(!GUIDES); break;
+		/* Edit */
+		case SDLK_i: setmode(!MODE); break;
+		case SDLK_a: select(0, 0, g.w, g.h); break;
+		case SDLK_x: cutclip(&cursor, clip); break;
+		case SDLK_c: copyclip(&cursor, clip); break;
+		case SDLK_v: pasteclip(&cursor, clip, shift); break;
+		case SDLK_UP: moveclip(&cursor, clip, 0, -1); break;
+		case SDLK_DOWN: moveclip(&cursor, clip, 0, 1); break;
+		case SDLK_LEFT: moveclip(&cursor, clip, -1, 0); break;
+		case SDLK_RIGHT: moveclip(&cursor, clip, 1, 0); break;
+		case SDLK_SLASH: comment(&cursor); break;
+		case SDLK_ESCAPE: reset(); break;
+		}
+	} else {
+		switch(event->key.keysym.sym) {
+		case SDLK_PAGEUP: modbpm(1); break;
+		case SDLK_PAGEDOWN: modbpm(-1); break;
+		case SDLK_UP: shift ? scale(0, -1) : move(0, -1); break;
+		case SDLK_DOWN: shift ? scale(0, 1) : move(0, 1); break;
+		case SDLK_LEFT: shift ? scale(-1, 0) : move(-1, 0); break;
+		case SDLK_RIGHT: shift ? scale(1, 0) : move(1, 0); break;
+		case SDLK_SPACE: setplay(!PAUSE); break;
+		case SDLK_BACKSPACE: insert('.'); break;
+		}
+	}
+}
+
+void
+dotext(SDL_Event *event)
+{
+	int i;
+	for(i = 0; i < SDL_TEXTINPUTEVENT_TEXT_SIZE; ++i) {
+		char c = event->text.text[i];
+		if(c < ' ' || c > '~')
+			break;
+		insert(c);
 	}
 }
 
@@ -760,7 +698,6 @@ main(int argc, char *argv[])
 {
 	Uint8 tick = 0;
 
-	loadtheme(fopen("theme.svg", "r"));
 	if(!init())
 		return error("Init", "Failure");
 
@@ -790,6 +727,7 @@ main(int argc, char *argv[])
 			case SDL_MOUSEBUTTONDOWN:
 			case SDL_MOUSEMOTION: domouse(&event); break;
 			case SDL_KEYDOWN: dokey(&event); break;
+			case SDL_TEXTINPUT: dotext(&event); break;
 			case SDL_WINDOWEVENT:
 				if(event.window.event == SDL_WINDOWEVENT_EXPOSED)
 					redraw(pixels);
