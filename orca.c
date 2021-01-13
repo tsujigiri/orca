@@ -399,6 +399,7 @@ makedoc(Document *d, char *name)
 	initgrid(&d->grid, HOR, VER);
 	scpy(name, d->name, 256);
 	redraw(pixels);
+	printf("Made: %s\n", name);
 }
 
 void
@@ -618,10 +619,10 @@ dokey(SDL_Event *event)
 		case SDLK_LEFT: moveclip(&cursor, clip, -1, 0); break;
 		case SDLK_RIGHT: moveclip(&cursor, clip, 1, 0); break;
 		case SDLK_SLASH: comment(&cursor); break;
-		case SDLK_ESCAPE: reset(); break;
 		}
 	} else {
 		switch(event->key.keysym.sym) {
+		case SDLK_ESCAPE: reset(); break;
 		case SDLK_PAGEUP: setmode(&BPM, BPM + 1); break;
 		case SDLK_PAGEDOWN: setmode(&BPM, BPM - 1); break;
 		case SDLK_UP: shift ? scale(0, -1) : move(0, -1); break;
@@ -686,7 +687,7 @@ main(int argc, char *argv[])
 	Uint8 tick = 0;
 	if(!init())
 		return error("Init", "Failure");
-	initgrid(&doc.grid, HOR, VER);
+	makedoc(&doc, "untitled.orca");
 	select(0, 0, 1, 1);
 	if(argc > 1)
 		loaddoc(&doc, argv[1]);
