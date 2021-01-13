@@ -229,8 +229,7 @@ drawui(Uint32 *dst)
 	drawicon(dst, 5 * 8, bottom, font[(doc.grid.f / 1296) % 36], 1, 0);
 	drawicon(dst, 6 * 8, bottom, font[(doc.grid.f / 36) % 36], 1, 0);
 	drawicon(dst, 7 * 8, bottom, font[doc.grid.f % 36], 1, 0);
-	if(!PAUSE)
-		drawicon(dst, 8 * 8, bottom, icons[PAUSE ? 1 : 0], (doc.grid.f - 1) % 8 == 0 ? 2 : 3, 0);
+	drawicon(dst, 8 * 8, bottom, icons[PAUSE ? 1 : 0], (doc.grid.f - 1) % 8 == 0 ? 2 : 3, 0);
 	/* SPEED */
 	drawicon(dst, 10 * 8, bottom, font[(BPM / 100) % 10], 1, 0);
 	drawicon(dst, 11 * 8, bottom, font[(BPM / 10) % 10], 1, 0);
@@ -238,10 +237,7 @@ drawui(Uint32 *dst)
 	for(i = 0; i < VOICES; ++i)
 		if(voices[i].length)
 			n++;
-	if(n > 0)
-		drawicon(dst, 13 * 8, bottom, icons[2 + clamp(n, 0, 6)], 2, 0);
-	else
-		drawicon(dst, 13 * 8, bottom, font[70], 3, 0);
+	drawicon(dst, 13 * 8, bottom, n > 0 ? icons[2 + clamp(n, 0, 6)] : font[70], 2, 0);
 }
 
 void
@@ -402,12 +398,15 @@ makedoc(Document *d, char *name)
 	printf("Made: %s\n", name);
 }
 
-void
-loaddoc(Document *d, char *name)
+int
+opendoc(Document *d, char *name)
 {
-	loadgrid(&d->grid, name);
+	initgrid(&d->grid, HOR, VER);
+	if(!loadgrid(&d->grid, name))
+		return error("Load", "Invalid input file");
 	scpy(name, d->name, 256);
 	redraw(pixels);
+	return 1;
 }
 
 void
@@ -429,6 +428,13 @@ select(int x, int y, int w, int h)
 		cursor = r;
 		redraw(pixels);
 	}
+}
+
+void
+scale(int w, int h)
+{
+	if((cursor.w + w) * (cursor.h + h) < CLIPSZ)
+		select(cursor.x, cursor.y, cursor.w + w, cursor.h + h);
 }
 
 void
@@ -474,13 +480,6 @@ insert(char c)
 	if(MODE)
 		move(1, 0);
 	redraw(pixels);
-}
-
-void
-scale(int w, int h)
-{
-	if((cursor.w + w) * (cursor.h + h) < CLIPSZ)
-		select(cursor.x, cursor.y, cursor.w + w, cursor.h + h);
 }
 
 void
@@ -587,11 +586,7 @@ domouse(SDL_Event *event)
 		break;
 	case SDL_MOUSEMOTION:
 		if(DOWN)
-			select(
-				cursor.x,
-				cursor.y,
-				cx - cursor.x,
-				cy - cursor.y);
+			select(cursor.x, cursor.y, cx - cursor.x, cy - cursor.y);
 		break;
 	}
 }
@@ -605,7 +600,7 @@ dokey(SDL_Event *event)
 		switch(event->key.keysym.sym) {
 		/* Generic */
 		case SDLK_n: makedoc(&doc, "untitled.orca"); break;
-		case SDLK_r: loaddoc(&doc, doc.name); break;
+		case SDLK_r: opendoc(&doc, doc.name); break;
 		case SDLK_s: savedoc(&doc, doc.name); break;
 		case SDLK_h: setmode(&GUIDES, !GUIDES); break;
 		/* Edit */
@@ -687,11 +682,8 @@ main(int argc, char *argv[])
 	Uint8 tick = 0;
 	if(!init())
 		return error("Init", "Failure");
-	makedoc(&doc, "untitled.orca");
-	select(0, 0, 1, 1);
-	if(argc > 1)
-		loaddoc(&doc, argv[1]);
-	select(0, 0, 1, 1);
+	if(argc < 2 || !opendoc(&doc, argv[1]))
+		makedoc(&doc, "untitled.orca");
 	while(1) {
 		SDL_Event event;
 		if(!PAUSE) {
