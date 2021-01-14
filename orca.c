@@ -21,16 +21,15 @@ WITH REGARD TO THIS SOFTWARE.
 #define DEVICE 0
 
 #define SZ (HOR * VER * 16)
-#define CLIPSZ 1024
+#define CLIPSZ (HOR * VER) + VER + 1
 #define MSGSZ 64
-#define MAXSZ 128 * 128
+#define MAXSZ (HOR * VER)
 
 typedef unsigned char Uint8;
 
 typedef struct Grid {
 	int w, h, l, f, r, msglen;
-	int lock[MAXSZ], type[MAXSZ];
-	char data[MAXSZ], var[36], msg[MSGSZ];
+	char var[36], data[MAXSZ], msg[MSGSZ], lock[MAXSZ], type[MAXSZ];
 } Grid;
 
 typedef struct {
@@ -999,7 +998,7 @@ int
 error(char *msg, const char *err)
 {
 	printf("Error %s: %s\n", msg, err);
-	return 1;
+	return 0;
 }
 
 void
@@ -1020,7 +1019,7 @@ opendoc(Document *d, char *name)
 	if(!f)
 		return error("Load", "Invalid input file");
 	initgrid(&d->grid, HOR, VER);
-	while((c = fgetc(f)) != EOF && d->grid.l < MAXSZ) {
+	while((c = fgetc(f)) != EOF && d->grid.l <= MAXSZ) {
 		if(c == '\n') {
 			x = 0;
 			y++;
@@ -1031,6 +1030,7 @@ opendoc(Document *d, char *name)
 	}
 	scpy(name, d->name, 256);
 	redraw(pixels);
+	printf("Opened: %s\n", name);
 	return 1;
 }
 
@@ -1156,12 +1156,9 @@ copyclip(Rect2d *r, char *c)
 {
 	int x, y, i = 0;
 	for(y = 0; y < r->h; ++y) {
-		for(x = 0; x < r->w; ++x) {
-			if(i < CLIPSZ - 2)
-				c[i++] = get(&doc.grid, r->x + x, r->y + y);
-		}
-		if(i < CLIPSZ - 2)
-			c[i++] = '\n';
+		for(x = 0; x < r->w; ++x)
+			c[i++] = get(&doc.grid, r->x + x, r->y + y);
+		c[i++] = '\n';
 	}
 	c[i] = '\0';
 }
@@ -1315,7 +1312,10 @@ main(int argc, char *argv[])
 	Uint8 tick = 0;
 	if(!init())
 		return error("Init", "Failure");
-	if(argc < 2 || !opendoc(&doc, argv[1]))
+	if(argc > 1) {
+		if(!opendoc(&doc, argv[1]))
+			makedoc(&doc, argv[1]);
+	} else
 		makedoc(&doc, "untitled.orca");
 	while(1) {
 		SDL_Event event;

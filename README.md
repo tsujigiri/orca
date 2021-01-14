@@ -71,6 +71,7 @@ To display the list of operators inside of Orca, use `CmdOrCtrl+G`.
 - True clock
 	- Makeup for render time.
 - Selection right-to-left drag.
-- Random
-- Investigate issue with copy/paste
 - Investigate crash with opspecial(515)
+- Investigate issue with opv leaving artifacts behind.
+- Add uc/lc modifiers controls.
+- Display changes
