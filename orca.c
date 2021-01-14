@@ -28,8 +28,8 @@ WITH REGARD TO THIS SOFTWARE.
 typedef unsigned char Uint8;
 
 typedef struct Grid {
-	int w, h, l, f, r, msglen;
-	char var[36], data[MAXSZ], msg[MSGSZ], lock[MAXSZ], type[MAXSZ];
+	int w, h, l, f, r;
+	char var[36], data[MAXSZ], lock[MAXSZ], type[MAXSZ];
 } Grid;
 
 typedef struct {
@@ -156,6 +156,24 @@ SDL_Texture *gTexture = NULL;
 Uint32 *pixels;
 PmStream *midi;
 
+/* helpers */
+
+int
+clamp(int val, int min, int max)
+{
+	return (val >= min) ? (val <= max) ? val : max : min;
+}
+
+char *
+scpy(char *src, char *dst, int len)
+{
+	int i = 0;
+	while((dst[i] = src[i]) && i < len - 2)
+		i++;
+	dst[i + 1] = '\0';
+	return dst;
+}
+
 /* core */
 
 int
@@ -216,6 +234,18 @@ int
 valid(Grid *g, int x, int y)
 {
 	return x >= 0 && x <= g->w - 1 && y >= 0 && y <= g->h - 1;
+}
+
+int
+nteval(char c)
+{
+	int sharp, uc, deg, notes[] = {0, 2, 4, 5, 7, 9, 11};
+	if(c >= '0' && c <= '9')
+		return c - '0';
+	sharp = c >= 'a' && c <= 'z';
+	uc = sharp ? c - 'a' + 'A' : c;
+	deg = uc <= 'B' ? 'G' - 'B' + uc - 'A' : uc - 'C';
+	return deg / 7 * 12 + notes[deg % 7] + sharp;
 }
 
 /* IO */
@@ -306,6 +336,8 @@ bang(Grid *g, int x, int y)
 }
 
 /* Library */
+
+Note *sendmidi(int chn, int val, int vel, int len);
 
 void
 opa(Grid *g, int x, int y, char c)
@@ -661,17 +693,22 @@ opcomment(Grid *g, int x, int y)
 void
 opspecial(Grid *g, int x, int y)
 {
-	int i, b = bang(g, x, y);
-	for(i = 0; x + i < MSGSZ; ++i) {
-		char c = getport(g, x + i, y, 1);
-		if(c == '.')
-			break;
-		if(b && g->msglen < MSGSZ) {
-			g->msg[g->msglen++] = c;
-			g->msg[g->msglen] = '\0';
-		}
+	int chn, oct, vel, len;
+	char nte;
+	if(getport(g, x, y, 1) != ':')
+		return;
+	chn = cb36(getport(g, x + 1, y, 1));
+	oct = cb36(getport(g, x + 2, y, 1));
+	nte = getport(g, x + 3, y, 1);
+	vel = cb36(getport(g, x + 4, y, 1));
+	len = cb36(getport(g, x + 5, y, 1));
+	if(bang(g, x, y)) {
+		sendmidi(chn,
+			12 * oct + nteval(nte),
+			!vel ? 36 : clamp(vel, 0, 36),
+			clamp(len, 1, 36));
+		settype(g, x, y, 3);
 	}
-	settype(g, x, y, b ? 3 : 2);
 }
 
 void
@@ -723,8 +760,6 @@ initframe(Grid *g)
 	}
 	for(i = 0; i < 36; ++i)
 		g->var[i] = '\0';
-	g->msg[0] = '\0';
-	g->msglen = 0;
 }
 
 int
@@ -760,24 +795,6 @@ initgrid(Grid *g, int w, int h)
 	for(i = 0; i < g->l; ++i)
 		g->data[i] = '.';
 	initframe(g);
-}
-
-/* helpers */
-
-int
-clamp(int val, int min, int max)
-{
-	return (val >= min) ? (val <= max) ? val : max : min;
-}
-
-char *
-scpy(char *src, char *dst, int len)
-{
-	int i = 0;
-	while((dst[i] = src[i]) && i < len - 2)
-		i++;
-	dst[i + 1] = '\0';
-	return dst;
 }
 
 /* misc */
@@ -889,22 +906,11 @@ redraw(Uint32 *dst)
 
 /* midi */
 
-int
-nteval(char c)
-{
-	int sharp, uc, deg, notes[] = {0, 2, 4, 5, 7, 9, 11};
-	if(c >= '0' && c <= '9')
-		return c - '0';
-	sharp = c >= 'a' && c <= 'z';
-	uc = sharp ? c - 'a' + 'A' : c;
-	deg = uc <= 'B' ? 'G' - 'B' + uc - 'A' : uc - 'C';
-	return deg / 7 * 12 + notes[deg % 7] + sharp;
-}
-
 Note *
 sendmidi(int chn, int val, int vel, int len)
 {
 	int i = 0;
+	/* Detrigger */
 	for(i = 0; i < VOICES; ++i) {
 		Note *n = &voices[i];
 		if(!n->length || n->channel != chn || n->value != val)
@@ -914,6 +920,7 @@ sendmidi(int chn, int val, int vel, int len)
 			Pm_Message(0x90 + n->channel, n->value, 0));
 		n->length = 0;
 	}
+	/* Trigger */
 	for(i = 0; i < VOICES; ++i) {
 		Note *n = &voices[i];
 		if(n->length < 1) {
@@ -931,31 +938,9 @@ sendmidi(int chn, int val, int vel, int len)
 }
 
 void
-parsemidi(char *msg, int msglen)
+runmidi(void)
 {
-	char chn, oct, nte, vel = 'z', len = '1';
-	if(msglen < 3)
-		return;
-	chn = msg[0];
-	oct = msg[1];
-	nte = msg[2];
-	if(msglen > 3)
-		vel = msg[3];
-	if(msglen > 4)
-		len = msg[4];
-	sendmidi(
-		cb36(chn),
-		12 * cb36(oct) + nteval(nte),
-		cb36(vel),
-		cb36(len));
-}
-
-void
-runmsg(Grid *g)
-{
-	int i, j = 0;
-	char buf[128];
-	/* release */
+	int i;
 	for(i = 0; i < VOICES; ++i) {
 		Note *n = &voices[i];
 		if(n->length > 0) {
@@ -966,17 +951,6 @@ runmsg(Grid *g)
 					Pm_Message(0x90 + n->channel, n->value, 0));
 		}
 	}
-	if(g->msglen < 2)
-		return;
-	/* split messages */
-	for(i = 0; i < g->msglen + 1; ++i)
-		if(!g->msg[i] || cisp(g->msg[i])) {
-			buf[j] = '\0';
-			if(j > 0)
-				parsemidi(buf, j);
-			j = 0;
-		} else
-			buf[j++] = g->msg[i];
 }
 
 void
@@ -1119,8 +1093,8 @@ void
 frame(void)
 {
 	rungrid(&doc.grid);
-	runmsg(&doc.grid);
 	redraw(pixels);
+	runmidi();
 }
 
 void
