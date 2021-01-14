@@ -219,17 +219,6 @@ valid(Grid *g, int x, int y)
 	return x >= 0 && x <= g->w - 1 && y >= 0 && y <= g->h - 1;
 }
 
-int
-random(Grid *g)
-{
-	(void)g;
-	return 0;
-	/* TODO
-	g->r *= 1103515245;
-	return ((g->r / 65536 * g->f) % 32768) ^ g->f;
-	*/
-}
-
 /* IO */
 
 char
@@ -530,7 +519,17 @@ opr(Grid *g, int x, int y, char c)
 	char max = getport(g, x + 1, y, 1);
 	int min_ = cb36(min);
 	int max_ = cb36(max);
-	setport(g, x, y + 1, cchr((random(g) % ((cb36(max_) - min_) || 1)) + min_, ciuc(max)));
+	unsigned int key = (g->r + y * g->w + x) ^ (g->f << 16);
+	if(!max_)
+		max_ = 36;
+	if(min_ == max_)
+		min_ = max_ - 1;
+	key = (key ^ 61) ^ (key >> 16);
+	key = key + (key << 3);
+	key = key ^ (key >> 4);
+	key = key * 0x27d4eb2d;
+	key = key ^ (key >> 15);
+	setport(g, x, y + 1, cchr(key % (max_ - min_) + min_, ciuc(max)));
 	(void)c;
 }
 
