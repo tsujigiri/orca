@@ -1145,7 +1145,7 @@ domouse(SDL_Event *event)
 		DOWN = 0;
 		break;
 	case SDL_MOUSEBUTTONDOWN:
-		if(cy == VER + 2)
+		if(cy == VER + 1)
 			selectoption(cx);
 		else {
 			select(cx, cy, 1, 1);
