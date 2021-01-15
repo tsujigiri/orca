@@ -16,7 +16,7 @@ WITH REGARD TO THIS SOFTWARE.
 
 #define HOR 32
 #define VER 16
-#define PAD 1
+#define PAD 2
 #define VOICES 16
 #define DEVICE 0
 
@@ -1189,23 +1189,23 @@ moveclip(Rect2d *r, char *c, int x, int y)
 void
 domouse(SDL_Event *event)
 {
-	int cx = event->motion.x / ZOOM / 8;
-	int cy = event->motion.y / ZOOM / 8;
+	int cx = event->motion.x / ZOOM / 8 - PAD;
+	int cy = event->motion.y / ZOOM / 8 - PAD;
 	switch(event->type) {
 	case SDL_MOUSEBUTTONUP:
 		DOWN = 0;
 		break;
 	case SDL_MOUSEBUTTONDOWN:
 		if(cy == VER + 2)
-			selectoption(cx - 1);
+			selectoption(cx);
 		else {
-			select(cx - 1, cy - 1, 1, 1);
+			select(cx, cy, 1, 1);
 			DOWN = 1;
 		}
 		break;
 	case SDL_MOUSEMOTION:
 		if(DOWN)
-			select(cursor.x, cursor.y, cx - cursor.x, cy - cursor.y);
+			select(cursor.x, cursor.y, cx + 1 - cursor.x, cy + 1 - cursor.y);
 		break;
 	}
 }
