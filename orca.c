@@ -615,7 +615,7 @@ opv(Grid *g, int x, int y, char c)
 	char r = getport(g, x + 1, y, 1);
 	if(w != '.')
 		save(g, w, r);
-	else if(w == '.' && r != '.') 
+	else if(w == '.' && r != '.')
 		setport(g, x, y + 1, load(g, r));
 	(void)c;
 }
@@ -1061,7 +1061,7 @@ reset(void)
 }
 
 void
-setmode(int *i, int v)
+savemode(int *i, int v)
 {
 	*i = v;
 	redraw(pixels);
@@ -1116,7 +1116,7 @@ selectoption(int option)
 		PAUSE = 1;
 		frame();
 		break;
-	case 15: setmode(&GUIDES, !GUIDES); break;
+	case 15: savemode(&GUIDES, !GUIDES); break;
 	case HOR - 1: savedoc(&doc, doc.name); break;
 	}
 }
@@ -1221,9 +1221,9 @@ dokey(SDL_Event *event)
 		case SDLK_n: makedoc(&doc, "untitled.orca"); break;
 		case SDLK_r: opendoc(&doc, doc.name); break;
 		case SDLK_s: savedoc(&doc, doc.name); break;
-		case SDLK_h: setmode(&GUIDES, !GUIDES); break;
+		case SDLK_h: savemode(&GUIDES, !GUIDES); break;
 		/* Edit */
-		case SDLK_i: setmode(&MODE, !MODE); break;
+		case SDLK_i: savemode(&MODE, !MODE); break;
 		case SDLK_a: select(0, 0, doc.grid.w, doc.grid.h); break;
 		case SDLK_x: cutclip(&cursor, clip); break;
 		case SDLK_c: copyclip(&cursor, clip); break;
@@ -1237,13 +1237,13 @@ dokey(SDL_Event *event)
 	} else {
 		switch(event->key.keysym.sym) {
 		case SDLK_ESCAPE: reset(); break;
-		case SDLK_PAGEUP: setmode(&BPM, BPM + 1); break;
-		case SDLK_PAGEDOWN: setmode(&BPM, BPM - 1); break;
+		case SDLK_PAGEUP: savemode(&BPM, BPM + 1); break;
+		case SDLK_PAGEDOWN: savemode(&BPM, BPM - 1); break;
 		case SDLK_UP: shift ? scale(0, -1) : move(0, -1); break;
 		case SDLK_DOWN: shift ? scale(0, 1) : move(0, 1); break;
 		case SDLK_LEFT: shift ? scale(-1, 0) : move(-1, 0); break;
 		case SDLK_RIGHT: shift ? scale(1, 0) : move(1, 0); break;
-		case SDLK_SPACE: setmode(&PAUSE, !PAUSE); break;
+		case SDLK_SPACE: savemode(&PAUSE, !PAUSE); break;
 		case SDLK_BACKSPACE: insert('.'); break;
 		}
 	}
