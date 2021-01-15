@@ -615,7 +615,7 @@ opv(Grid *g, int x, int y, char c)
 	char r = getport(g, x + 1, y, 1);
 	if(w != '.')
 		save(g, w, r);
-	else if(w == '.' && r != '.')
+	else if(w == '.' && r != '.') 
 		setport(g, x, y + 1, load(g, r));
 	(void)c;
 }
@@ -759,7 +759,7 @@ initframe(Grid *g)
 		g->type[i] = 0;
 	}
 	for(i = 0; i < 36; ++i)
-		g->var[i] = '\0';
+		g->var[i] = '.';
 }
 
 int
