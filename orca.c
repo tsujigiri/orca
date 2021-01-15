@@ -22,7 +22,6 @@ WITH REGARD TO THIS SOFTWARE.
 
 #define SZ (HOR * VER * 16)
 #define CLIPSZ (HOR * VER) + VER + 1
-#define MSGSZ 64
 #define MAXSZ (HOR * VER)
 
 typedef unsigned char Uint8;
