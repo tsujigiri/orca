@@ -53,6 +53,7 @@ To display the list of operators inside of Orca, use `CmdOrCtrl+G`.
 - `-` zoom out.
 - `SHIFT+ARROW` scale selection.
 - `CTRL+ARROW` drag selection.
+- `ALT+ARROW` skip selection.
 - `ARROW` move selection.
 - `SPACE` toggle play.
 - `BACKSPACE` erase.

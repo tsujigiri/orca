@@ -29,7 +29,7 @@ typedef unsigned char Uint8;
 
 typedef struct Grid {
 	int w, h, l, f, r;
-	char var[36], data[MAXSZ], lock[MAXSZ], type[MAXSZ];
+	Uint8 var[36], data[MAXSZ], lock[MAXSZ], type[MAXSZ];
 } Grid;
 
 typedef struct {
@@ -159,7 +159,7 @@ PmStream *midi;
 #pragma mark - HELPERS
 
 int
-clamp(int val, int min, int max)
+clmp(int val, int min, int max)
 {
 	return (val >= min) ? (val <= max) ? val : max : min;
 }
@@ -174,21 +174,13 @@ scpy(char *src, char *dst, int len)
 	return dst;
 }
 
-#pragma mark - CORE
-
-int
-ciuc(char c)
-{
-	return c >= 'A' && c <= 'Z';
-}
-
 char
-cchr(int v, int cap)
+cchr(int v, char c)
 {
 	v = abs(v % 36);
 	if(v >= 0 && v <= 9)
 		return '0' + v;
-	return (cap ? 'A' : 'a') + v - 10;
+	return (c >= 'A' && c <= 'Z' ? 'A' : 'a') + v - 10;
 }
 
 int
@@ -204,13 +196,23 @@ cb36(char c)
 }
 
 int
-valid(Grid *g, int x, int y)
+validposition(Grid *g, int x, int y)
 {
 	return x >= 0 && x <= g->w - 1 && y >= 0 && y <= g->h - 1;
 }
 
 int
-nteval(char c)
+validcharacter(char c)
+{
+	if(cb36(c) || c == '0')
+		return 1;
+	if(c == '.' || c == ':' || c == '#' || c == '*')
+		return 1;
+	return 0;
+}
+
+int
+ctbl(char c)
 {
 	int sharp, uc, deg, notes[] = {0, 2, 4, 5, 7, 9, 11};
 	if(c >= '0' && c <= '9')
@@ -224,26 +226,24 @@ nteval(char c)
 #pragma mark - IO
 
 char
-get(Grid *g, int x, int y)
+getcell(Grid *g, int x, int y)
 {
-	if(valid(g, x, y))
+	if(validposition(g, x, y))
 		return g->data[x + (y * g->w)];
 	return '.';
 }
 
 void
-set(Grid *g, int x, int y, char c)
+setcell(Grid *g, int x, int y, char c)
 {
-	if(valid(g, x, y))
+	if(validposition(g, x, y) && validcharacter(c))
 		g->data[x + (y * g->w)] = c;
 }
-
-/* Syntax */
 
 int
 gettype(Grid *g, int x, int y)
 {
-	if(valid(g, x, y))
+	if(validposition(g, x, y))
 		return g->type[x + (y * g->w)];
 	return 0;
 }
@@ -251,47 +251,43 @@ gettype(Grid *g, int x, int y)
 void
 settype(Grid *g, int x, int y, int t)
 {
-	if(valid(g, x, y))
+	if(validposition(g, x, y))
 		g->type[x + (y * g->w)] = t;
 }
 
-/* Locks */
-
 void
-lock(Grid *g, int x, int y)
+setlock(Grid *g, int x, int y)
 {
-	if(valid(g, x, y)) {
+	if(validposition(g, x, y)) {
 		g->lock[x + (y * g->w)] = 1;
 		if(!gettype(g, x, y))
 			settype(g, x, y, 1);
 	}
 }
 
-/* Port Setters */
-
 void
 setport(Grid *g, int x, int y, char c)
 {
-	lock(g, x, y);
+	setlock(g, x, y);
 	settype(g, x, y, 5);
-	set(g, x, y, c);
+	setcell(g, x, y, c);
 }
 
 int
 getport(Grid *g, int x, int y, int l)
 {
 	if(l) {
-		lock(g, x, y);
+		setlock(g, x, y);
 		settype(g, x, y, 4);
 	} else
 		settype(g, x, y, 2);
-	return get(g, x, y);
+	return getcell(g, x, y);
 }
 
 int
-bang(Grid *g, int x, int y)
+getbang(Grid *g, int x, int y)
 {
-	return get(g, x - 1, y) == '*' || get(g, x + 1, y) == '*' || get(g, x, y - 1) == '*' || get(g, x, y + 1) == '*';
+	return getcell(g, x - 1, y) == '*' || getcell(g, x + 1, y) == '*' || getcell(g, x, y - 1) == '*' || getcell(g, x, y + 1) == '*';
 }
 
 #pragma mark - MIDI
@@ -363,7 +359,7 @@ opa(Grid *g, int x, int y, char c)
 {
 	char a = getport(g, x - 1, y, 0);
 	char b = getport(g, x + 1, y, 1);
-	setport(g, x, y + 1, cchr(cb36(a) + cb36(b), ciuc(b)));
+	setport(g, x, y + 1, cchr(cb36(a) + cb36(b), b));
 	(void)c;
 }
 
@@ -372,7 +368,7 @@ opb(Grid *g, int x, int y, char c)
 {
 	char a = getport(g, x - 1, y, 0);
 	char b = getport(g, x + 1, y, 1);
-	setport(g, x, y + 1, cchr(cb36(a) - cb36(b), ciuc(b)));
+	setport(g, x, y + 1, cchr(cb36(a) - cb36(b), b));
 	(void)c;
 }
 
@@ -387,7 +383,7 @@ opc(Grid *g, int x, int y, char c)
 		rate_ = 1;
 	if(!mod_)
 		mod_ = 8;
-	setport(g, x, y + 1, cchr(g->f / rate_ % mod_, ciuc(mod)));
+	setport(g, x, y + 1, cchr(g->f / rate_ % mod_, mod));
 	(void)c;
 }
 
@@ -409,10 +405,10 @@ opd(Grid *g, int x, int y, char c)
 void
 ope(Grid *g, int x, int y, char c)
 {
-	if(x >= g->h - 1 || get(g, x + 1, y) != '.')
-		set(g, x, y, '*');
+	if(x >= g->h - 1 || getcell(g, x + 1, y) != '.')
+		setcell(g, x, y, '*');
 	else {
-		set(g, x, y, '.');
+		setcell(g, x, y, '.');
 		setport(g, x + 1, y, c);
 		settype(g, x + 1, y, 0);
 	}
@@ -461,7 +457,7 @@ opi(Grid *g, int x, int y, char c)
 		rate_ = 1;
 	if(!mod_)
 		mod_ = 36;
-	setport(g, x, y + 1, cchr((cb36(val) + rate_) % mod_, ciuc(mod)));
+	setport(g, x, y + 1, cchr((cb36(val) + rate_) % mod_, mod));
 	(void)c;
 }
 
@@ -472,7 +468,7 @@ opj(Grid *g, int x, int y, char c)
 	int i;
 	if(link != c) {
 		for(i = 1; y + i < 256; ++i)
-			if(get(g, x, y + i) != c)
+			if(getcell(g, x, y + i) != c)
 				break;
 		setport(g, x, y + i, link);
 	}
@@ -507,17 +503,17 @@ opm(Grid *g, int x, int y, char c)
 {
 	char a = getport(g, x - 1, y, 0);
 	char b = getport(g, x + 1, y, 1);
-	setport(g, x, y + 1, cchr(cb36(a) * cb36(b), ciuc(b)));
+	setport(g, x, y + 1, cchr(cb36(a) * cb36(b), b));
 	(void)c;
 }
 
 void
 opn(Grid *g, int x, int y, char c)
 {
-	if(y <= 0 || get(g, x, y - 1) != '.')
-		set(g, x, y, '*');
+	if(y <= 0 || getcell(g, x, y - 1) != '.')
+		setcell(g, x, y, '*');
 	else {
-		set(g, x, y, '.');
+		setcell(g, x, y, '.');
 		setport(g, x, y - 1, c);
 		settype(g, x, y - 1, 0);
 	}
@@ -543,7 +539,7 @@ opp(Grid *g, int x, int y, char c)
 	if(!len_)
 		len_ = 1;
 	for(i = 0; i < len_; ++i)
-		lock(g, x + i, y + 1);
+		setlock(g, x + i, y + 1);
 	setport(g, x + (cb36(key) % len_), y + 1, val);
 	(void)c;
 }
@@ -574,22 +570,22 @@ opr(Grid *g, int x, int y, char c)
 		max_ = 36;
 	if(min_ == max_)
 		min_ = max_ - 1;
-	key = (key ^ 61) ^ (key >> 16);
+	key = (key ^ 61U) ^ (key >> 16);
 	key = key + (key << 3);
 	key = key ^ (key >> 4);
 	key = key * 0x27d4eb2d;
 	key = key ^ (key >> 15);
-	setport(g, x, y + 1, cchr(key % (max_ - min_) + min_, ciuc(max)));
+	setport(g, x, y + 1, cchr(key % (max_ - min_) + min_, max));
 	(void)c;
 }
 
 void
 ops(Grid *g, int x, int y, char c)
 {
-	if(y >= g->h - 1 || get(g, x, y + 1) != '.')
-		set(g, x, y, '*');
+	if(y >= g->h - 1 || getcell(g, x, y + 1) != '.')
+		setcell(g, x, y, '*');
 	else {
-		set(g, x, y, '.');
+		setcell(g, x, y, '.');
 		setport(g, x, y + 1, c);
 		settype(g, x, y + 1, 0);
 	}
@@ -605,7 +601,7 @@ opt(Grid *g, int x, int y, char c)
 	if(!len_)
 		len_ = 1;
 	for(i = 0; i < len_; ++i)
-		lock(g, x + 1 + i, y);
+		setlock(g, x + 1 + i, y);
 	setport(g, x, y + 1, getport(g, x + 1 + (cb36(key) % len_), y, 1));
 	(void)c;
 }
@@ -642,10 +638,10 @@ opv(Grid *g, int x, int y, char c)
 void
 opw(Grid *g, int x, int y, char c)
 {
-	if(x <= 0 || get(g, x - 1, y) != '.')
-		set(g, x, y, '*');
+	if(x <= 0 || getcell(g, x - 1, y) != '.')
+		setcell(g, x, y, '*');
 	else {
-		set(g, x, y, '.');
+		setcell(g, x, y, '.');
 		setport(g, x - 1, y, c);
 		settype(g, x - 1, y, 0);
 	}
@@ -669,7 +665,7 @@ opy(Grid *g, int x, int y, char c)
 	int i;
 	if(link != c) {
 		for(i = 1; x + i < 256; ++i)
-			if(get(g, x + i, y) != c)
+			if(getcell(g, x + i, y) != c)
 				break;
 		setport(g, x + i, y, link);
 	}
@@ -693,7 +689,7 @@ opz(Grid *g, int x, int y, char c)
 		mod = -rate;
 	else
 		mod = target_ - val_;
-	setport(g, x, y + 1, cchr(val_ + mod, ciuc(target)));
+	setport(g, x, y + 1, cchr(val_ + mod, target));
 	(void)c;
 }
 
@@ -702,8 +698,8 @@ opcomment(Grid *g, int x, int y)
 {
 	int i;
 	for(i = 1; x + i < 256; ++i) {
-		lock(g, x + i, y);
-		if(get(g, x + i, y) == '#')
+		setlock(g, x + i, y);
+		if(getcell(g, x + i, y) == '#')
 			break;
 	}
 	settype(g, x, y, 1);
@@ -721,11 +717,11 @@ opspecial(Grid *g, int x, int y)
 	nte = getport(g, x + 3, y, 1);
 	vel = getport(g, x + 4, y, 1);
 	len = cb36(getport(g, x + 5, y, 1));
-	if(bang(g, x, y)) {
+	if(getbang(g, x, y)) {
 		sendmidi(chn,
-			12 * oct + nteval(nte),
-			vel == '.' ? 36 : clamp(cb36(vel), 0, 36),
-			clamp(len, 1, 36));
+			12 * oct + ctbl(nte),
+			vel == '.' ? 36 : clmp(cb36(vel), 0, 36),
+			clmp(len, 1, 36));
 		settype(g, x, y, 3);
 	}
 }
@@ -734,7 +730,7 @@ void
 operate(Grid *g, int x, int y, char c)
 {
 	settype(g, x, y, 3);
-	switch(ciuc(c) ? c + ('a' - 'A') : c) {
+	switch(c >= 'A' && c <= 'Z' ? c + ('a' - 'A') : c) {
 	case 'a': opa(g, x, y, c); break;
 	case 'b': opb(g, x, y, c); break;
 	case 'c': opc(g, x, y, c); break;
@@ -761,7 +757,7 @@ operate(Grid *g, int x, int y, char c)
 	case 'x': opx(g, x, y, c); break;
 	case 'y': opy(g, x, y, c); break;
 	case 'z': opz(g, x, y, c); break;
-	case '*': set(g, x, y, '.'); break;
+	case '*': setcell(g, x, y, '.'); break;
 	case '#': opcomment(g, x, y); break;
 	default: opspecial(g, x, y);
 	}
@@ -770,7 +766,7 @@ operate(Grid *g, int x, int y, char c)
 #pragma mark - GRID
 
 void
-initframe(Grid *g)
+initgridframe(Grid *g)
 {
 	int i;
 	for(i = 0; i < g->l; ++i) {
@@ -785,7 +781,7 @@ int
 rungrid(Grid *g)
 {
 	int i, x, y;
-	initframe(g);
+	initgridframe(g);
 	for(i = 0; i < g->l; ++i) {
 		char c = g->data[i];
 		x = i % g->w;
@@ -794,7 +790,7 @@ rungrid(Grid *g)
 			continue;
 		if(c >= '0' && c <= '9')
 			continue;
-		if(c >= 'a' && c <= 'z' && !bang(g, x, y))
+		if(c >= 'a' && c <= 'z' && !getbang(g, x, y))
 			continue;
 		operate(g, x, y, c);
 	}
@@ -812,8 +808,8 @@ initgrid(Grid *g, int w, int h)
 	g->f = 0;
 	g->r = 1;
 	for(i = 0; i < g->l; ++i)
-		set(g, i % g->w, i / g->w, '.');
-	initframe(g);
+		setcell(g, i % g->w, i / g->w, '.');
+	initgridframe(g);
 }
 
 #pragma mark - DRAW
@@ -845,7 +841,7 @@ getfont(int x, int y, char c, int type, int sel)
 }
 
 void
-putpixel(Uint32 *dst, int x, int y, int color)
+setpixel(Uint32 *dst, int x, int y, int color)
 {
 	if(x >= 0 && x < WIDTH - 8 && y >= 0 && y < HEIGHT - 8)
 		dst[(y + PAD * 8) * WIDTH + (x + PAD * 8)] = theme[color];
@@ -858,7 +854,7 @@ drawicon(Uint32 *dst, int x, int y, Uint8 *icon, int fg, int bg)
 	for(v = 0; v < 8; v++)
 		for(h = 0; h < 8; h++) {
 			int clr = (icon[v] >> (7 - h)) & 0x1;
-			putpixel(dst, x + h, y + v, clr == 1 ? fg : bg);
+			setpixel(dst, x + h, y + v, clr == 1 ? fg : bg);
 		}
 }
 
@@ -884,7 +880,7 @@ drawui(Uint32 *dst)
 	for(i = 0; i < VOICES; ++i)
 		if(voices[i].len)
 			n++;
-	drawicon(dst, 13 * 8, bottom, n > 0 ? icons[2 + clamp(n, 0, 6)] : font[70], 2, 0);
+	drawicon(dst, 13 * 8, bottom, n > 0 ? icons[2 + clmp(n, 0, 6)] : font[70], 2, 0);
 	/* generics */
 	drawicon(dst, 15 * 8, bottom, icons[GUIDES ? 10 : 9], GUIDES ? 1 : 2, 0);
 	drawicon(dst, (HOR - 1) * 8, bottom, icons[11], doc.unsaved ? 2 : 3, 0);
@@ -899,7 +895,7 @@ redraw(Uint32 *dst)
 		for(x = 0; x < HOR; ++x) {
 			int sel = x < r->x + r->w && x >= r->x && y < r->y + r->h && y >= r->y;
 			int t = gettype(&doc.grid, x, y);
-			Uint8 *letter = font[getfont(x, y, get(&doc.grid, x, y), t, sel)];
+			Uint8 *letter = font[getfont(x, y, getcell(&doc.grid, x, y), t, sel)];
 			int fg = 0, bg = 0;
 			if(sel) {
 				fg = 0;
@@ -958,7 +954,7 @@ opendoc(Document *d, char *name)
 			x = 0;
 			y++;
 		} else {
-			set(&d->grid, x, y, c);
+			setcell(&d->grid, x, y, c);
 			x++;
 		}
 	}
@@ -976,7 +972,7 @@ savedoc(Document *d, char *name)
 	FILE *f = fopen(name, "w");
 	for(y = 0; y < d->grid.h; ++y) {
 		for(x = 0; x < d->grid.w; ++x)
-			fputc(get(&d->grid, x, y), f);
+			fputc(getcell(&d->grid, x, y), f);
 		fputc('\n', f);
 	}
 	fclose(f);
@@ -987,13 +983,20 @@ savedoc(Document *d, char *name)
 }
 
 void
+setoption(int *i, int v)
+{
+	*i = v;
+	redraw(pixels);
+}
+
+void
 select(int x, int y, int w, int h)
 {
 	Rect2d r;
-	r.x = clamp(x, 0, HOR - 1);
-	r.y = clamp(y, 0, VER - 1);
-	r.w = clamp(w, 1, HOR - x + 1);
-	r.h = clamp(h, 1, VER - y + 1);
+	r.x = clmp(x, 0, HOR - 1);
+	r.y = clmp(y, 0, VER - 1);
+	r.w = clmp(w, 1, HOR - x);
+	r.h = clmp(h, 1, VER - y);
 	if(r.x != cursor.x || r.y != cursor.y || r.w != cursor.w || r.h != cursor.h) {
 		cursor = r;
 		redraw(pixels);
@@ -1001,10 +1004,15 @@ select(int x, int y, int w, int h)
 }
 
 void
-scale(int w, int h)
+scale(int w, int h, int skip)
 {
-	if((cursor.w + w) * (cursor.h + h) < CLIPSZ)
-		select(cursor.x, cursor.y, cursor.w + w, cursor.h + h);
+	select(cursor.x, cursor.y, cursor.w + (w * (skip ? 4 : 1)), cursor.h + (h * (skip ? 4 : 1)));
+}
+
+void
+move(int x, int y, int skip)
+{
+	select(cursor.x + (x * (skip ? 4 : 1)), cursor.y + (y * (skip ? 4 : 1)), cursor.w, cursor.h);
 }
 
 void
@@ -1016,29 +1024,16 @@ reset(void)
 }
 
 void
-savemode(int *i, int v)
-{
-	*i = v;
-	redraw(pixels);
-}
-
-void
 comment(Rect2d *r)
 {
 	int y;
-	char c = get(&doc.grid, r->x, r->y) == '#' ? '.' : '#';
+	char c = getcell(&doc.grid, r->x, r->y) == '#' ? '.' : '#';
 	for(y = 0; y < r->h; ++y) {
-		set(&doc.grid, r->x, r->y + y, c);
-		set(&doc.grid, r->x + r->w - 1, r->y + y, c);
+		setcell(&doc.grid, r->x, r->y + y, c);
+		setcell(&doc.grid, r->x + r->w - 1, r->y + y, c);
 	}
 	doc.unsaved = 1;
 	redraw(pixels);
-}
-
-void
-move(int x, int y)
-{
-	select(cursor.x + x, cursor.y + y, cursor.w, cursor.h);
 }
 
 void
@@ -1047,9 +1042,9 @@ insert(char c)
 	int x, y;
 	for(x = 0; x < cursor.w; ++x)
 		for(y = 0; y < cursor.h; ++y)
-			set(&doc.grid, cursor.x + x, cursor.y + y, c);
+			setcell(&doc.grid, cursor.x + x, cursor.y + y, c);
 	if(MODE)
-		move(1, 0);
+		move(1, 0, 0);
 	doc.unsaved = 1;
 	redraw(pixels);
 }
@@ -1071,7 +1066,7 @@ selectoption(int option)
 		PAUSE = 1;
 		frame();
 		break;
-	case 15: savemode(&GUIDES, !GUIDES); break;
+	case 15: setoption(&GUIDES, !GUIDES); break;
 	case HOR - 1: savedoc(&doc, doc.name); break;
 	}
 }
@@ -1098,7 +1093,7 @@ copyclip(Rect2d *r, char *c)
 	int x, y, i = 0;
 	for(y = 0; y < r->h; ++y) {
 		for(x = 0; x < r->w; ++x)
-			c[i++] = get(&doc.grid, r->x + x, r->y + y);
+			c[i++] = getcell(&doc.grid, r->x + x, r->y + y);
 		c[i++] = '\n';
 	}
 	c[i] = '\0';
@@ -1122,7 +1117,7 @@ pasteclip(Rect2d *r, char *c, int insert)
 			x = r->x;
 			y++;
 		} else {
-			set(&doc.grid, x, y, insert && ch == '.' ? get(&doc.grid, x, y) : ch);
+			setcell(&doc.grid, x, y, insert && ch == '.' ? getcell(&doc.grid, x, y) : ch);
 			x++;
 		}
 	}
@@ -1131,11 +1126,11 @@ pasteclip(Rect2d *r, char *c, int insert)
 }
 
 void
-moveclip(Rect2d *r, char *c, int x, int y)
+moveclip(Rect2d *r, char *c, int x, int y, int skip)
 {
 	copyclip(r, c);
 	insert('.');
-	move(x, y);
+	move(x, y, skip);
 	pasteclip(r, c, 0);
 }
 
@@ -1170,35 +1165,36 @@ dokey(SDL_Event *event)
 {
 	int shift = SDL_GetModState() & KMOD_LSHIFT || SDL_GetModState() & KMOD_RSHIFT;
 	int ctrl = SDL_GetModState() & KMOD_LCTRL || SDL_GetModState() & KMOD_RCTRL;
+	int alt = SDL_GetModState() & KMOD_LALT || SDL_GetModState() & KMOD_RALT;
 	if(ctrl) {
 		switch(event->key.keysym.sym) {
 		/* Generic */
 		case SDLK_n: makedoc(&doc, "untitled.orca"); break;
 		case SDLK_r: opendoc(&doc, doc.name); break;
 		case SDLK_s: savedoc(&doc, doc.name); break;
-		case SDLK_h: savemode(&GUIDES, !GUIDES); break;
+		case SDLK_h: setoption(&GUIDES, !GUIDES); break;
 		/* Edit */
-		case SDLK_i: savemode(&MODE, !MODE); break;
+		case SDLK_i: setoption(&MODE, !MODE); break;
 		case SDLK_a: select(0, 0, doc.grid.w, doc.grid.h); break;
 		case SDLK_x: cutclip(&cursor, clip); break;
 		case SDLK_c: copyclip(&cursor, clip); break;
 		case SDLK_v: pasteclip(&cursor, clip, shift); break;
-		case SDLK_UP: moveclip(&cursor, clip, 0, -1); break;
-		case SDLK_DOWN: moveclip(&cursor, clip, 0, 1); break;
-		case SDLK_LEFT: moveclip(&cursor, clip, -1, 0); break;
-		case SDLK_RIGHT: moveclip(&cursor, clip, 1, 0); break;
+		case SDLK_UP: moveclip(&cursor, clip, 0, -1, alt); break;
+		case SDLK_DOWN: moveclip(&cursor, clip, 0, 1, alt); break;
+		case SDLK_LEFT: moveclip(&cursor, clip, -1, 0, alt); break;
+		case SDLK_RIGHT: moveclip(&cursor, clip, 1, 0, alt); break;
 		case SDLK_SLASH: comment(&cursor); break;
 		}
 	} else {
 		switch(event->key.keysym.sym) {
 		case SDLK_ESCAPE: reset(); break;
-		case SDLK_PAGEUP: savemode(&BPM, BPM + 1); break;
-		case SDLK_PAGEDOWN: savemode(&BPM, BPM - 1); break;
-		case SDLK_UP: shift ? scale(0, -1) : move(0, -1); break;
-		case SDLK_DOWN: shift ? scale(0, 1) : move(0, 1); break;
-		case SDLK_LEFT: shift ? scale(-1, 0) : move(-1, 0); break;
-		case SDLK_RIGHT: shift ? scale(1, 0) : move(1, 0); break;
-		case SDLK_SPACE: savemode(&PAUSE, !PAUSE); break;
+		case SDLK_PAGEUP: setoption(&BPM, BPM + 1); break;
+		case SDLK_PAGEDOWN: setoption(&BPM, BPM - 1); break;
+		case SDLK_UP: shift ? scale(0, -1, alt) : move(0, -1, alt); break;
+		case SDLK_DOWN: shift ? scale(0, 1, alt) : move(0, 1, alt); break;
+		case SDLK_LEFT: shift ? scale(-1, 0, alt) : move(-1, 0, alt); break;
+		case SDLK_RIGHT: shift ? scale(1, 0, alt) : move(1, 0, alt); break;
+		case SDLK_SPACE: setoption(&PAUSE, !PAUSE); break;
 		case SDLK_BACKSPACE: insert('.'); break;
 		}
 	}
