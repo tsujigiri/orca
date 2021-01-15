@@ -33,6 +33,7 @@ typedef struct Grid {
 } Grid;
 
 typedef struct {
+	int unsaved;
 	char name[256];
 	Grid grid;
 } Document;
@@ -71,10 +72,9 @@ Uint8 icons[][8] = {
 	{0x00, 0x00, 0x00, 0x3e, 0x3e, 0x3e, 0x3e, 0x00}, /* midi:4 */
 	{0x00, 0x00, 0x3e, 0x3e, 0x3e, 0x3e, 0x3e, 0x00}, /* midi:5 */
 	{0x00, 0x3e, 0x3e, 0x3e, 0x3e, 0x3e, 0x3e, 0x00}, /* midi:6 */
-	{0x38, 0x10, 0x10, 0x10, 0x10, 0x10, 0x38, 0x00}, /* mode:default */
-	{0x38, 0x10, 0x08, 0x04, 0x08, 0x10, 0x38, 0x00}, /* mode: insert */
 	{0x00, 0x00, 0x00, 0x82, 0x44, 0x38, 0x00, 0x00}, /* eye open */
-	{0x00, 0x38, 0x44, 0x92, 0x28, 0x10, 0x00, 0x00}  /* eye closed */
+	{0x00, 0x38, 0x44, 0x92, 0x28, 0x10, 0x00, 0x00}, /* eye closed */
+	{0x10, 0x54, 0x28, 0xc6, 0x28, 0x54, 0x10, 0x00}  /* unsaved */
 };
 
 Uint8 font[][8] = {
@@ -793,7 +793,7 @@ initgrid(Grid *g, int w, int h)
 	g->f = 0;
 	g->r = 1;
 	for(i = 0; i < g->l; ++i)
-		g->data[i] = '.';
+		set(g, i % g->w, i / g->w, '.');
 	initframe(g);
 }
 
@@ -867,6 +867,9 @@ drawui(Uint32 *dst)
 		if(voices[i].length)
 			n++;
 	drawicon(dst, 13 * 8, bottom, n > 0 ? icons[2 + clamp(n, 0, 6)] : font[70], 2, 0);
+	drawicon(dst, 15 * 8, bottom, icons[GUIDES ? 10 : 9], GUIDES ? 1 : 2, 0);
+	/* saved state */
+	drawicon(dst, (HOR - 1) * 8, bottom, icons[11], doc.unsaved ? 2 : 3, 0);
 }
 
 void
@@ -979,6 +982,7 @@ void
 makedoc(Document *d, char *name)
 {
 	initgrid(&d->grid, HOR, VER);
+	d->unsaved = 0;
 	scpy(name, d->name, 256);
 	redraw(pixels);
 	printf("Made: %s\n", name);
@@ -1002,6 +1006,7 @@ opendoc(Document *d, char *name)
 			x++;
 		}
 	}
+	d->unsaved = 0;
 	scpy(name, d->name, 256);
 	redraw(pixels);
 	printf("Opened: %s\n", name);
@@ -1019,7 +1024,9 @@ savedoc(Document *d, char *name)
 		fputc('\n', f);
 	}
 	fclose(f);
+	d->unsaved = 0;
 	scpy(name, d->name, 256);
+	redraw(pixels);
 	printf("Saved: %s\n", name);
 }
 
@@ -1068,6 +1075,7 @@ comment(Rect2d *r)
 		set(&doc.grid, r->x, r->y + y, c);
 		set(&doc.grid, r->x + r->w - 1, r->y + y, c);
 	}
+	doc.unsaved = 1;
 	redraw(pixels);
 }
 
@@ -1086,6 +1094,7 @@ insert(char c)
 			set(&doc.grid, cursor.x + x, cursor.y + y, c);
 	if(MODE)
 		move(1, 0);
+	doc.unsaved = 1;
 	redraw(pixels);
 }
 
@@ -1106,6 +1115,8 @@ selectoption(int option)
 		PAUSE = 1;
 		frame();
 		break;
+	case 15: setmode(&GUIDES, !GUIDES); break;
+	case HOR - 1: savedoc(&doc, doc.name); break;
 	}
 }
 
@@ -1135,6 +1146,7 @@ copyclip(Rect2d *r, char *c)
 		c[i++] = '\n';
 	}
 	c[i] = '\0';
+	redraw(pixels);
 }
 
 void
@@ -1158,6 +1170,8 @@ pasteclip(Rect2d *r, char *c, int insert)
 			x++;
 		}
 	}
+	doc.unsaved = 1;
+	redraw(pixels);
 }
 
 void
