@@ -707,20 +707,28 @@ opcomment(Grid *g, int x, int y)
 void
 opspecial(Grid *g, int x, int y)
 {
-	int chn, oct, vel, len;
-	char nte;
+	int chn, oct, nte, vel, len;
 	if(getport(g, x, y, 1) != ':')
 		return;
 	chn = cb36(getport(g, x + 1, y, 1));
+	if(chn == '.')
+		return;
 	oct = cb36(getport(g, x + 2, y, 1));
+	if(oct == '.')
+		return;
 	nte = getport(g, x + 3, y, 1);
+	if(nte == '.')
+		return;
 	vel = getport(g, x + 4, y, 1);
-	len = cb36(getport(g, x + 5, y, 1));
+	if(vel == '.')
+		vel = 'z';
+	len = getport(g, x + 5, y, 1);
 	if(getbang(g, x, y)) {
-		sendmidi(chn,
+		sendmidi(
+			clmp(chn, 0, 16),
 			12 * oct + ctbl(nte),
-			vel == '.' ? 36 : clmp(cb36(vel), 0, 36),
-			clmp(len, 1, 36));
+			clmp(cb36(vel), 0, 36),
+			clmp(cb36(len), 1, 36));
 		settype(g, x, y, 3);
 	}
 }
