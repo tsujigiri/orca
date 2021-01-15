@@ -43,12 +43,12 @@ typedef struct {
 } Rect2d;
 
 typedef struct {
-	int channel, value, velocity, length;
-} Note;
+	int chn, val, vel, len;
+} MidiNote;
 
 Document doc;
 char clip[CLIPSZ];
-Note voices[VOICES];
+MidiNote voices[VOICES];
 Rect2d cursor;
 
 int WIDTH = 8 * HOR + PAD * 8 * 2;
@@ -156,7 +156,7 @@ SDL_Texture *gTexture = NULL;
 Uint32 *pixels;
 PmStream *midi;
 
-/* helpers */
+#pragma mark - HELPERS
 
 int
 clamp(int val, int min, int max)
@@ -174,7 +174,7 @@ scpy(char *src, char *dst, int len)
 	return dst;
 }
 
-/* core */
+#pragma mark - CORE
 
 int
 ciuc(char c)
@@ -182,40 +182,13 @@ ciuc(char c)
 	return c >= 'A' && c <= 'Z';
 }
 
-int
-cilc(char c)
-{
-	return c >= 'a' && c <= 'z';
-}
-
-int
-cinu(char c)
-{
-	return c >= '0' && c <= '9';
-}
-
-int
-cisp(char c)
-{
-	return !ciuc(c) && !cilc(c) && !cinu(c) && c != '.';
-}
-
-int
-clca(int c)
-{
-	return ciuc(c) ? c + ('a' - 'A') : c;
-}
-
 char
 cchr(int v, int cap)
 {
-	v %= 36;
-	v *= v < 0 ? -1 : 1;
+	v = abs(v % 36);
 	if(v >= 0 && v <= 9)
 		return '0' + v;
-	if(cap)
-		return 'A' + (v - 10);
-	return 'a' + (v - 10);
+	return (cap ? 'A' : 'a') + v - 10;
 }
 
 int
@@ -248,7 +221,7 @@ nteval(char c)
 	return deg / 7 * 12 + notes[deg % 7] + sharp;
 }
 
-/* IO */
+#pragma mark - IO
 
 char
 get(Grid *g, int x, int y)
@@ -263,20 +236,6 @@ set(Grid *g, int x, int y, char c)
 {
 	if(valid(g, x, y))
 		g->data[x + (y * g->w)] = c;
-}
-
-/* Variables */
-
-void
-save(Grid *g, char key, char val)
-{
-	g->var[cb36(key)] = val;
-}
-
-char
-load(Grid *g, char key)
-{
-	return g->var[cb36(key)];
 }
 
 /* Syntax */
@@ -335,9 +294,69 @@ bang(Grid *g, int x, int y)
 	return get(g, x - 1, y) == '*' || get(g, x + 1, y) == '*' || get(g, x, y - 1) == '*' || get(g, x, y + 1) == '*';
 }
 
-/* Library */
+#pragma mark - MIDI
 
-Note *sendmidi(int chn, int val, int vel, int len);
+MidiNote *
+sendmidi(int chn, int val, int vel, int len)
+{
+	int i = 0;
+	/* Detrigger */
+	for(i = 0; i < VOICES; ++i) {
+		MidiNote *n = &voices[i];
+		if(!n->len || n->chn != chn || n->val != val)
+			continue;
+		Pm_WriteShort(midi,
+			Pt_Time(),
+			Pm_Message(0x90 + n->chn, n->val, 0));
+		n->len = 0;
+	}
+	/* Trigger */
+	for(i = 0; i < VOICES; ++i) {
+		MidiNote *n = &voices[i];
+		if(n->len < 1) {
+			n->chn = chn;
+			n->val = val;
+			n->vel = vel;
+			n->len = len;
+			Pm_WriteShort(midi,
+				Pt_Time(),
+				Pm_Message(0x90 + chn, val, vel * 3));
+			return n;
+		}
+	}
+	return NULL;
+}
+
+void
+runmidi(void)
+{
+	int i;
+	for(i = 0; i < VOICES; ++i) {
+		MidiNote *n = &voices[i];
+		if(n->len > 0) {
+			n->len--;
+			if(n->len == 0)
+				Pm_WriteShort(midi,
+					Pt_Time(),
+					Pm_Message(0x90 + n->chn, n->val, 0));
+		}
+	}
+}
+
+void
+initmidi(void)
+{
+	int i;
+	Pm_Initialize();
+	for(i = 0; i < Pm_CountDevices(); ++i)
+		printf("Device #%d -> %s%s\n",
+			i,
+			Pm_GetDeviceInfo(i)->name,
+			i == DEVICE ? "[x]" : "[ ]");
+	Pm_OpenOutput(&midi, DEVICE, NULL, 128, 0, NULL, 1);
+}
+
+#pragma mark - LIBRARY
 
 void
 opa(Grid *g, int x, int y, char c)
@@ -390,7 +409,7 @@ opd(Grid *g, int x, int y, char c)
 void
 ope(Grid *g, int x, int y, char c)
 {
-	if(!valid(g, x + 1, y) || get(g, x + 1, y) != '.')
+	if(x >= g->h - 1 || get(g, x + 1, y) != '.')
 		set(g, x, y, '*');
 	else {
 		set(g, x, y, '.');
@@ -469,7 +488,7 @@ opk(Grid *g, int x, int y, char c)
 	for(i = 0; i < len_; ++i) {
 		char key = getport(g, x + 1 + i, y, 1);
 		if(key != '.')
-			setport(g, x + 1 + i, y + 1, load(g, key));
+			setport(g, x + 1 + i, y + 1, g->var[cb36(key)]);
 	}
 	(void)c;
 }
@@ -495,7 +514,7 @@ opm(Grid *g, int x, int y, char c)
 void
 opn(Grid *g, int x, int y, char c)
 {
-	if(!valid(g, x, y - 1) || get(g, x, y - 1) != '.')
+	if(y <= 0 || get(g, x, y - 1) != '.')
 		set(g, x, y, '*');
 	else {
 		set(g, x, y, '.');
@@ -567,7 +586,7 @@ opr(Grid *g, int x, int y, char c)
 void
 ops(Grid *g, int x, int y, char c)
 {
-	if(!valid(g, x, y + 1) || get(g, x, y + 1) != '.')
+	if(y >= g->h - 1 || get(g, x, y + 1) != '.')
 		set(g, x, y, '*');
 	else {
 		set(g, x, y, '.');
@@ -614,16 +633,16 @@ opv(Grid *g, int x, int y, char c)
 	char w = getport(g, x - 1, y, 0);
 	char r = getport(g, x + 1, y, 1);
 	if(w != '.')
-		save(g, w, r);
+		g->var[cb36(w)] = r;
 	else if(w == '.' && r != '.')
-		setport(g, x, y + 1, load(g, r));
+		setport(g, x, y + 1, g->var[cb36(r)]);
 	(void)c;
 }
 
 void
 opw(Grid *g, int x, int y, char c)
 {
-	if(!valid(g, x - 1, y) || get(g, x - 1, y) != '.')
+	if(x <= 0 || get(g, x - 1, y) != '.')
 		set(g, x, y, '*');
 	else {
 		set(g, x, y, '.');
@@ -700,12 +719,12 @@ opspecial(Grid *g, int x, int y)
 	chn = cb36(getport(g, x + 1, y, 1));
 	oct = cb36(getport(g, x + 2, y, 1));
 	nte = getport(g, x + 3, y, 1);
-	vel = cb36(getport(g, x + 4, y, 1));
+	vel = getport(g, x + 4, y, 1);
 	len = cb36(getport(g, x + 5, y, 1));
 	if(bang(g, x, y)) {
 		sendmidi(chn,
 			12 * oct + nteval(nte),
-			!vel ? 36 : clamp(vel, 0, 36),
+			vel == '.' ? 36 : clamp(cb36(vel), 0, 36),
 			clamp(len, 1, 36));
 		settype(g, x, y, 3);
 	}
@@ -715,7 +734,7 @@ void
 operate(Grid *g, int x, int y, char c)
 {
 	settype(g, x, y, 3);
-	switch(clca(c)) {
+	switch(ciuc(c) ? c + ('a' - 'A') : c) {
 	case 'a': opa(g, x, y, c); break;
 	case 'b': opb(g, x, y, c); break;
 	case 'c': opc(g, x, y, c); break;
@@ -748,7 +767,7 @@ operate(Grid *g, int x, int y, char c)
 	}
 }
 
-/* General */
+#pragma mark - GRID
 
 void
 initframe(Grid *g)
@@ -773,9 +792,9 @@ rungrid(Grid *g)
 		y = i / g->w;
 		if(c == '.' || g->lock[i])
 			continue;
-		if(cinu(c))
+		if(c >= '0' && c <= '9')
 			continue;
-		if(cilc(c) && !bang(g, x, y))
+		if(c >= 'a' && c <= 'z' && !bang(g, x, y))
 			continue;
 		operate(g, x, y, c);
 	}
@@ -797,7 +816,7 @@ initgrid(Grid *g, int w, int h)
 	initframe(g);
 }
 
-/* misc */
+#pragma mark - DRAW
 
 int
 getfont(int x, int y, char c, int type, int sel)
@@ -824,8 +843,6 @@ getfont(int x, int y, char c, int type, int sel)
 	}
 	return 70;
 }
-
-/* drawing */
 
 void
 putpixel(Uint32 *dst, int x, int y, int color)
@@ -865,7 +882,7 @@ drawui(Uint32 *dst)
 	drawicon(dst, 12 * 8, bottom, font[BPM % 10], 1, 0);
 	/* io */
 	for(i = 0; i < VOICES; ++i)
-		if(voices[i].length)
+		if(voices[i].len)
 			n++;
 	drawicon(dst, 13 * 8, bottom, n > 0 ? icons[2 + clamp(n, 0, 6)] : font[70], 2, 0);
 	/* generics */
@@ -908,69 +925,7 @@ redraw(Uint32 *dst)
 	SDL_RenderPresent(gRenderer);
 }
 
-/* midi */
-
-Note *
-sendmidi(int chn, int val, int vel, int len)
-{
-	int i = 0;
-	/* Detrigger */
-	for(i = 0; i < VOICES; ++i) {
-		Note *n = &voices[i];
-		if(!n->length || n->channel != chn || n->value != val)
-			continue;
-		Pm_WriteShort(midi,
-			Pt_Time(),
-			Pm_Message(0x90 + n->channel, n->value, 0));
-		n->length = 0;
-	}
-	/* Trigger */
-	for(i = 0; i < VOICES; ++i) {
-		Note *n = &voices[i];
-		if(n->length < 1) {
-			n->channel = chn;
-			n->value = val;
-			n->velocity = vel;
-			n->length = len;
-			Pm_WriteShort(midi,
-				Pt_Time(),
-				Pm_Message(0x90 + chn, val, vel * 3));
-			return n;
-		}
-	}
-	return NULL;
-}
-
-void
-runmidi(void)
-{
-	int i;
-	for(i = 0; i < VOICES; ++i) {
-		Note *n = &voices[i];
-		if(n->length > 0) {
-			n->length--;
-			if(n->length == 0)
-				Pm_WriteShort(midi,
-					Pt_Time(),
-					Pm_Message(0x90 + n->channel, n->value, 0));
-		}
-	}
-}
-
-void
-initmidi(void)
-{
-	int i;
-	Pm_Initialize();
-	for(i = 0; i < Pm_CountDevices(); ++i)
-		printf("Device #%d -> %s%s\n",
-			i,
-			Pm_GetDeviceInfo(i)->name,
-			i == DEVICE ? "[x]" : "[ ]");
-	Pm_OpenOutput(&midi, DEVICE, NULL, 128, 0, NULL, 1);
-}
-
-/* options */
+#pragma mark - OPTIONS
 
 int
 error(char *msg, const char *err)
@@ -1135,7 +1090,7 @@ quit(void)
 	exit(0);
 }
 
-/* clip */
+#pragma mark - CLIP
 
 void
 copyclip(Rect2d *r, char *c)
@@ -1184,7 +1139,7 @@ moveclip(Rect2d *r, char *c, int x, int y)
 	pasteclip(r, c, 0);
 }
 
-/* triggers */
+#pragma mark - TRIGGERS
 
 void
 domouse(SDL_Event *event)
