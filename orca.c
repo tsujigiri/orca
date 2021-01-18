@@ -173,10 +173,18 @@ scpy(char *src, char *dst, int len)
 	return dst;
 }
 
+int
+cspe(char c)
+{
+	return c == '.' || c == ':' || c == '#' || c == '*';
+}
+
 char
 cchr(int v, char c)
 {
 	v = abs(v % 36);
+	if(c == '.')
+		return '.';
 	if(v >= 0 && v <= 9)
 		return '0' + v;
 	return (c >= 'A' && c <= 'Z' ? 'A' : 'a') + v - 10;
@@ -194,6 +202,30 @@ cb36(char c)
 	return 0;
 }
 
+char
+cuca(char c)
+{
+	return c >= 'a' && c <= 'z' ? 'A' + c - 'a' : c;
+}
+
+char
+clca(char c)
+{
+	return c >= 'A' && c <= 'Z' ? 'a' + c - 'A' : c;
+}
+
+char
+cinc(char c)
+{
+	return !cspe(c) ? cchr(cb36(c) + 1, c) : c;
+}
+
+char
+cdec(char c)
+{
+	return !cspe(c) ? cchr(cb36(c) - 1, c) : c;
+}
+
 int
 validposition(Grid *g, int x, int y)
 {
@@ -205,7 +237,7 @@ validcharacter(char c)
 {
 	if(cb36(c) || c == '0')
 		return 1;
-	if(c == '.' || c == ':' || c == '#' || c == '*')
+	if(cspe(c))
 		return 1;
 	return 0;
 }
@@ -705,11 +737,9 @@ opcomment(Grid *g, int x, int y)
 }
 
 void
-opspecial(Grid *g, int x, int y)
+opmidi(Grid *g, int x, int y)
 {
 	int chn, oct, nte, vel, len;
-	if(getport(g, x, y, 1) != ':')
-		return;
 	chn = cb36(getport(g, x + 1, y, 1));
 	if(chn == '.')
 		return;
@@ -717,7 +747,7 @@ opspecial(Grid *g, int x, int y)
 	if(oct == '.')
 		return;
 	nte = getport(g, x + 3, y, 1);
-	if(nte == '.')
+	if(cspe(nte))
 		return;
 	vel = getport(g, x + 4, y, 1);
 	if(vel == '.')
@@ -730,14 +760,15 @@ opspecial(Grid *g, int x, int y)
 			clmp(cb36(vel), 0, 36),
 			clmp(cb36(len), 1, 36));
 		settype(g, x, y, 3);
-	}
+	} else
+		settype(g, x, y, 2);
 }
 
 void
 operate(Grid *g, int x, int y, char c)
 {
 	settype(g, x, y, 3);
-	switch(c >= 'A' && c <= 'Z' ? c + ('a' - 'A') : c) {
+	switch(clca(c)) {
 	case 'a': opa(g, x, y, c); break;
 	case 'b': opb(g, x, y, c); break;
 	case 'c': opc(g, x, y, c); break;
@@ -766,7 +797,8 @@ operate(Grid *g, int x, int y, char c)
 	case 'z': opz(g, x, y, c); break;
 	case '*': setcell(g, x, y, '.'); break;
 	case '#': opcomment(g, x, y); break;
-	default: opspecial(g, x, y);
+	case ':': opmidi(g, x, y); break;
+	default: printf("Unknown operator[%d,%d]: %c\n", x, y, c);
 	}
 }
 
@@ -990,6 +1022,15 @@ savedoc(Document *d, char *name)
 }
 
 void
+transform(Rect2d *r, char (*fn)(char))
+{
+	int x, y;
+	for(y = 0; y < r->h; ++y)
+		for(x = 0; x < r->w; ++x)
+			setcell(&doc.grid, r->x + x, r->y + y, fn(getcell(&doc.grid, r->x + x, r->y + y)));
+}
+
+void
 setoption(int *i, int v)
 {
 	*i = v;
@@ -1186,6 +1227,10 @@ dokey(SDL_Event *event)
 		case SDLK_x: cutclip(&cursor, clip); break;
 		case SDLK_c: copyclip(&cursor, clip); break;
 		case SDLK_v: pasteclip(&cursor, clip, shift); break;
+		case SDLK_u: transform(&cursor, cuca); break;
+		case SDLK_l: transform(&cursor, clca); break;
+		case SDLK_LEFTBRACKET: transform(&cursor, cinc); break;
+		case SDLK_RIGHTBRACKET: transform(&cursor, cdec); break;
 		case SDLK_UP: moveclip(&cursor, clip, 0, -1, alt); break;
 		case SDLK_DOWN: moveclip(&cursor, clip, 0, 1, alt); break;
 		case SDLK_LEFT: moveclip(&cursor, clip, -1, 0, alt); break;
@@ -1202,7 +1247,10 @@ dokey(SDL_Event *event)
 		case SDLK_LEFT: shift ? scale(-1, 0, alt) : move(-1, 0, alt); break;
 		case SDLK_RIGHT: shift ? scale(1, 0, alt) : move(1, 0, alt); break;
 		case SDLK_SPACE: setoption(&PAUSE, !PAUSE); break;
-		case SDLK_BACKSPACE: insert('.'); break;
+		case SDLK_BACKSPACE:
+			setoption(&MODE, 0);
+			insert('.');
+			break;
 		}
 	}
 }
