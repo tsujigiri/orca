@@ -49,8 +49,6 @@ To display the list of operators inside of Orca, use `CmdOrCtrl+G`.
 
 - `PAGEUP`, incr. bpm.
 - `PAGEDOWN`, decr. bpm.
-- `+` zoom in.
-- `-` zoom out.
 - `SHIFT+ARROW` scale selection.
 - `CTRL+ARROW` drag selection.
 - `ALT+ARROW` skip selection.

@@ -163,18 +163,8 @@ clmp(int val, int min, int max)
 	return (val >= min) ? (val <= max) ? val : max : min;
 }
 
-char *
-scpy(char *src, char *dst, int len)
-{
-	int i = 0;
-	while((dst[i] = src[i]) && i < len - 2)
-		i++;
-	dst[i + 1] = '\0';
-	return dst;
-}
-
 int
-cspe(char c)
+cisp(char c)
 {
 	return c == '.' || c == ':' || c == '#' || c == '*';
 }
@@ -191,12 +181,12 @@ cchr(int v, char c)
 int
 cb36(char c)
 {
+	if(c >= '0' && c <= '9')
+		return c - '0';
 	if(c >= 'A' && c <= 'Z')
 		return c - 'A' + 10;
 	if(c >= 'a' && c <= 'z')
 		return c - 'a' + 10;
-	if(c >= '0' && c <= '9')
-		return c - '0';
 	return 0;
 }
 
@@ -215,13 +205,13 @@ clca(char c)
 char
 cinc(char c)
 {
-	return !cspe(c) ? cchr(cb36(c) + 1, c) : c;
+	return !cisp(c) ? cchr(cb36(c) + 1, c) : c;
 }
 
 char
 cdec(char c)
 {
-	return !cspe(c) ? cchr(cb36(c) - 1, c) : c;
+	return !cisp(c) ? cchr(cb36(c) - 1, c) : c;
 }
 
 int
@@ -233,11 +223,7 @@ validposition(Grid *g, int x, int y)
 int
 validcharacter(char c)
 {
-	if(cb36(c) || c == '0')
-		return 1;
-	if(cspe(c))
-		return 1;
-	return 0;
+	return cb36(c) || c == '0' || cisp(c);
 }
 
 int
@@ -250,6 +236,16 @@ ctbl(char c)
 	uc = sharp ? c - 'a' + 'A' : c;
 	deg = uc <= 'B' ? 'G' - 'B' + uc - 'A' : uc - 'C';
 	return deg / 7 * 12 + notes[deg % 7] + sharp;
+}
+
+char *
+scpy(char *src, char *dst, int len)
+{
+	int i = 0;
+	while((dst[i] = src[i]) && i < len - 2)
+		i++;
+	dst[i + 1] = '\0';
+	return dst;
 }
 
 #pragma mark - IO
@@ -712,12 +708,8 @@ opz(Grid *g, int x, int y, char c)
 	int mod;
 	if(!rate_)
 		rate_ = 1;
-	if(val_ <= target_ - rate_)
-		mod = rate_;
-	else if(val_ >= target_ + rate_)
-		mod = -rate;
-	else
-		mod = target_ - val_;
+	mod = val_ <= target_ - rate_ ? rate_ : val_ >= target_ + rate_ ? -rate_
+																	: target_ - val_;
 	setport(g, x, y + 1, cchr(val_ + mod, target));
 	(void)c;
 }
@@ -745,7 +737,7 @@ opmidi(Grid *g, int x, int y)
 	if(oct == '.')
 		return;
 	nte = getport(g, x + 3, y, 1);
-	if(cspe(nte))
+	if(cisp(nte))
 		return;
 	vel = getport(g, x + 4, y, 1);
 	if(vel == '.')
@@ -1026,6 +1018,7 @@ transform(Rect2d *r, char (*fn)(char))
 	for(y = 0; y < r->h; ++y)
 		for(x = 0; x < r->w; ++x)
 			setcell(&doc.grid, r->x + x, r->y + y, fn(getcell(&doc.grid, r->x + x, r->y + y)));
+	redraw(pixels);
 }
 
 void
