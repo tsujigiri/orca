@@ -936,7 +936,7 @@ redraw(Uint32 *dst)
 			int t = gettype(&doc.grid, x, y);
 			Uint8 *letter = font[getfont(x, y, getcell(&doc.grid, x, y), t, sel)];
 			int fg = 0, bg = 0;
-			if(sel) {
+			if((sel && !MODE) || (sel && MODE && doc.grid.f % 2)) {
 				fg = 0;
 				bg = 4;
 			} else {
@@ -1246,10 +1246,14 @@ dokey(SDL_Event *event)
 		case SDLK_DOWN: shift ? scale(0, 1, alt) : move(0, 1, alt); break;
 		case SDLK_LEFT: shift ? scale(-1, 0, alt) : move(-1, 0, alt); break;
 		case SDLK_RIGHT: shift ? scale(1, 0, alt) : move(1, 0, alt); break;
-		case SDLK_SPACE: setoption(&PAUSE, !PAUSE); break;
+		case SDLK_SPACE:
+			if(!MODE)
+				setoption(&PAUSE, !PAUSE);
+			break;
 		case SDLK_BACKSPACE:
-			setoption(&MODE, 0);
 			insert('.');
+			if(MODE)
+				move(-2, 0, alt);
 			break;
 		}
 	}
