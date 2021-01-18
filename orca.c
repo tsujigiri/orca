@@ -183,8 +183,6 @@ char
 cchr(int v, char c)
 {
 	v = abs(v % 36);
-	if(c == '.')
-		return '.';
 	if(v >= 0 && v <= 9)
 		return '0' + v;
 	return (c >= 'A' && c <= 'Z' ? 'A' : 'a') + v - 10;

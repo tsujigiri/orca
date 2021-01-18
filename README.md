@@ -9,7 +9,7 @@ This is a minimalist implementation of the basic operators created for education
 You must have [SDL2](https://wiki.libsdl.org/) and [portmidi](http://portmedia.sourceforge.net/portmidi/).
 
 ```
-cc orca.c sim.c -std=c89 -O2 -DNDEBUG -g0 -s -Wall -L/usr/local/lib -lSDL2 -o orca
+cc orca.c -std=c89 -O2 -DNDEBUG -g0 -s -Wall -L/usr/local/lib -lSDL2 -o orca
 ```
 
 ## Operators
