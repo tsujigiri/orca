@@ -430,7 +430,7 @@ opd(Grid *g, int x, int y, char c)
 void
 ope(Grid *g, int x, int y, char c)
 {
-	if(x >= g->h - 1 || getcell(g, x + 1, y) != '.')
+	if(x >= g->w - 1 || getcell(g, x + 1, y) != '.')
 		setcell(g, x, y, '*');
 	else {
 		setcell(g, x, y, '.');
