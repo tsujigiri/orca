@@ -1309,14 +1309,16 @@ main(int argc, char *argv[])
 		makedoc(&doc, "untitled.orca");
 	while(1) {
 		SDL_Event event;
+		double elapsed, start = SDL_GetPerformanceCounter();
 		if(!PAUSE) {
-			if(tick > 3) {
+			if(tick > 7) {
 				frame();
 				tick = 0;
 			} else
 				tick++;
 		}
-		SDL_Delay(60000 / BPM / 16);
+		elapsed = (SDL_GetPerformanceCounter() - start) / (double)SDL_GetPerformanceFrequency() * 1000.0f;
+		SDL_Delay(clmp(16.666f - elapsed, 0, 1000));
 		while(SDL_PollEvent(&event) != 0) {
 			switch(event.type) {
 			case SDL_QUIT: quit(); break;
