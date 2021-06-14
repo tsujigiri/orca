@@ -11,22 +11,32 @@
 		- Copy/paste(chorded)
 )
 
-%+  { ADD } %-   { SUB }  %*  { MUL } %/   { DIV }
-%<  { LTH } %>   { GTH }  %=  { EQU } %!   { NEQ }
+%+  { ADD } %-   { SUB }  %*  { MUL }  %/   { DIV }
+%<  { LTH } %>   { GTH }  %=  { EQU }  %!   { NEQ }
 %++ { ADD2 } %-- { SUB2 } %** { MUL2 } %// { DIV2 }
 %<< { LTH2 } %>> { GTH2 } %== { EQU2 } %!! { NEQ2 }
+
+%DEBUG  { .Console/byte DEO #0a .Console/char DEO }
+%DEBUG2 { .Console/short DEO2 #0a .Console/char DEO }
 
 %RTN { JMP2r }
 %MOD { DUP2 / * - }
 %MOD8 { #07 AND }
 %INCR { SWP #01 + SWP }
+%GET-ITERATORS { SWP2k POP SWP POP }
+%TOGGLE { DUP LDZ #00 = SWP STZ }
+
+%CHAR-DOT { #2e }
 
 %DATA-CELLS { #2000 }
 %DATA-LOCKS { #3000 }
 %DATA-TYPES { #4000 }
 
+%IS-CHAR-KEY { STHk #20 > STHr #7b < #0101 == }
+
+
 %LDA-CHAR { #24 MOD #00 SWP ;b36clc ++ LDA } ( b36 -- char )
-%LDA-VALUE { #20 SUB #00 SWP ;values ++ LDA } ( char -- b36 )
+%LDA-VALUE { #20 - #00 SWP ;values ++ LDA } ( char -- b36 )
 
 %LDA-INDEX { #00 SWP #00 .grid/width LDZ ** ROT #00 SWP ++ } ( x y -- index )
 %LDA-CELL { LDA-INDEX DATA-CELLS ++ LDA } ( x y -- char )
@@ -49,7 +59,7 @@
 
 ( variables )
 
-@timer     [ &byte $1 &frame $1 &speed $1 ]
+@timer     [ &beat $1 &alive $1 &frame $1 &speed $1 ]
 @grid      [ &width $1 &height $1 ]
 @selection [ &x1 $1 &y1 $1 &x2 $1 &y2 $1 ]
 @cursor    [ &x $2 &y $2 ]
@@ -68,7 +78,7 @@
 
 	( find size )
 	.Screen/width DEI2 #03 SFT2 SWP POP .grid/width STZ
-	.Screen/height DEI2 #03 SFT2 SWP POP #02 SUB .grid/height STZ
+	.Screen/height DEI2 #03 SFT2 SWP POP #02 - .grid/height STZ
 
 	( fill grid with dots )
 	;start JSR2
@@ -78,48 +88,57 @@ BRK
 
 @on-frame
 
-	.timer LDZ #01 ADD DUP .timer STZ
+	( paused ) .timer/alive LDZ #01 JCN [ BRK ]
+
+	.timer/beat LDZ #01 + DUP .timer/beat STZ
 
 	( skip ) #08 EQU ,&tick JCN BRK &tick
 
-	.timer/frame LDZ #01 ADD .timer/frame STZ
+	.timer/frame LDZ #01 + .timer/frame STZ
 
 	;run JSR2
 
-	#00 .timer STZ
+	#00 .timer/beat STZ
 
 BRK
 
 @on-button
 	
-	.Controller/key DEI #00 EQU ,&no-key JCN
-		.selection/x1 LDZ .selection/y1 LDZ .Controller/key DEI SET-CELL
-		;redraw JSR2
-	&no-key
+	( ignore release when key/button is blank )
+	.Controller/button DEI2 #0000 !! #01 JCN [ BRK ]
 
-	( arrows )
+	( key )
+	.Controller/key DEI 
+	DUP #20 ! ,&no-space JCN
+		.timer/alive TOGGLE
+		;redraw JSR2 POP BRK &no-space
+	DUP #08 ! ,&no-backspace JCN
+		.selection/x1 LDZ .selection/y1 LDZ CHAR-DOT SET-CELL ( put . char )
+		;redraw JSR2 POP BRK &no-backspace
+	DUP IS-CHAR-KEY #00 = ,&no-key JCN
+		.selection/x1 LDZ .selection/y1 LDZ .Controller/key DEI SET-CELL
+		;redraw JSR2 POP BRK &no-key
+	POP
+
+	( button )
 	.Controller/button DEI #f0 AND
 		DUP #04 SFT #01 AND #01 NEQ ,&no-up JCN
 			.selection/y1 LDZ #00 EQU ,&no-up JCN
-			.selection/y1 LDZ #01 SUB .selection/y1 STZ
-			.selection/y2 LDZ #01 SUB .selection/y2 STZ &no-up
+			.selection/y1 LDZ #01 - .selection/y1 STZ
+			.selection/y2 LDZ #01 - .selection/y2 STZ &no-up
 		DUP #05 SFT #01 AND #01 NEQ ,&no-down JCN
-			.selection/y1 LDZ .grid/height LDZ #01 SUB EQU ,&no-down JCN
-			.selection/y1 LDZ #01 ADD .selection/y1 STZ
-			.selection/y2 LDZ #01 ADD .selection/y2 STZ &no-down
+			.selection/y1 LDZ .grid/height LDZ #01 - EQU ,&no-down JCN
+			.selection/y1 LDZ #01 + .selection/y1 STZ
+			.selection/y2 LDZ #01 + .selection/y2 STZ &no-down
 		DUP #06 SFT #01 AND #01 NEQ ,&no-left JCN
 			.selection/x1 LDZ #00 EQU ,&no-left JCN
-			.selection/x1 LDZ #01 SUB .selection/x1 STZ
-			.selection/x2 LDZ #01 SUB .selection/x2 STZ &no-left
+			.selection/x1 LDZ #01 - .selection/x1 STZ
+			.selection/x2 LDZ #01 - .selection/x2 STZ &no-left
 		DUP #07 SFT #01 AND #01 NEQ ,&no-right JCN
-			.selection/x1 LDZ .grid/width LDZ #01 SUB EQU ,&no-right JCN
-			.selection/x1 LDZ #01 ADD .selection/x1 STZ
-			.selection/x2 LDZ #01 ADD .selection/x2 STZ &no-right
+			.selection/x1 LDZ .grid/width LDZ #01 - EQU ,&no-right JCN
+			.selection/x1 LDZ #01 + .selection/x1 STZ
+			.selection/x2 LDZ #01 + .selection/x2 STZ &no-right
 	POP
-
-	.Controller/key DEI #08 NEQ ,&no-backspace JCN
-		.selection/x1 LDZ .selection/y1 LDZ #2e SET-CELL ( put . char )
-	&no-backspace
 
 	;redraw JSR2
 
@@ -147,32 +166,33 @@ BRK
 	.cursor/x LDZ2 .Screen/x DEO2
 	.cursor/y LDZ2 .Screen/y DEO2
 	;cursor_icn .Screen/addr DEO2
-	#32 .Mouse/state DEI #01 EQU ADD .Screen/color DEO
+	#32 .Mouse/state DEI #01 EQU + .Screen/color DEO
 	
 BRK
 
 @start ( -- )
-	
+
 	#00 .grid/height LDZ
 	&ver
 		#00 .grid/width LDZ
 		&hor
-			( get x,y ) SWP2 OVR STH SWP2 OVR STHr
-			#2e SET-CELL
+			GET-ITERATORS #2e SET-CELL
 			INCR
-			DUP2 LTH ,&hor JCN
+			LTHk ,&hor JCN
 		POP2
 		INCR
-		DUP2 LTH ,&ver JCN
+		LTHk ,&ver JCN
 	POP2
 
 	#9a .timer/speed STZ
+	#01 .timer/alive STZ
 
 RTN
 
 ( operations )
 
 @get-bang ( x y -- bang )
+
 RTN
 
 ( old )
@@ -207,7 +227,7 @@ RTN
 		POP2 ;font RTN
 	&no-bar
 	STH POP2 STHr
-	#20 SUB #00 SWP #30 SFT2 ;font ++
+	#20 - #00 SWP #30 SFT2 ;font ++
 
 RTN
 
@@ -216,9 +236,9 @@ RTN
 @op-a ( x y char -- )
 
 	POP
-	( get left ) DUP2 SWP #01 SUB SWP LDA-CELL-VALUE STH
+	( get left ) DUP2 SWP #01 - SWP LDA-CELL-VALUE STH
 	( get right ) DUP2 INCR LDA-CELL-VALUE STH
-	( incr y ) #01 ADD
+	( incr y ) #01 +
 	( get result ) ADDr STHr
 	LDA-CHAR
 	SET-CELL
@@ -228,9 +248,9 @@ RTN
 @op-b ( x y char -- )
 	
 	POP
-	( get left ) DUP2 SWP #01 SUB SWP LDA-CELL-VALUE STH
+	( get left ) DUP2 SWP #01 - SWP LDA-CELL-VALUE STH
 	( get right ) DUP2 INCR LDA-CELL-VALUE STH
-	( incr y ) #01 ADD
+	( incr y ) #01 +
 	( get result ) SUBr STHr
 	LDA-CHAR
 	SET-CELL
@@ -242,8 +262,8 @@ RTN
 @op-c ( x y char -- )
 	
 	POP
-	#01 ADD
-	#30 .timer/frame LDZ MOD8 ADD SET-CELL
+	#01 +
+	#30 .timer/frame LDZ MOD8 + SET-CELL
 
 RTN
 
@@ -315,12 +335,12 @@ RTN
 		#2a SET-CELL POP STHr RTN
 	&not-edge
 	( collide )
-	DUP2 #01 SUB LDA-CELL #2e EQU ,&not-collide JCN
+	DUP2 #01 - LDA-CELL #2e EQU ,&not-collide JCN
 		#2a SET-CELL POP STHr RTN
 	&not-collide
 	( move )
 	DUP2 STHr
-	SWP #01 SUB SWP SET-CELL	
+	SWP #01 - SWP SET-CELL	
 	#2e SET-CELL
 	
 RTN
@@ -353,7 +373,7 @@ RTN
 	
 	STH
 	( clear ) DUP2 #2e SET-CELL
-	( move ) #01 ADD DUP2 #01 SET-LOCK
+	( move ) #01 + DUP2 #01 SET-LOCK
 	STHr SET-CELL
 	
 RTN
@@ -384,12 +404,12 @@ RTN
 		#2a SET-CELL POP STHr RTN
 	&not-edge
 	( collide )
-	DUP2 SWP #01 SUB SWP LDA-CELL #2e EQU ,&not-collide JCN
+	DUP2 SWP #01 - SWP LDA-CELL #2e EQU ,&not-collide JCN
 		#2a SET-CELL POP STHr RTN
 	&not-collide
 	( move )
 	DUP2
-	SWP #01 SUB SWP STHr SET-CELL	
+	SWP #01 - SWP STHr SET-CELL	
 	#2e SET-CELL
 	
 RTN
@@ -432,6 +452,7 @@ RTN
 	&not-locked
 	ROT
 
+	( TODO: Make into a lookup table )
 	( A ) DUP #41 EQU ;op-a JCN2 ( B ) DUP #42 EQU ;op-b JCN2
 	( C ) DUP #43 EQU ;op-c JCN2 ( D ) DUP #44 EQU ;op-d JCN2
 	( E ) DUP #45 EQU ;op-e JCN2 ( F ) DUP #46 EQU ;op-f JCN2
@@ -456,13 +477,13 @@ RTN
 	&ver
 		#00 .grid/width LDZ
 		&hor
-			( get x,y ) SWP2 OVR STH SWP2 OVR STHr
+			GET-ITERATORS
 			( unlock ) #00 SET-LOCK
 			INCR
-			DUP2 LTH ,&hor JCN
+			LTHk ,&hor JCN
 		POP2
 		INCR
-		DUP2 LTH ,&ver JCN
+		LTHk ,&ver JCN
 	POP2
 
 RTN
@@ -475,13 +496,13 @@ RTN
 	&ver
 		#00 .grid/width LDZ
 		&hor
-			( get x,y ) SWP2 OVR STH SWP2 OVR STHr
+			GET-ITERATORS
 			DUP2 LDA-CELL ;run-char JSR2
 			INCR
-			DUP2 LTH ,&hor JCN
+			LTHk ,&hor JCN
 		POP2
 		INCR
-		DUP2 LTH ,&ver JCN
+		LTHk ,&ver JCN
 	POP2
 	;redraw JSR2
 
@@ -494,19 +515,19 @@ RTN
 	( Positionx )
 	#0000 .Screen/x DEO2
 	.selection/x1 LDZ
-		DUP #04 SFT LDA-CHAR #20 SUB #00 SWP #30 SFT2 ;font ++ .Screen/addr DEO2
+		DUP #04 SFT LDA-CHAR #20 - #00 SWP #30 SFT2 ;font ++ .Screen/addr DEO2
 	#22 .Screen/color DEO
 	#0008 .Screen/x DEO2
-		#0f AND LDA-CHAR #20 SUB #00 SWP #30 SFT2 ;font ++ .Screen/addr DEO2
+		#0f AND LDA-CHAR #20 - #00 SWP #30 SFT2 ;font ++ .Screen/addr DEO2
 	#22 .Screen/color DEO
 
 	( Positiony )
 	#0010 .Screen/x DEO2
 	.selection/y1 LDZ
-		DUP #04 SFT LDA-CHAR #20 SUB #00 SWP #30 SFT2 ;font ++ .Screen/addr DEO2
+		DUP #04 SFT LDA-CHAR #20 - #00 SWP #30 SFT2 ;font ++ .Screen/addr DEO2
 	#22 .Screen/color DEO
 	#0018 .Screen/x DEO2
-		#0f AND LDA-CHAR #20 SUB #00 SWP #30 SFT2 ;font ++ .Screen/addr DEO2
+		#0f AND LDA-CHAR #20 - #00 SWP #30 SFT2 ;font ++ .Screen/addr DEO2
 	#22 .Screen/color DEO
 
 	#0020 .Screen/x DEO2
@@ -516,23 +537,23 @@ RTN
 	( Frame )
 	#0030 .Screen/x DEO2
 	.timer/frame LDZ
-		DUP #04 SFT LDA-CHAR #20 SUB #00 SWP #30 SFT2 ;font ++ .Screen/addr DEO2
+		DUP #04 SFT LDA-CHAR #20 - #00 SWP #30 SFT2 ;font ++ .Screen/addr DEO2
 	#22 .Screen/color DEO
 	#0038 .Screen/x DEO2
-		#0f AND LDA-CHAR #20 SUB #00 SWP #30 SFT2 ;font ++ .Screen/addr DEO2
+		#0f AND LDA-CHAR #20 - #00 SWP #30 SFT2 ;font ++ .Screen/addr DEO2
 	#22 .Screen/color DEO
 
 	#0040 .Screen/x DEO2
 	;beat_icn .Screen/addr DEO2
-	#21 .timer/frame LDZ MOD8 #00 EQU #02 MUL ADD .Screen/color DEO
+	#21 .timer/frame LDZ MOD8 #00 EQU #02 * + .Screen/color DEO
 
 	( Speed )
 	#0050 .Screen/x DEO2
 	.timer/speed LDZ
-		DUP #04 SFT LDA-CHAR #20 SUB #00 SWP #30 SFT2 ;font ++ .Screen/addr DEO2
+		DUP #04 SFT LDA-CHAR #20 - #00 SWP #30 SFT2 ;font ++ .Screen/addr DEO2
 	#22 .Screen/color DEO
 	#0058 .Screen/x DEO2
-		#0f AND LDA-CHAR #20 SUB #00 SWP #30 SFT2 ;font ++ .Screen/addr DEO2
+		#0f AND LDA-CHAR #20 - #00 SWP #30 SFT2 ;font ++ .Screen/addr DEO2
 	#22 .Screen/color DEO
 
 	( TODO: Signal VU )
@@ -554,14 +575,14 @@ RTN
 		#00 .grid/width LDZ
 		&hor
 			( pos-x ) OVR #00 SWP #30 SFT2 .Screen/x DEO2
-			( get x,y ) SWP2 OVR STH SWP2 OVR STHr
+			GET-ITERATORS
 			( sprite ) DUP2 ;get-cell-sprite JSR2 .Screen/addr DEO2
-			( draw ) ;is-selected JSR2 #0d MUL #21 ADD .Screen/color DEO
+			( draw ) ;is-selected JSR2 #0d * #21 + .Screen/color DEO
 			INCR
-			DUP2 LTH ,&hor JCN
+			LTHk ,&hor JCN
 		POP2
 		INCR
-		DUP2 LTH ,&ver JCN
+		LTHk ,&ver JCN
 	POP2
 
 	;draw-interface JSR2
@@ -652,5 +673,3 @@ RTN
 	0000 7e02 3c40 7e00 000c 0810 1008 0c00
 	0008 0808 0808 0800 0030 1008 0810 3000
 	0000 0032 4c00 0000 3c42 99a1 a199 423c
-
-@data 
