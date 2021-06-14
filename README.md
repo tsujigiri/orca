@@ -1,12 +1,18 @@
 # Orca
 
-Orca is an [esoteric programming language](https://wiki.xxiivv.com/orca) designed to quickly create procedural sequencers, in which every letter of the alphabet is an operation, where lowercase letters operate on bang, uppercase letters operate each frame.
+[Orca](https://wiki.xxiivv.com/orca) is an esoteric programming language, written in [Uxntal](https://wiki.xxiivv.com/site/uxntal.html).
 
-This is a minimalist implementation of the basic operators created for educational purposes. To try a complete environment with client and server, see [Orca](https://git.sr.ht/~rabbits/orca).
+In Orca, every letter of the alphabet is an operation, where lowercase letters operate on bang, uppercase letters operate each frame. This repository also contain a ANSI C version.
 
 ## Build
 
-You must have [SDL2](https://wiki.libsdl.org/) and [portmidi](http://portmedia.sourceforge.net/portmidi/).
+You must have the [Uxn](https://git.sr.ht/~rabbits/uxn/) assembler and emulator.
+
+```
+uxnasm orca.tal orca.rom && uxnemu orca.rom
+```
+
+To build the C version(old), you must have [SDL2](https://wiki.libsdl.org/).
 
 ```
 cc orca.c -std=c89 -O2 -DNDEBUG -g0 -s -Wall -L/usr/local/lib -lSDL2 -o orca

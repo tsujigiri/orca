@@ -1,22 +1,24 @@
 #!/bin/bash
 
-clang-format -i orca.c
+echo "Cleaning.."
+rm -rf bin
+mkdir bin
 
-## Cleanup
-rm -f ./orca
+echo "Assembling.."
+uxnasm orca.tal bin/orca.rom 
 
-# client
-cc -std=c89 -DDEBUG -Wall -Wno-unknown-pragmas -Wpedantic -Wshadow -Wextra -Werror=implicit-int -Werror=incompatible-pointer-types -Werror=int-conversion -Wvla -g -Og -fsanitize=address -fsanitize=undefined -L/usr/local/lib -lSDL2 -lportmidi orca.c -o orca
-# cc -std=c89 -O2 -DNDEBUG -g0 -s -Wall -Wno-unknown-pragmas -L/usr/local/lib -lSDL2 -lportmidi orca.c -o orca
-
-# Size
-echo "Size: $(du -sk ./orca)"
-
-# Install
-if [ -d "$HOME/bin" ] && [ -e ./orca ]
+echo "Installing.."
+if [ -d "$HOME/roms" ] && [ -e ./bin/orca.rom ]
 then
-	cp ./orca $HOME/bin
-    echo "Installed: $HOME/bin" 
+	cp ./bin/orca.rom $HOME/roms
+    echo "Installed in $HOME/roms" 
 fi
 
-./orca demo.orca
+if [ "${1}" = '--push' ]; 
+then
+	echo "Pushing.."
+	~/Applications/butler push bin/orca.rom hundredrabbits/orca:uxn
+fi
+
+echo "Running.."
+uxnemu bin/orca.rom
