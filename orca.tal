@@ -1,14 +1,19 @@
 ( Orca
 	
 	TODO
-		- draw path name
+		- lowcase/upcase bang
 		- Synthax highlight
-		- B operating doesn't loop around
-		- Detect capitalization
 		- Comments
 		- Scale selection
+		- Rename file
 		- Load/Save
 		- Copy/Paste
+
+	☒ A - B
+	☐ C - H
+	☐ I - N
+	☐ O - T
+	☐ U - Z
 )
 
 %+  { ADD } %-   { SUB }  %*  { MUL }  %/   { DIV }
@@ -19,10 +24,11 @@
 %DEBUG  { .Console/byte DEO #0a .Console/char DEO }
 %DEBUG2 { .Console/short DEO2 #0a .Console/char DEO }
 
+%TOB { SWP POP }        %TOS { #00 SWP }
+%INCR { SWP #01 + SWP } %DECR { SWP #01 - SWP }
+
 %RTN { JMP2r }
 %MOD { DUP2 / * - } %MOD8 { #07 AND }
-%TOB { SWP POP } %TOS { #00 SWP }
-%INCR { SWP #01 + SWP }
 %GET-ITERATORS { SWP2k POP SWP POP }
 %TOGGLE { DUP LDZ #00 = SWP STZ }
 
@@ -32,19 +38,24 @@
 
 %IS-CHAR-KEY { STHk #20 > STHr #7b < #0101 == }
 
-%LDA-CHAR { #24 MOD #00 SWP ;b36clc ++ LDA } ( b36 -- char )
-%LDA-VALUE { #20 - #00 SWP ;values ++ LDA } ( char -- b36 )
+%GET-INDEX { #00 SWP #00 .grid/width LDZ ** ROT #00 SWP ++ } ( x y -- index )
+%GET-CHAR  { #24 MOD #00 SWP ;b36clc ++ LDA } ( b36 -- char )
+%GET-VALUE { #20 - #00 SWP ;values ++ LDA } ( char -- b36 )
 
-%LDA-INDEX { #00 SWP #00 .grid/width LDZ ** ROT #00 SWP ++ } ( x y -- index )
-%LDA-CELL { LDA-INDEX DATA-CELLS ++ LDA } ( x y -- char )
-%SET-CELL { ROT ROT LDA-INDEX DATA-CELLS ++ STA } ( x y char -- )
-%LDA-TYPE { LDA-INDEX DATA-TYPES ++ LDA } ( x y -- type )
-%SET-TYPE { ROT ROT LDA-INDEX DATA-TYPES ++ STA } ( x y type -- )
-%LDA-LOCK { LDA-INDEX DATA-TYPES ++ LDA } ( x y -- type )
-%SET-LOCK { ROT ROT LDA-INDEX DATA-TYPES ++ STA } ( x y type -- )
-%LDA-PORT { } ( x y lock -- char )
-%SET-PORT { } ( x y char -- )
-%LDA-CELL-VALUE { LDA-CELL LDA-VALUE } ( x y -- b36 )
+%GET-CELL  { GET-INDEX DATA-CELLS ++ LDA } ( x y -- char )
+%SET-CELL  { ROT ROT GET-INDEX DATA-CELLS ++ STA } ( x y char -- )
+
+%GET-TYPE  { GET-INDEX DATA-TYPES ++ LDA } ( x y -- type )
+%SET-TYPE  { ROT ROT GET-INDEX DATA-TYPES ++ STA } ( x y type -- )
+
+%GET-LOCK  { GET-INDEX DATA-TYPES ++ LDA } ( x y -- type )
+%SET-LOCK  { ROT ROT GET-INDEX DATA-TYPES ++ STA } ( x y type -- )
+
+%GET-PORT  { GET-CELL GET-VALUE } ( x y -- char )
+%SET-PORT  { SET-CELL } ( x y char -- )
+
+%GET-PORT-LOCK  { DUP2 #01 SET-LOCK GET-PORT } ( x y -- char )
+%SET-PORT-LOCK  { DUP2 #01 SET-LOCK SET-PORT } ( x y -- )
 
 %CHAR-DOT { #2e }
 
@@ -219,21 +230,9 @@ RTN
 
 RTN
 
-@get-port ( x y lock -- value )
-	
-	(
-	DUP #01 NEQ ^$no-lock JCN
-		DUP2 #01 SET-LOCK
-	$no-lock
-	STH DUP2 #02 #02 STHr MUL ADD ,set-type JSR2
-	LDA-CELL
-	)
-
-RTN
-
 @get-cell-sprite ( x y -- addr )
 	
-	DUP2 LDA-CELL
+	DUP2 GET-CELL
 	( if character is dot )
 	DUP CHAR-DOT NEQ ,&no-bar JCN
 		( check if x,y is grid )
@@ -254,25 +253,23 @@ RTN
 @op-a ( x y char -- )
 
 	POP ( TODO: detect capitalization )
-	( get left ) DUP2 SWP #01 - SWP LDA-CELL-VALUE STH
-	( get right ) DUP2 INCR LDA-CELL-VALUE STH
+	( get left ) DUP2 DECR GET-PORT STH
+	( get right ) DUP2 INCR GET-PORT-LOCK STH
 	( incr y ) #01 +
-	( get result ) ADDr STHr
-	LDA-CHAR
-	SET-CELL
+	( get result ) ADDr STHr GET-CHAR
+	SET-PORT-LOCK
 
 RTN
 
 @op-b ( x y char -- )
 	
 	POP ( TODO: detect capitalization )
-	( get left ) DUP2 SWP #01 - SWP LDA-CELL-VALUE STH
-	( get right ) DUP2 INCR LDA-CELL-VALUE STH
+	( get left ) DUP2 DECR GET-PORT STH
+	( get right ) DUP2 INCR GET-PORT-LOCK STH
 	( incr y ) #01 +
 	( get result ) SUBr STHr
-	( loop-around ) DUP #80 < ,&no-bounds JCN #00 SWP - #24 SWP - &no-bounds
-	LDA-CHAR
-	SET-CELL
+	( loop-around ) DUP #80 < ,&no-bounds JCN #00 SWP - #24 SWP - &no-bounds GET-CHAR
+	SET-PORT-LOCK
 
 RTN
 
@@ -352,12 +349,12 @@ RTN
 		#2a SET-CELL POP STHr RTN
 	&not-edge
 	( collide )
-	DUP2 #01 - LDA-CELL CHAR-DOT EQU ,&not-collide JCN
+	DUP2 #01 - GET-CELL CHAR-DOT EQU ,&not-collide JCN
 		#2a SET-CELL POP STHr RTN
 	&not-collide
 	( move )
 	DUP2 STHr
-	SWP #01 - SWP SET-CELL	
+	DECR SET-CELL	
 	CHAR-DOT SET-CELL
 	
 RTN
@@ -421,12 +418,12 @@ RTN
 		#2a SET-CELL POP STHr RTN
 	&not-edge
 	( collide )
-	DUP2 SWP #01 - SWP LDA-CELL CHAR-DOT EQU ,&not-collide JCN
+	DUP2 DECR GET-CELL CHAR-DOT EQU ,&not-collide JCN
 		#2a SET-CELL POP STHr RTN
 	&not-collide
 	( move )
 	DUP2
-	SWP #01 - SWP STHr SET-CELL	
+	DECR STHr SET-CELL	
 	CHAR-DOT SET-CELL
 	
 RTN
@@ -464,10 +461,13 @@ RTN
 	&not-dot
 
 	( skip locked )
-	ROT ROT DUP2 LDA-LOCK #00 EQU ,&not-locked JCN
+	ROT ROT DUP2 GET-LOCK #00 EQU ,&not-locked JCN
 		POP POP2 RTN
 	&not-locked
 	ROT
+
+	( TODO: skip lowercase )
+	( TODO: skip commented )
 
 	( TODO: Make into a lookup table )
 	( A ) DUP #41 EQU ;op-a JCN2 ( B ) DUP #42 EQU ;op-b JCN2
@@ -529,7 +529,7 @@ RTN
 		#00 .grid/width LDZ
 		&hor
 			GET-ITERATORS
-			DUP2 LDA-CELL ;run-char JSR2
+			DUP2 GET-CELL ;run-char JSR2
 			INCR
 			LTHk ,&hor JCN
 		POP2
@@ -579,19 +579,19 @@ RTN
 	( Positionx )
 	#0000 .Screen/x DEO2
 	.selection/x1 LDZ
-		DUP #04 SFT LDA-CHAR #20 - #00 SWP #30 SFT2 ;font ++ .Screen/addr DEO2
+		DUP #04 SFT GET-CHAR #20 - #00 SWP #30 SFT2 ;font ++ .Screen/addr DEO2
 	#22 .Screen/color DEO
 	#0008 .Screen/x DEO2
-		#0f AND LDA-CHAR #20 - #00 SWP #30 SFT2 ;font ++ .Screen/addr DEO2
+		#0f AND GET-CHAR #20 - #00 SWP #30 SFT2 ;font ++ .Screen/addr DEO2
 	#22 .Screen/color DEO
 
 	( Positiony )
 	#0010 .Screen/x DEO2
 	.selection/y1 LDZ
-		DUP #04 SFT LDA-CHAR #20 - #00 SWP #30 SFT2 ;font ++ .Screen/addr DEO2
+		DUP #04 SFT GET-CHAR #20 - #00 SWP #30 SFT2 ;font ++ .Screen/addr DEO2
 	#22 .Screen/color DEO
 	#0018 .Screen/x DEO2
-		#0f AND LDA-CHAR #20 - #00 SWP #30 SFT2 ;font ++ .Screen/addr DEO2
+		#0f AND GET-CHAR #20 - #00 SWP #30 SFT2 ;font ++ .Screen/addr DEO2
 	#22 .Screen/color DEO
 
 	#0020 .Screen/x DEO2
@@ -601,10 +601,10 @@ RTN
 	( Frame )
 	#0030 .Screen/x DEO2
 	.timer/frame LDZ
-		DUP #04 SFT LDA-CHAR #20 - #00 SWP #30 SFT2 ;font ++ .Screen/addr DEO2
+		DUP #04 SFT GET-CHAR #20 - #00 SWP #30 SFT2 ;font ++ .Screen/addr DEO2
 	#22 .Screen/color DEO
 	#0038 .Screen/x DEO2
-		#0f AND LDA-CHAR #20 - #00 SWP #30 SFT2 ;font ++ .Screen/addr DEO2
+		#0f AND GET-CHAR #20 - #00 SWP #30 SFT2 ;font ++ .Screen/addr DEO2
 	#22 .Screen/color DEO
 
 	#0040 .Screen/x DEO2
@@ -614,10 +614,10 @@ RTN
 	( Speed )
 	#0050 .Screen/x DEO2
 	.timer/speed LDZ
-		DUP #04 SFT LDA-CHAR #20 - #00 SWP #30 SFT2 ;font ++ .Screen/addr DEO2
+		DUP #04 SFT GET-CHAR #20 - #00 SWP #30 SFT2 ;font ++ .Screen/addr DEO2
 	#22 .Screen/color DEO
 	#0058 .Screen/x DEO2
-		#0f AND LDA-CHAR #20 - #00 SWP #30 SFT2 ;font ++ .Screen/addr DEO2
+		#0f AND GET-CHAR #20 - #00 SWP #30 SFT2 ;font ++ .Screen/addr DEO2
 	#22 .Screen/color DEO
 
 	( TODO: Signal VU )
