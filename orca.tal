@@ -3,6 +3,7 @@
 	TODO
 		- lowcase/upcase bang
 		- Synthax highlight
+			- Type data
 		- Comments
 		- Scale selection
 		- Rename file
@@ -32,6 +33,8 @@
 %GET-ITERATORS { SWP2k POP SWP POP }
 %TOGGLE { DUP LDZ #00 = SWP STZ }
 
+%OUTPUT-TYPE { #05 }
+
 %DATA-CELLS { #8000 }
 %DATA-LOCKS { #9000 }
 %DATA-TYPES { #a000 }
@@ -55,7 +58,9 @@
 %SET-PORT  { SET-CELL } ( x y char -- )
 
 %GET-PORT-LOCK  { DUP2 #01 SET-LOCK GET-PORT } ( x y -- char )
-%SET-PORT-LOCK  { DUP2 #01 SET-LOCK SET-PORT } ( x y -- )
+%SET-PORT-LOCK  { DUP2 #01 SET-LOCK SET-PORT } ( x y char -- )
+
+%SET-PORT-OUT { DUP2 OUTPUT-TYPE SET-TYPE SET-PORT-LOCK } ( x y char -- )
 
 %CHAR-DOT { #2e }
 
@@ -84,9 +89,9 @@
 |0100
 
 	( theme ) 
-	#0ff3 .System/r DEO2 
-	#0ffc .System/g DEO2 
-	#0ff9 .System/b DEO2
+	#0f34 .System/r DEO2 
+	#0fc4 .System/g DEO2 
+	#0f94 .System/b DEO2
 
 	( vectors ) 
 	;on-button .Controller/vector DEO2
@@ -101,7 +106,7 @@
 
 	( start )
 	;clear JSR2
-	;unlock JSR2
+	;init JSR2
 	#9a .timer/speed STZ
 	#01 .timer/alive STZ
 
@@ -230,6 +235,14 @@ RTN
 
 RTN
 
+@get-cell-type ( x y -- type )
+	
+	DUP2 ;is-selected JSR2 #01 ! ,&unselected JCN
+		POP2 #06 RTN &unselected
+	GET-TYPE
+
+RTN
+
 @get-cell-sprite ( x y -- addr )
 	
 	DUP2 GET-CELL
@@ -257,7 +270,7 @@ RTN
 	( get right ) DUP2 INCR GET-PORT-LOCK STH
 	( incr y ) #01 +
 	( get result ) ADDr STHr GET-CHAR
-	SET-PORT-LOCK
+	SET-PORT-OUT
 
 RTN
 
@@ -269,7 +282,7 @@ RTN
 	( incr y ) #01 +
 	( get result ) SUBr STHr
 	( loop-around ) DUP #80 < ,&no-bounds JCN #00 SWP - #24 SWP - &no-bounds GET-CHAR
-	SET-PORT-LOCK
+	SET-PORT-OUT
 
 RTN
 
@@ -504,14 +517,15 @@ RTN
 
 RTN
 
-@unlock ( -- )
+@init ( -- )
 	
 	#00 .grid/height LDZ
 	&ver
 		#00 .grid/width LDZ
 		&hor
 			GET-ITERATORS
-			( unlock ) #00 SET-LOCK
+			( reset lock ) DUP2 #00 SET-LOCK
+			( reset type ) #00 SET-TYPE
 			INCR
 			LTHk ,&hor JCN
 		POP2
@@ -523,7 +537,7 @@ RTN
 
 @run ( -- )
 	
-	;unlock JSR2
+	;init JSR2
 	#00 .grid/height LDZ
 	&ver
 		#00 .grid/width LDZ
@@ -650,7 +664,7 @@ RTN
 			( pos-x ) OVR #00 SWP #30 SFT2 .Screen/x DEO2
 			GET-ITERATORS
 			( sprite ) DUP2 ;get-cell-sprite JSR2 .Screen/addr DEO2
-			( draw ) ;is-selected JSR2 #0d * #21 + .Screen/color DEO
+			( draw ) ;get-cell-type JSR2 TOS ;cell-styles ++ LDA .Screen/color DEO
 			INCR
 			LTHk ,&hor JCN
 		POP2
@@ -700,6 +714,15 @@ RTN
 	67 68 69 6a 6b 6c 6d 6e
 	6f 70 71 72 73 74 75 76
 	77 78 79 7a
+
+@cell-styles
+	21 ( 0 normal )
+	23 ( 1 locked )
+	21 ( 2 port-unlocked )
+	21 ( 3 operator )
+	21 ( 4 port-locked )
+	2c ( 5 port-output )
+	29 ( 6 selected )
 
 @untitled-txt  "untitled.chr $1
 
