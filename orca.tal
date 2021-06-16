@@ -1,6 +1,7 @@
 ( Orca
 	
 	TODO
+		- draw path name
 		- Synthax highlight
 		- B operating doesn't loop around
 		- Detect capitalization
@@ -8,7 +9,6 @@
 		- Scale selection
 		- Load/Save
 		- Copy/Paste
-		- Copy/paste(chorded)
 )
 
 %+  { ADD } %-   { SUB }  %*  { MUL }  %/   { DIV }
@@ -26,6 +26,8 @@
 %GET-ITERATORS { SWP2k POP SWP POP }
 %TOGGLE { DUP LDZ #00 = SWP STZ }
 
+%TOB { SWP POP } %TOS { #00 SWP }
+
 %CHAR-DOT { #2e }
 
 %DATA-CELLS { #2000 }
@@ -33,7 +35,6 @@
 %DATA-TYPES { #4000 }
 
 %IS-CHAR-KEY { STHk #20 > STHr #7b < #0101 == }
-
 
 %LDA-CHAR { #24 MOD #00 SWP ;b36clc ++ LDA } ( b36 -- char )
 %LDA-VALUE { #20 - #00 SWP ;values ++ LDA } ( char -- b36 )
@@ -56,6 +57,7 @@
 |20 @Screen     [ &vector $2 &width $2 &height $2 &pad $2 &x $2 &y $2 &addr $2 &color $1 ]
 |80 @Controller [ &vector $2 &button $1 &key $1 ]
 |90 @Mouse      [ &vector $2 &x $2 &y $2 &state $1 &chord $1 ]
+|a0 @File       [ &vector $2 &success $2 &offset $2 &pad   $2 &name  $2 &length $2 &load $2 &save $2 ]
 
 ( variables )
 
@@ -64,12 +66,16 @@
 @selection [ &x1 $1 &y1 $1 &x2 $1 &y2 $1 ]
 @cursor    [ &x $2 &y $2 ]
 
+@path 
+	&length $1
+	&name $20
+
 |0100
 
 	( theme ) 
-	#08f3 .System/r DEO2 
-	#08fc .System/g DEO2 
-	#08f9 .System/b DEO2
+	#0ff3 .System/r DEO2 
+	#0ffc .System/g DEO2 
+	#0ff9 .System/b DEO2
 
 	( vectors ) 
 	;on-button .Controller/vector DEO2
@@ -80,13 +86,15 @@
 	.Screen/width DEI2 #03 SFT2 SWP POP .grid/width STZ
 	.Screen/height DEI2 #03 SFT2 SWP POP #02 - .grid/height STZ
 
+	;untitled-txt ;new-file JSR2
+
 	( fill grid with dots )
 	;start JSR2
 	;redraw JSR2
 
 BRK
 
-@on-frame
+@on-frame ( -> )
 
 	( paused ) .timer/alive LDZ #01 JCN [ BRK ]
 
@@ -102,7 +110,7 @@ BRK
 
 BRK
 
-@on-button
+@on-button ( -> )
 	
 	( ignore release when key/button is blank )
 	.Controller/button DEI2 #0000 !! #01 JCN [ BRK ]
@@ -144,12 +152,16 @@ BRK
 
 BRK
 
-@on-mouse
+@on-mouse (-> )
 	
 	.Mouse/state DEI #00 EQU ,&no-touch JCN
+
+		.Mouse/y DEI2 .Screen/height DEI2 #0008 -- -- #0008 << ;on-touch-bar JCN2
+
 		.Mouse/x DEI2 #03 SFT2 SWP POP .selection/x1 STZ
 		.Mouse/y DEI2 #03 SFT2 SWP POP .selection/y1 STZ
 		;redraw JSR2
+
 	&no-touch
 
 	( clear last cursor )
@@ -168,6 +180,12 @@ BRK
 	;cursor_icn .Screen/addr DEO2
 	#32 .Mouse/state DEI #01 EQU + .Screen/color DEO
 	
+BRK
+
+@on-touch-bar ( -> )
+	
+	.Mouse/x DEI2 #03 SFT2 TOB DEBUG 
+
 BRK
 
 @start ( -- )
@@ -508,6 +526,38 @@ RTN
 
 RTN
 
+@new-file ( default* -- )
+
+	( TODO: clear )
+	STH2
+	#00 #0c
+	&loop
+		OVR DUP TOS STH2kr ++ LDA
+		SWP .path/name + STZ
+		INCR
+		LTHk ,&loop JCN
+	.path/length STZ POP 
+	POP2r
+
+RTN
+
+@load-file ( -- )
+
+	( TODO: clear )
+	;path/name .File/name DEO2 
+	#2000 .File/length DEO2 
+	( BANK .File/load DEO2 )
+
+RTN
+
+@save-file ( -- )
+
+	;path/name .File/name DEO2 
+	#2000 .File/length DEO2 
+	( BANK .File/save DEO2 )
+
+RTN
+
 @draw-interface ( -- )
 	
 	.Screen/height DEI2 #0008 -- .Screen/y DEO2
@@ -558,12 +608,21 @@ RTN
 
 	( TODO: Signal VU )
 
+	.Screen/width DEI2 .Screen/x DEO2
+
 	( File )
-	.Screen/width DEI2 #0028 -- .Screen/x DEO2
-	.Screen/x DEI2 #0008 ++ .Screen/x DEO2 ;eye_icns .Screen/addr DEO2 #21 .Screen/color DEO
-	.Screen/x DEI2 #0008 ++ .Screen/x DEO2 ;filestate_icn .Screen/addr DEO2 #21 .Screen/color DEO
-	.Screen/x DEI2 #0008 ++ .Screen/x DEO2 ;load_icn .Screen/addr DEO2 #21 .Screen/color DEO
-	.Screen/x DEI2 #0008 ++ .Screen/x DEO2 ;save_icn .Screen/addr DEO2 #21 .Screen/color DEO
+	.Screen/x DEI2 #0008 -- .Screen/x DEO2
+	;save-icn .Screen/addr DEO2
+	#21 .Screen/color DEO
+	.Screen/x DEI2 #0010 -- .Screen/x DEO2
+	;load-icn .Screen/addr DEO2
+	#21 .Screen/color DEO
+	.Screen/x DEI2 #0008 -- .Screen/x DEO2
+	;make-icn .Screen/addr DEO2
+	#21 .Screen/color DEO
+
+	( filepath )
+	#23 ;draw-filepath JSR2
 
 RTN
 
@@ -588,6 +647,27 @@ RTN
 	;draw-interface JSR2
 
 RTN
+
+@draw-filepath ( color -- )
+	
+	STH
+	.Screen/x DEI2 #0048 ++ .Screen/x DEO2
+	.Screen/y DEI2 .Screen/y DEO2
+	;path/name
+	&loop
+		DUP2 LDA DUP #00 ! #20 * - TOS #0008 ** ;font ++ .Screen/addr DEO2 
+		STHkr .Screen/color DEO
+		.Screen/x DEI2 #0008 ++ .Screen/x DEO2
+		#0001 ++
+		LDAk #00 ! ,&loop JCN
+	POP2
+	POPr
+	( clear last ) 
+	#20 .Screen/color DEO
+
+RTN
+
+@untitled-txt  "untitled.chr $1
 
 @values ( char to b36 )
 	00 00 00 00 00 00 00 00
@@ -616,9 +696,10 @@ RTN
 @beat_icn       0000 1038 7c38 1000
 @marker8_icn    0000 2400 0024 0000
 @marker4_icn    0000 0000 0000 1000
-@filestate_icn  1054 28c6 2854 1000
-@load_icn       feaa d6aa d4aa f400
-@save_icn       fe82 8282 848a f400
+
+@save-icn      1054 28c6 2854 1000 
+@make-icn      fe82 8282 848a f400 
+@load-icn      feaa d6aa d4aa f400 
 
 @eye_icns
 	0038 4492 2810 0000 ( open )
