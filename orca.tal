@@ -24,13 +24,17 @@
 %DEBUG  { .Console/byte DEO #0a .Console/char DEO }
 %DEBUG2 { .Console/short DEO2 #0a .Console/char DEO }
 
-%TOB { SWP POP }        %TOS { #00 SWP }
-%INCR { SWP #01 + SWP } %DECR { SWP #01 - SWP }
+%TOB  { SWP POP }        
+%TOS  { #00 SWP }
+%INCR { SWP #01 + SWP } 
+%DECR { SWP #01 - SWP }
+%RTN  { JMP2r }
+%MOD  { DUP2 / * - } 
+%MOD8 { #07 AND }
+%MIN1 { DUP #00 = + }
 
-%RTN { JMP2r }
-%MOD { DUP2 / * - } %MOD8 { #07 AND }
-%GET-ITERATORS { SWP2k POP SWP POP }
 %TOGGLE { DUP LDZ #00 = SWP STZ }
+%GET-ITERATORS { SWP2k POP SWP POP }
 
 %PORTEL-TYPE   { #02 }
 %OPERATOR-TYPE { #03 }
@@ -284,7 +288,7 @@ RTN
 
 @op-c ( x y char -- )
 	
-	POP
+	POP ( TODO: detect capitalization )
 	#01 +
 	#30 .timer/frame LDZ MOD8 + SET-CELL
 
@@ -292,7 +296,15 @@ RTN
 
 @op-d ( x y char -- )
 
-	POP POP2
+	POP ( TODO: detect capitalization )
+	( TODO: clamp at #01 )
+	( get left ) DUP2 DECR GET-PORT-LEFT MIN1 STH
+	( TODO: clamp at #01 )
+	( get right ) DUP2 INCR GET-PORT-RIGHT MIN1 STH
+	( incr y ) #01 +
+	( get result ) .timer/frame LDZ MULr STHr MOD #00 =
+	( bang if equal ) #fc * #2e + 
+	SET-PORT-OUTPUT
 	
 RTN
 
@@ -323,8 +335,10 @@ RTN
 @op-h ( x y char -- )
 
 	POP
-	#01 + GET-PORT-RIGHT
-	
+	#01 + 
+	( lock ) DUP2 #01 SET-LOCK
+	( type ) PORTER-TYPE SET-TYPE 
+
 RTN
 
 @op-i ( x y char -- )
