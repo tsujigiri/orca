@@ -33,11 +33,14 @@
 %GET-ITERATORS { SWP2k POP SWP POP }
 %TOGGLE { DUP LDZ #00 = SWP STZ }
 
-%OUTPUT-TYPE { #05 }
+%OPERATOR-TYPE { #03 }
+%OUTPUT-TYPE   { #05 }
 
 %DATA-CELLS { #8000 }
 %DATA-LOCKS { #9000 }
 %DATA-TYPES { #a000 }
+
+%CHAR-DOT { #2e }
 
 %IS-CHAR-KEY { STHk #20 > STHr #7b < #0101 == }
 
@@ -51,18 +54,15 @@
 %GET-TYPE  { GET-INDEX DATA-TYPES ++ LDA } ( x y -- type )
 %SET-TYPE  { ROT ROT GET-INDEX DATA-TYPES ++ STA } ( x y type -- )
 
-%GET-LOCK  { GET-INDEX DATA-TYPES ++ LDA } ( x y -- type )
-%SET-LOCK  { ROT ROT GET-INDEX DATA-TYPES ++ STA } ( x y type -- )
+%GET-LOCK  { GET-INDEX DATA-LOCKS ++ LDA } ( x y -- type )
+%SET-LOCK  { ROT ROT GET-INDEX DATA-LOCKS ++ STA } ( x y type -- )
 
 %GET-PORT  { GET-CELL GET-VALUE } ( x y -- char )
 %SET-PORT  { SET-CELL } ( x y char -- )
 
 %GET-PORT-LOCK  { DUP2 #01 SET-LOCK GET-PORT } ( x y -- char )
 %SET-PORT-LOCK  { DUP2 #01 SET-LOCK SET-PORT } ( x y char -- )
-
-%SET-PORT-OUT { DUP2 OUTPUT-TYPE SET-TYPE SET-PORT-LOCK } ( x y char -- )
-
-%CHAR-DOT { #2e }
+%SET-PORT-OUT   { STH DUP2 OUTPUT-TYPE SET-TYPE STHr SET-PORT-LOCK } ( x y char -- )
 
 %RELEASE-MOUSE { #00 .Mouse/state DEO }
 
@@ -479,6 +479,12 @@ RTN
 	&not-locked
 	ROT
 
+	( is uppercase )
+	DUP #40 < ,&no-uc JCN
+	DUP #5a > ,&no-uc JCN
+		STH DUP2 OPERATOR-TYPE SET-TYPE STHr 
+	&no-uc
+
 	( TODO: skip lowercase )
 	( TODO: skip commented )
 
@@ -718,10 +724,10 @@ RTN
 @cell-styles
 	21 ( 0 normal )
 	23 ( 1 locked )
-	21 ( 2 port-unlocked )
-	21 ( 3 operator )
-	21 ( 4 port-locked )
-	2c ( 5 port-output )
+	2c ( 2 port-unlocked )
+	28 ( 3 operator )
+	2c ( 4 port-locked )
+	24 ( 5 port-output )
 	29 ( 6 selected )
 
 @untitled-txt  "untitled.chr $1
