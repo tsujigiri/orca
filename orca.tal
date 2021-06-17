@@ -45,6 +45,7 @@
 %DATA-LOCKS { #9000 }
 %DATA-TYPES { #a000 }
 
+%CHAR-BANG { #2a }
 %CHAR-DOT { #2e }
 
 %IS-CHAR-KEY { STHk #20 > STHr #7b < #0101 == }
@@ -83,14 +84,20 @@
 
 ( variables )
 
-@timer     [ &beat $1 &alive $1 &frame $1 &speed $1 ]
-@grid      [ &width $1 &height $1 ]
-@selection [ &x1 $1 &y1 $1 &x2 $1 &y2 $1 ]
-@cursor    [ &x $2 &y $2 ]
-
+@timer
+	&beat $1 
+	&alive $1 
+	&frame $1 
+	&speed $1
 @path 
 	&length $1
 	&name $20
+@grid
+	&width $1 
+	&height $1
+
+@selection [ &x1 $1 &y1 $1 &x2 $1 &y2 $1 ]
+@cursor    [ &x $2 &y $2 ]
 
 |0100
 
@@ -281,7 +288,8 @@ RTN
 	( get right ) DUP2 INCR GET-PORT-RIGHT STH
 	( incr y ) #01 +
 	( get result ) SUBr STHr
-	( loop-around ) DUP #80 < ,&no-bounds JCN #00 SWP - #24 SWP - &no-bounds GET-CHAR
+	( loop-around ) DUP #80 < ,&no-bounds JCN 
+		#00 SWP - #24 SWP - &no-bounds GET-CHAR
 	SET-PORT-OUTPUT 
 
 RTN
@@ -289,17 +297,18 @@ RTN
 @op-c ( x y char -- )
 	
 	POP ( TODO: detect capitalization )
-	#01 +
-	#30 .timer/frame LDZ MOD8 + SET-CELL
+	( get left ) DUP2 DECR GET-PORT-LEFT MIN1 STH
+	( get right ) DUP2 INCR GET-PORT-RIGHT MIN1 STH
+	( incr y ) #01 +
+	( get result ) SWPr .timer/frame LDZ STHr / STHr MOD GET-CHAR
+	SET-PORT-OUTPUT
 
 RTN
 
 @op-d ( x y char -- )
 
 	POP ( TODO: detect capitalization )
-	( TODO: clamp at #01 )
 	( get left ) DUP2 DECR GET-PORT-LEFT MIN1 STH
-	( TODO: clamp at #01 )
 	( get right ) DUP2 INCR GET-PORT-RIGHT MIN1 STH
 	( incr y ) #01 +
 	( get result ) .timer/frame LDZ MULr STHr MOD #00 =
@@ -310,7 +319,18 @@ RTN
 
 @op-e ( x y char -- )
 
-	POP POP2
+	STH
+	( limit )
+	OVR .grid/width LDZ #01 - ! ,&not-edge JCN
+		CHAR-BANG SET-CELL POPr RTN &not-edge
+	( collide )
+	DUP2 INCR GET-CELL CHAR-DOT = ,&not-blocker JCN
+		CHAR-BANG SET-CELL POPr RTN &not-blocker
+	( move )
+	DUP2 #00 SET-TYPE
+	DUP2 CHAR-DOT SET-CELL
+	INCR DUP2 STHr SET-CELL
+	#01 SET-LOCK
 	
 RTN
 
@@ -386,16 +406,15 @@ RTN
 	STH
 	( limit )
 	DUP ,&not-edge JCN
-		#2a SET-CELL POP STHr RTN
-	&not-edge
+		CHAR-BANG SET-CELL POPr RTN &not-edge
 	( collide )
-	DUP2 #01 - GET-CELL CHAR-DOT = ,&not-collide JCN
-		#2a SET-CELL POP STHr RTN
-	&not-collide
+	DUP2 #01 - GET-CELL CHAR-DOT = ,&not-blocker JCN
+		CHAR-BANG SET-CELL POPr RTN &not-blocker
 	( move )
-	DUP2 STHr
-	DECR SET-CELL	
-	CHAR-DOT SET-CELL
+	DUP2 #00 SET-TYPE
+	DUP2 CHAR-DOT SET-CELL
+	#01 - DUP2 STHr SET-CELL
+	#01 SET-LOCK
 	
 RTN
 
@@ -426,9 +445,17 @@ RTN
 @op-s ( x y char -- )
 	
 	STH
-	( clear ) DUP2 CHAR-DOT SET-CELL
-	( move ) #01 + DUP2 #01 SET-LOCK
-	STHr SET-CELL
+	( limit )
+	DUP .grid/width LDZ #01 - ! ,&not-edge JCN
+		CHAR-BANG SET-CELL POPr RTN &not-edge
+	( collide )
+	DUP2 #01 + GET-CELL CHAR-DOT = ,&not-blocker JCN
+		CHAR-BANG SET-CELL POPr RTN &not-blocker
+	( move )
+	DUP2 #00 SET-TYPE
+	DUP2 CHAR-DOT SET-CELL
+	#01 + DUP2 STHr SET-CELL
+	#01 SET-LOCK
 	
 RTN
 
@@ -455,16 +482,15 @@ RTN
 	STH
 	( limit )
 	OVR ,&not-edge JCN
-		#2a SET-CELL POP STHr RTN
-	&not-edge
+		CHAR-BANG SET-CELL POPr RTN &not-edge
 	( collide )
-	DUP2 DECR GET-CELL CHAR-DOT = ,&not-collide JCN
-		#2a SET-CELL POP STHr RTN
-	&not-collide
+	DUP2 DECR GET-CELL CHAR-DOT = ,&not-blocker JCN
+		CHAR-BANG SET-CELL POPr RTN &not-blocker
 	( move )
-	DUP2
-	DECR STHr SET-CELL	
-	CHAR-DOT SET-CELL
+	DUP2 #00 SET-TYPE
+	DUP2 CHAR-DOT SET-CELL
+	DECR DUP2 STHr SET-CELL
+	#01 SET-LOCK
 	
 RTN
 
@@ -604,7 +630,7 @@ RTN
 
 @load-file ( -- )
 
-	( TODO: clear )
+	;clear JSR2
 	;path/name .File/name DEO2 
 	#2000 .File/length DEO2 
 	( BANK .File/load DEO2 )
