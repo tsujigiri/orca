@@ -1,9 +1,8 @@
 ( Orca
 	
 	TODO
+		- Display character on cursor head
 		- lowcase/upcase bang
-		- Synthax highlight
-			- Type data
 		- Comments
 		- Scale selection
 		- Rename file
@@ -92,9 +91,9 @@
 |0100
 
 	( theme ) 
-	#0f34 .System/r DEO2 
-	#0fc4 .System/g DEO2 
-	#0f94 .System/b DEO2
+	#0f35 .System/r DEO2 
+	#0fc5 .System/g DEO2 
+	#0f95 .System/b DEO2
 
 	( vectors ) 
 	;on-button .Controller/vector DEO2
@@ -123,7 +122,7 @@ BRK
 
 	.timer/beat LDZ #01 + DUP .timer/beat STZ
 
-	( skip ) #08 EQU ,&tick JCN BRK &tick
+	( skip ) #08 = ,&tick JCN BRK &tick
 
 	.timer/frame LDZ #01 + .timer/frame STZ
 
@@ -154,19 +153,19 @@ BRK
 	( button )
 	.Controller/button DEI #f0 AND
 		DUP #04 SFT #01 AND #01 NEQ ,&no-up JCN
-			.selection/y1 LDZ #00 EQU ,&no-up JCN
+			.selection/y1 LDZ #00 = ,&no-up JCN
 			.selection/y1 LDZ #01 - .selection/y1 STZ
 			.selection/y2 LDZ #01 - .selection/y2 STZ &no-up
 		DUP #05 SFT #01 AND #01 NEQ ,&no-down JCN
-			.selection/y1 LDZ .grid/height LDZ #01 - EQU ,&no-down JCN
+			.selection/y1 LDZ .grid/height LDZ #01 - = ,&no-down JCN
 			.selection/y1 LDZ #01 + .selection/y1 STZ
 			.selection/y2 LDZ #01 + .selection/y2 STZ &no-down
 		DUP #06 SFT #01 AND #01 NEQ ,&no-left JCN
-			.selection/x1 LDZ #00 EQU ,&no-left JCN
+			.selection/x1 LDZ #00 = ,&no-left JCN
 			.selection/x1 LDZ #01 - .selection/x1 STZ
 			.selection/x2 LDZ #01 - .selection/x2 STZ &no-left
 		DUP #07 SFT #01 AND #01 NEQ ,&no-right JCN
-			.selection/x1 LDZ .grid/width LDZ #01 - EQU ,&no-right JCN
+			.selection/x1 LDZ .grid/width LDZ #01 - = ,&no-right JCN
 			.selection/x1 LDZ #01 + .selection/x1 STZ
 			.selection/x2 LDZ #01 + .selection/x2 STZ &no-right
 	POP
@@ -191,9 +190,9 @@ BRK
 	.cursor/x LDZ2 .Screen/x DEO2
 	.cursor/y LDZ2 .Screen/y DEO2
 	;cursor_icn .Screen/addr DEO2
-	#32 .Mouse/state DEI #01 EQU + .Screen/color DEO
+	#32 .Mouse/state DEI #01 = + .Screen/color DEO
 
-	.Mouse/state DEI #00 EQU ,&no-touch JCN
+	.Mouse/state DEI #00 = ,&no-touch JCN
 		.Mouse/y DEI2 .Screen/height DEI2 #0008 -- -- #0008 << ,on-touch-bar JCN
 		.Mouse/y DEI2 .Screen/height DEI2 #0010 -- -- #0008 << ,&no-touch JCN
 		.Mouse/x DEI2 #03 SFT2 SWP POP .selection/x1 STZ
@@ -230,17 +229,9 @@ BRK
 
 RTN
 
-( old )
-
-@is-selected ( x y -- flag )
-	
-	.selection/x1 LDZ .selection/y1 LDZ EQU2
-
-RTN
-
 @get-cell-type ( x y -- type )
 	
-	DUP2 ;is-selected JSR2 #01 ! ,&unselected JCN
+	DUP2 .selection/x1 LDZ .selection/y1 LDZ == #01 ! ,&unselected JCN
 		POP2 #06 RTN &unselected
 	GET-TYPE
 
@@ -253,9 +244,9 @@ RTN
 	DUP CHAR-DOT NEQ ,&no-bar JCN
 		( check if x,y is grid )
 		POP
-		DUP2 MOD8 #00 EQU SWP MOD8 #00 EQU #0101 NEQ2 ,&no-marker8 JCN 
+		DUP2 MOD8 #00 = SWP MOD8 #00 = #0101 NEQ2 ,&no-marker8 JCN 
 			POP2 ;marker8_icn RTN &no-marker8
-		DUP2 #01 AND #00 EQU SWP #01 AND #00 EQU #0101 NEQ2 ,&no-marker4 JCN 
+		DUP2 #01 AND #00 = SWP #01 AND #00 = #0101 NEQ2 ,&no-marker4 JCN 
 			POP2 ;marker4_icn RTN &no-marker4
 		DUP2 GET-TYPE #00 = ,&no-port JCN
 			POP2 ;marker4_icn RTN &no-port
@@ -313,7 +304,13 @@ RTN
 
 @op-f ( x y char -- )
 
-	POP POP2
+	POP ( TODO: detect capitalization )
+	( get left ) DUP2 DECR GET-PORT-LEFT STH
+	( get right ) DUP2 INCR GET-PORT-RIGHT STH
+	( incr y ) #01 +
+	( get result ) EQUr STHr
+	( bang on true ) #fc * #2e + 
+	SET-PORT-OUTPUT
 	
 RTN
 
@@ -367,7 +364,7 @@ RTN
 		#2a SET-CELL POP STHr RTN
 	&not-edge
 	( collide )
-	DUP2 #01 - GET-CELL CHAR-DOT EQU ,&not-collide JCN
+	DUP2 #01 - GET-CELL CHAR-DOT = ,&not-collide JCN
 		#2a SET-CELL POP STHr RTN
 	&not-collide
 	( move )
@@ -436,7 +433,7 @@ RTN
 		#2a SET-CELL POP STHr RTN
 	&not-edge
 	( collide )
-	DUP2 DECR GET-CELL CHAR-DOT EQU ,&not-collide JCN
+	DUP2 DECR GET-CELL CHAR-DOT = ,&not-collide JCN
 		#2a SET-CELL POP STHr RTN
 	&not-collide
 	( move )
@@ -479,7 +476,7 @@ RTN
 	&not-dot
 
 	( skip locked )
-	ROT ROT DUP2 GET-LOCK #00 EQU ,&not-locked JCN
+	ROT ROT DUP2 GET-LOCK #00 = ,&not-locked JCN
 		POP POP2 RTN
 	&not-locked
 	ROT
@@ -494,20 +491,20 @@ RTN
 	( TODO: skip commented )
 
 	( TODO: Make into a lookup table )
-	( A ) DUP #41 EQU ;op-a JCN2 ( B ) DUP #42 EQU ;op-b JCN2
-	( C ) DUP #43 EQU ;op-c JCN2 ( D ) DUP #44 EQU ;op-d JCN2
-	( E ) DUP #45 EQU ;op-e JCN2 ( F ) DUP #46 EQU ;op-f JCN2
-	( G ) DUP #47 EQU ;op-g JCN2 ( H ) DUP #48 EQU ;op-h JCN2
-	( I ) DUP #49 EQU ;op-i JCN2 ( J ) DUP #4a EQU ;op-j JCN2
-	( K ) DUP #4b EQU ;op-k JCN2 ( L ) DUP #4c EQU ;op-l JCN2
-	( M ) DUP #4d EQU ;op-m JCN2 ( N ) DUP #4e EQU ;op-n JCN2
-	( O ) DUP #4f EQU ;op-o JCN2 ( P ) DUP #50 EQU ;op-p JCN2
-	( Q ) DUP #51 EQU ;op-q JCN2 ( R ) DUP #52 EQU ;op-r JCN2
-	( S ) DUP #53 EQU ;op-s JCN2 ( T ) DUP #54 EQU ;op-t JCN2
-	( U ) DUP #55 EQU ;op-u JCN2 ( V ) DUP #56 EQU ;op-v JCN2
-	( W ) DUP #57 EQU ;op-w JCN2 ( X ) DUP #58 EQU ;op-x JCN2
-	( Y ) DUP #59 EQU ;op-y JCN2 ( Z ) DUP #5a EQU ;op-z JCN2
-	( * ) DUP #2a EQU ;op-bang JCN2
+	( A ) DUP #41 = ;op-a JCN2 ( B ) DUP #42 = ;op-b JCN2
+	( C ) DUP #43 = ;op-c JCN2 ( D ) DUP #44 = ;op-d JCN2
+	( E ) DUP #45 = ;op-e JCN2 ( F ) DUP #46 = ;op-f JCN2
+	( G ) DUP #47 = ;op-g JCN2 ( H ) DUP #48 = ;op-h JCN2
+	( I ) DUP #49 = ;op-i JCN2 ( J ) DUP #4a = ;op-j JCN2
+	( K ) DUP #4b = ;op-k JCN2 ( L ) DUP #4c = ;op-l JCN2
+	( M ) DUP #4d = ;op-m JCN2 ( N ) DUP #4e = ;op-n JCN2
+	( O ) DUP #4f = ;op-o JCN2 ( P ) DUP #50 = ;op-p JCN2
+	( Q ) DUP #51 = ;op-q JCN2 ( R ) DUP #52 = ;op-r JCN2
+	( S ) DUP #53 = ;op-s JCN2 ( T ) DUP #54 = ;op-t JCN2
+	( U ) DUP #55 = ;op-u JCN2 ( V ) DUP #56 = ;op-v JCN2
+	( W ) DUP #57 = ;op-w JCN2 ( X ) DUP #58 = ;op-x JCN2
+	( Y ) DUP #59 = ;op-y JCN2 ( Z ) DUP #5a = ;op-z JCN2
+	( * ) DUP #2a = ;op-bang JCN2
 	POP POP2
 
 RTN
@@ -605,45 +602,45 @@ RTN
 	#0000 .Screen/x DEO2
 	.selection/x1 LDZ
 		DUP #04 SFT GET-CHAR #20 - #00 SWP #30 SFT2 ;font ++ .Screen/addr DEO2
-	#22 .Screen/color DEO
+	#21 .Screen/color DEO
 	#0008 .Screen/x DEO2
 		#0f AND GET-CHAR #20 - #00 SWP #30 SFT2 ;font ++ .Screen/addr DEO2
-	#22 .Screen/color DEO
+	#21 .Screen/color DEO
 
 	( Positiony )
 	#0010 .Screen/x DEO2
 	.selection/y1 LDZ
 		DUP #04 SFT GET-CHAR #20 - #00 SWP #30 SFT2 ;font ++ .Screen/addr DEO2
-	#22 .Screen/color DEO
+	#21 .Screen/color DEO
 	#0018 .Screen/x DEO2
 		#0f AND GET-CHAR #20 - #00 SWP #30 SFT2 ;font ++ .Screen/addr DEO2
-	#22 .Screen/color DEO
+	#21 .Screen/color DEO
 
 	#0020 .Screen/x DEO2
 	;position_icn .Screen/addr DEO2
-	#23 .Screen/color DEO
+	#22 .Screen/color DEO
 
 	( Frame )
 	#0030 .Screen/x DEO2
 	.timer/frame LDZ
 		DUP #04 SFT GET-CHAR #20 - #00 SWP #30 SFT2 ;font ++ .Screen/addr DEO2
-	#22 .Screen/color DEO
+	#21 .Screen/color DEO
 	#0038 .Screen/x DEO2
 		#0f AND GET-CHAR #20 - #00 SWP #30 SFT2 ;font ++ .Screen/addr DEO2
-	#22 .Screen/color DEO
+	#21 .Screen/color DEO
 
 	#0040 .Screen/x DEO2
 	;beat_icn .Screen/addr DEO2
-	#21 .timer/frame LDZ MOD8 #00 EQU #02 * + .Screen/color DEO
+	#23 .timer/frame LDZ MOD8 #00 = - .Screen/color DEO
 
 	( Speed )
 	#0050 .Screen/x DEO2
 	.timer/speed LDZ
 		DUP #04 SFT GET-CHAR #20 - #00 SWP #30 SFT2 ;font ++ .Screen/addr DEO2
-	#22 .Screen/color DEO
+	#21 .Screen/color DEO
 	#0058 .Screen/x DEO2
 		#0f AND GET-CHAR #20 - #00 SWP #30 SFT2 ;font ++ .Screen/addr DEO2
-	#22 .Screen/color DEO
+	#21 .Screen/color DEO
 
 	( TODO: Signal VU )
 
@@ -727,7 +724,7 @@ RTN
 	77 78 79 7a
 
 @cell-styles
-	21 ( 0 normal )
+	23 ( 0 normal )
 	23 ( 1 locked )
 	21 ( 2 port-unlocked )
 	24 ( 3 operator )
