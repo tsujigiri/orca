@@ -33,7 +33,7 @@ To display the list of operators inside of Orca, use `CmdOrCtrl+G`.
 - `I` **increment**(*step* mod): Increments southward operand.
 - `J` **jumper**(*val*): Outputs northward operand.
 - `K` **konkat**(*len*): Reads multiple variables.
-- `L` **less**(*a* *b*): Outputs smallest of inputs.
+- `L` **lesser**(*a* *b*): Outputs smallest of inputs.
 - `M` **multiply**(*a* b): Outputs product of inputs.
 - `N` **north**: Moves Northward, or bangs.
 - `O` **read**(*x* *y* read): Reads operand with offset.

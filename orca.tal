@@ -309,7 +309,7 @@ RTN
 	( get right ) DUP2 INCR GET-PORT-RIGHT STH
 	( incr y ) #01 +
 	( get result ) EQUr STHr
-	( bang on true ) #fc * #2e + 
+	( bang if equal ) #fc * #2e + 
 	SET-PORT-OUTPUT
 	
 RTN
@@ -322,7 +322,8 @@ RTN
 
 @op-h ( x y char -- )
 
-	POP POP2
+	POP
+	#01 + GET-PORT-RIGHT
 	
 RTN
 
@@ -346,13 +347,23 @@ RTN
 
 @op-l ( x y char -- )
 
-	POP POP2
+	POP ( TODO: detect capitalization )
+	( get left ) DUP2 DECR GET-PORT-LEFT STH
+	( get right ) DUP2 INCR GET-PORT-RIGHT STH
+	( incr y ) #01 +
+	( min ) STH2r LTHk #01 JCN SWP POP GET-CHAR 
+	SET-PORT-OUTPUT
 	
 RTN
 
 @op-m ( x y char -- )
 
-	POP POP2
+	POP ( TODO: detect capitalization )
+	( get left ) DUP2 DECR GET-PORT-LEFT STH
+	( get right ) DUP2 INCR GET-PORT-RIGHT STH
+	( incr y ) #01 +
+	( get result ) MULr STHr GET-CHAR
+	SET-PORT-OUTPUT
 	
 RTN
 
