@@ -427,7 +427,7 @@ RTN
 	POP
 	( get x ) DUP2 SWP #02 - SWP GET-PORT-LEFT STH
 	( get y ) DUP2 SWP #01 - SWP GET-PORT-LEFT STH
-	( get value ) DUP2 STH2r ++ GET-PORT-RIGHT-RAW STH
+	( get value ) DUP2 INCR STH2r ++ GET-PORT-RIGHT-RAW STH
 	( incr y ) #01 +
 	STHr SET-PORT-OUTPUT
 	
