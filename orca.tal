@@ -1,9 +1,9 @@
 ( Orca
 	
 	TODO
+		- Catch ports that overflow out of grid
 		- Display character on cursor head
 		- lowcase/upcase bang
-		- Comments
 		- Scale selection
 		- Rename file
 		- Load/Save
@@ -36,6 +36,7 @@
 %TOGGLE { DUP LDZ #00 = SWP STZ }
 %GET-ITERATORS { SWP2k POP SWP POP }
 
+%LOCKED-TYPE   { #01 }
 %PORTEL-TYPE   { #02 }
 %OPERATOR-TYPE { #03 }
 %PORTER-TYPE   { #04 }
@@ -45,8 +46,9 @@
 %DATA-LOCKS { #9000 }
 %DATA-TYPES { #a000 }
 
+%CHAR-HASH { #23 }
 %CHAR-BANG { #2a }
-%CHAR-DOT { #2e }
+%CHAR-DOT  { #2e }
 
 %IS-CHAR-KEY { STHk #20 > STHr #7b < #0101 == }
 
@@ -274,8 +276,8 @@ RTN
 	( get a ) DUP2 DECR GET-PORT-LEFT STH
 	( get b ) DUP2 INCR GET-PORT-RIGHT STH
 	( incr y ) #01 +
-	( get result ) ADDr STHr GET-CHAR
-	SET-PORT-OUTPUT 
+	( get result ) ADDr STHr 
+	GET-CHAR SET-PORT-OUTPUT 
 
 RTN
 
@@ -287,8 +289,8 @@ RTN
 	( incr y ) #01 +
 	( get result ) SUBr STHr
 	( loop-around ) DUP #80 < ,&no-bounds JCN 
-		#00 SWP - #24 SWP - &no-bounds GET-CHAR
-	SET-PORT-OUTPUT 
+		#00 SWP - #24 SWP - &no-bounds 
+	GET-CHAR SET-PORT-OUTPUT 
 
 RTN
 
@@ -298,14 +300,14 @@ RTN
 	( get rate ) DUP2 DECR GET-PORT-LEFT MIN1 STH
 	( get mod ) DUP2 INCR GET-PORT-RIGHT MIN1 STH
 	( incr y ) #01 +
-	( get result ) SWPr .timer/frame LDZ STHr / STHr MOD GET-CHAR
-	SET-PORT-OUTPUT
+	( get result ) SWPr .timer/frame LDZ STHr / STHr MOD 
+	GET-CHAR SET-PORT-OUTPUT
 
 RTN
 
 @op-d ( x y char -- )
 
-	POP ( TODO: detect capitalization )
+	POP
 	( get rate ) DUP2 DECR GET-PORT-LEFT MIN1 STH
 	( get mod ) DUP2 INCR GET-PORT-RIGHT MIN1 STH
 	( incr y ) #01 +
@@ -331,7 +333,7 @@ RTN
 
 @op-f ( x y char -- )
 
-	POP ( TODO: detect capitalization )
+	POP
 	( get a ) DUP2 DECR GET-PORT-LEFT STH
 	( get b ) DUP2 INCR GET-PORT-RIGHT STH
 	( incr y ) #01 +
@@ -363,8 +365,8 @@ RTN
 	( get rate ) DUP2 DECR GET-PORT-LEFT STH
 	( incr y ) #01 +
 	( get val ) DUP2 GET-PORT-RIGHT STH
-	( get result ) ADDr STH2r SWP MOD GET-CHAR
-	SET-PORT-OUTPUT
+	( get result ) ADDr STH2r SWP MOD 
+	GET-CHAR SET-PORT-OUTPUT
 	
 RTN
 
@@ -386,8 +388,8 @@ RTN
 	( get left ) DUP2 DECR GET-PORT-LEFT STH
 	( get right ) DUP2 INCR GET-PORT-RIGHT STH
 	( incr y ) #01 +
-	( min ) STH2r LTHk #01 JCN SWP POP GET-CHAR 
-	SET-PORT-OUTPUT
+	( min ) STH2r LTHk #01 JCN SWP POP 
+	GET-CHAR SET-PORT-OUTPUT
 	
 RTN
 
@@ -397,8 +399,8 @@ RTN
 	( get left ) DUP2 DECR GET-PORT-LEFT STH
 	( get right ) DUP2 INCR GET-PORT-RIGHT STH
 	( incr y ) #01 +
-	( get result ) MULr STHr GET-CHAR
-	SET-PORT-OUTPUT
+	( get result ) MULr STHr 
+	GET-CHAR SET-PORT-OUTPUT
 	
 RTN
 
@@ -521,17 +523,34 @@ RTN
 
 RTN
 
+@op-comment ( x y char -- )
+	
+	POP
+	STH
+	#01 + .grid/width LDZ
+	&loop
+		OVR STHkr 
+		( lock )  DUP2 #01 SET-LOCK 
+		( close ) DUP2 GET-CELL CHAR-HASH = ,&end JCN
+		( type )  LOCKED-TYPE SET-TYPE
+		INCR
+		LTHk ,&loop JCN
+	POP2 POPr
+	RTN
+	&end
+	POP2 POP2 POPr
+
+RTN
+
 @run-char ( x y char -- )
 	
 	( skip dot )
 	DUP CHAR-DOT NEQ ,&not-dot JCN
-		POP POP2 RTN
-	&not-dot
+		POP POP2 RTN &not-dot
 
 	( skip locked )
 	ROT ROT DUP2 GET-LOCK #00 = ,&not-locked JCN
-		POP POP2 RTN
-	&not-locked
+		POP POP2 RTN &not-locked
 	ROT
 
 	( is uppercase )
@@ -557,7 +576,8 @@ RTN
 	( U ) DUP #55 = ;op-u JCN2 ( V ) DUP #56 = ;op-v JCN2
 	( W ) DUP #57 = ;op-w JCN2 ( X ) DUP #58 = ;op-x JCN2
 	( Y ) DUP #59 = ;op-y JCN2 ( Z ) DUP #5a = ;op-z JCN2
-	( * ) DUP #2a = ;op-bang JCN2
+	( * ) DUP CHAR-BANG = ;op-bang JCN2
+	( # ) DUP CHAR-HASH = ;op-comment JCN2
 	POP POP2
 
 RTN
