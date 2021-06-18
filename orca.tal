@@ -505,7 +505,12 @@ RTN
 
 @op-x ( x y char -- )
 
-	POP POP2
+	POP
+	( get value ) DUP2 INCR GET-PORT-RIGHT-RAW STH 
+	( get x ) DUP2 SWP #02 - SWP GET-PORT-LEFT STH
+	( get y ) DUP2 SWP #01 - SWP GET-PORT-LEFT STH
+	( incr y ) STH2r #01 + ++ STHr
+	SET-PORT-OUTPUT
 	
 RTN
 
