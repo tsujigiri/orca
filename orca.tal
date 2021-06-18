@@ -318,17 +318,14 @@ RTN
 @op-e ( x y char -- )
 
 	STH
-	( limit )
-	OVR .grid/width LDZ #01 - ! ,&not-edge JCN
-		CHAR-BANG SET-CELL POPr RTN &not-edge
-	( collide )
-	DUP2 INCR GET-CELL CHAR-DOT = ,&not-blocker JCN
-		CHAR-BANG SET-CELL POPr RTN &not-blocker
-	( move )
+	( hit edge ) OVR .grid/width LDZ #01 - = ;&collide JCN2
+	( hit cell ) DUP2 INCR GET-CELL CHAR-DOT ! ,&collide JCN
 	DUP2 #00 SET-TYPE
 	DUP2 CHAR-DOT SET-CELL
 	INCR DUP2 STHr SET-CELL
 	#01 SET-LOCK
+	RTN
+	&collide CHAR-BANG SET-CELL POPr
 	
 RTN
 
@@ -408,17 +405,14 @@ RTN
 @op-n ( x y char -- )
 	
 	STH
-	( limit )
-	DUP ,&not-edge JCN
-		CHAR-BANG SET-CELL POPr RTN &not-edge
-	( collide )
-	DUP2 #01 - GET-CELL CHAR-DOT = ,&not-blocker JCN
-		CHAR-BANG SET-CELL POPr RTN &not-blocker
-	( move )
+	( hit edge ) DUP #00 = ;&collide JCN2
+	( hit cell ) DUP2 #01 - GET-CELL CHAR-DOT ! ,&collide JCN
 	DUP2 #00 SET-TYPE
 	DUP2 CHAR-DOT SET-CELL
 	#01 - DUP2 STHr SET-CELL
 	#01 SET-LOCK
+	RTN
+	&collide CHAR-BANG SET-CELL POPr
 	
 RTN
 
@@ -454,17 +448,14 @@ RTN
 @op-s ( x y char -- )
 	
 	STH
-	( limit )
-	DUP .grid/width LDZ #01 - ! ,&not-edge JCN
-		CHAR-BANG SET-CELL POPr RTN &not-edge
-	( collide )
-	DUP2 #01 + GET-CELL CHAR-DOT = ,&not-blocker JCN
-		CHAR-BANG SET-CELL POPr RTN &not-blocker
-	( move )
+	( hit edge ) DUP .grid/height LDZ #01 - = ;&collide JCN2
+	( hit cell ) DUP2 #01 + GET-CELL CHAR-DOT ! ,&collide JCN
 	DUP2 #00 SET-TYPE
 	DUP2 CHAR-DOT SET-CELL
 	#01 + DUP2 STHr SET-CELL
 	#01 SET-LOCK
+	RTN
+	&collide CHAR-BANG SET-CELL POPr
 	
 RTN
 
@@ -489,17 +480,14 @@ RTN
 @op-w ( x y char -- )
 
 	STH
-	( limit )
-	OVR ,&not-edge JCN
-		CHAR-BANG SET-CELL POPr RTN &not-edge
-	( collide )
-	DUP2 DECR GET-CELL CHAR-DOT = ,&not-blocker JCN
-		CHAR-BANG SET-CELL POPr RTN &not-blocker
-	( move )
+	( hit edge ) OVR #00 = ;&collide JCN2
+	( hit cell ) DUP2 DECR GET-CELL CHAR-DOT ! ,&collide JCN
 	DUP2 #00 SET-TYPE
 	DUP2 CHAR-DOT SET-CELL
 	DECR DUP2 STHr SET-CELL
 	#01 SET-LOCK
+	RTN
+	&collide CHAR-BANG SET-CELL POPr
 	
 RTN
 
