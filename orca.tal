@@ -9,15 +9,15 @@
 		- Load/Save
 		- Copy/Paste
 
-	☒ A - B
-	☐ C - H
-	☐ I - N
-	☐ O - T
-	☐ U - Z
+	A - B
+	C - H
+	I - N
+	O - T
+	U - Z
 )
 
-%+  { ADD } %-   { SUB }  %*  { MUL }  %/   { DIV }
-%<  { LTH } %>   { GTH }  %=  { EQU }  %!   { NEQ }
+%+  { ADD } %-   { SUB }  %*  { MUL }  %/  { DIV }
+%<  { LTH } %>   { GTH }  %=  { EQU }  %!  { NEQ }
 %++ { ADD2 } %-- { SUB2 } %** { MUL2 } %// { DIV2 }
 %<< { LTH2 } %>> { GTH2 } %== { EQU2 } %!! { NEQ2 }
 
@@ -64,12 +64,12 @@
 %SET-LOCK  { ROT ROT GET-INDEX DATA-LOCKS ++ STA } ( x y type -- )
 
 %GET-PORT  { GET-CELL GET-VALUE } ( x y -- char )
-%SET-PORT  { SET-CELL } ( x y char -- )
 
 %GET-PORT-LEFT { DUP2 PORTEL-TYPE SET-TYPE GET-PORT } ( x y -- char )
 %GET-PORT-RIGHT  { DUP2 PORTER-TYPE SET-TYPE DUP2 #01 SET-LOCK GET-PORT } ( x y -- char )
+%GET-PORT-RIGHT-RAW  { DUP2 PORTER-TYPE SET-TYPE DUP2 #01 SET-LOCK GET-CELL } ( x y -- char )
 
-%SET-PORT-OUTPUT { STH DUP2 OUTPUT-TYPE SET-TYPE DUP2 #01 SET-LOCK STHr SET-PORT } ( x y char -- )
+%SET-PORT-OUTPUT { STH DUP2 OUTPUT-TYPE SET-TYPE DUP2 #01 SET-LOCK STHr SET-CELL } ( x y char -- )
 
 %RELEASE-MOUSE { #00 .Mouse/state DEO }
 
@@ -420,7 +420,12 @@ RTN
 
 @op-o ( x y char -- )
 
-	POP POP2
+	POP
+	( get x ) DUP2 SWP #02 - SWP GET-PORT-LEFT STH
+	( get y ) DUP2 SWP #01 - SWP GET-PORT-LEFT STH
+	( get value ) DUP2 STH2r ++ GET-PORT-RIGHT-RAW STH
+	( incr y ) #01 +
+	STHr SET-PORT-OUTPUT
 	
 RTN
 
