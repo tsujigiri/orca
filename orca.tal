@@ -372,8 +372,12 @@ RTN
 
 @op-j ( x y char -- )
 
-	POP POP2
 	
+	POP ( TODO: Wiring )
+	( get value ) DUP2 #01 - GET-PORT-RIGHT-RAW STH
+	( incr y ) #01 + 
+	STHr SET-PORT-OUTPUT
+
 RTN
 
 @op-k ( x y char -- )
@@ -506,7 +510,10 @@ RTN
 
 @op-y ( x y char -- )
 
-	POP POP2
+	POP ( TODO: Wiring )
+	( get value ) DUP2 DECR GET-PORT-RIGHT-RAW STH
+	( incr y ) INCR
+	STHr SET-PORT-OUTPUT
 	
 RTN
 
