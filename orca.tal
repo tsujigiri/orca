@@ -63,10 +63,8 @@
 %GET-LOCK  { GET-INDEX DATA-LOCKS ++ LDA } ( x y -- type )
 %SET-LOCK  { ROT ROT GET-INDEX DATA-LOCKS ++ STA } ( x y type -- )
 
-%GET-PORT  { GET-CELL GET-VALUE } ( x y -- char )
-
-%GET-PORT-LEFT { DUP2 PORTEL-TYPE SET-TYPE GET-PORT } ( x y -- char )
-%GET-PORT-RIGHT  { DUP2 PORTER-TYPE SET-TYPE DUP2 #01 SET-LOCK GET-PORT } ( x y -- char )
+%GET-PORT-LEFT { DUP2 PORTEL-TYPE SET-TYPE GET-CELL GET-VALUE } ( x y -- char )
+%GET-PORT-RIGHT  { DUP2 PORTER-TYPE SET-TYPE DUP2 #01 SET-LOCK GET-CELL GET-VALUE } ( x y -- char )
 %GET-PORT-RIGHT-RAW  { DUP2 PORTER-TYPE SET-TYPE DUP2 #01 SET-LOCK GET-CELL } ( x y -- char )
 
 %SET-PORT-OUTPUT { STH DUP2 OUTPUT-TYPE SET-TYPE DUP2 #01 SET-LOCK STHr SET-CELL } ( x y char -- )
@@ -273,8 +271,8 @@ RTN
 @op-a ( x y char -- )
 
 	POP ( TODO: detect capitalization )
-	( get left ) DUP2 DECR GET-PORT-LEFT STH
-	( get right ) DUP2 INCR GET-PORT-RIGHT STH
+	( get a ) DUP2 DECR GET-PORT-LEFT STH
+	( get b ) DUP2 INCR GET-PORT-RIGHT STH
 	( incr y ) #01 +
 	( get result ) ADDr STHr GET-CHAR
 	SET-PORT-OUTPUT 
@@ -284,8 +282,8 @@ RTN
 @op-b ( x y char -- )
 	
 	POP ( TODO: detect capitalization )
-	( get left ) DUP2 DECR GET-PORT-LEFT STH
-	( get right ) DUP2 INCR GET-PORT-RIGHT STH
+	( get a ) DUP2 DECR GET-PORT-LEFT STH
+	( get b ) DUP2 INCR GET-PORT-RIGHT STH
 	( incr y ) #01 +
 	( get result ) SUBr STHr
 	( loop-around ) DUP #80 < ,&no-bounds JCN 
@@ -297,8 +295,8 @@ RTN
 @op-c ( x y char -- )
 	
 	POP ( TODO: detect capitalization )
-	( get left ) DUP2 DECR GET-PORT-LEFT MIN1 STH
-	( get right ) DUP2 INCR GET-PORT-RIGHT MIN1 STH
+	( get rate ) DUP2 DECR GET-PORT-LEFT MIN1 STH
+	( get mod ) DUP2 INCR GET-PORT-RIGHT MIN1 STH
 	( incr y ) #01 +
 	( get result ) SWPr .timer/frame LDZ STHr / STHr MOD GET-CHAR
 	SET-PORT-OUTPUT
@@ -308,8 +306,8 @@ RTN
 @op-d ( x y char -- )
 
 	POP ( TODO: detect capitalization )
-	( get left ) DUP2 DECR GET-PORT-LEFT MIN1 STH
-	( get right ) DUP2 INCR GET-PORT-RIGHT MIN1 STH
+	( get rate ) DUP2 DECR GET-PORT-LEFT MIN1 STH
+	( get mod ) DUP2 INCR GET-PORT-RIGHT MIN1 STH
 	( incr y ) #01 +
 	( get result ) .timer/frame LDZ MULr STHr MOD #00 =
 	( bang if equal ) #fc * #2e + 
@@ -337,8 +335,8 @@ RTN
 @op-f ( x y char -- )
 
 	POP ( TODO: detect capitalization )
-	( get left ) DUP2 DECR GET-PORT-LEFT STH
-	( get right ) DUP2 INCR GET-PORT-RIGHT STH
+	( get a ) DUP2 DECR GET-PORT-LEFT STH
+	( get b ) DUP2 INCR GET-PORT-RIGHT STH
 	( incr y ) #01 +
 	( get result ) EQUr STHr
 	( bang if equal ) #fc * #2e + 
@@ -363,7 +361,13 @@ RTN
 
 @op-i ( x y char -- )
 
-	POP POP2
+	POP ( TODO: detect capitalization )
+	( get mod ) DUP2 INCR GET-PORT-RIGHT MIN1 STH
+	( get rate ) DUP2 DECR GET-PORT-LEFT STH
+	( incr y ) #01 +
+	( get val ) DUP2 GET-PORT-RIGHT STH
+	( get result ) ADDr STH2r SWP MOD GET-CHAR
+	SET-PORT-OUTPUT
 	
 RTN
 
