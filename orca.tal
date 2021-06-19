@@ -32,6 +32,9 @@
 %MOD  { DUP2 / * - } 
 %MOD8 { #07 AND }
 %MIN1 { DUP #00 = + }
+%LTS2 { #8000 ++ SWP2 #8000 ++ >> }
+
+%8** { #30 SFT2 }
 
 %TOGGLE { DUP LDZ #00 = SWP STZ }
 %GET-ITERATORS { SWP2k POP SWP POP }
@@ -93,6 +96,10 @@
 	&length $1
 	&name $20
 @grid
+	&x1 $2
+	&y1 $2
+	&x2 $2
+	&y2 $2
 	&width $1 
 	&height $1
 
@@ -112,8 +119,14 @@
 	;on-frame .Screen/vector DEO2
 
 	( find size )
-	.Screen/width DEI2 #03 SFT2 SWP POP .grid/width STZ
-	.Screen/height DEI2 #03 SFT2 SWP POP #02 - .grid/height STZ
+	.Screen/width DEI2 
+		DUP2 #03 SFT2 SWP POP #07 - .grid/width STZ
+		DUP2 #0002 // .grid/width LDZ #02 / #01 + TOS 8** -- #0004 ++ .grid/x1 STZ2
+		#0002 // .grid/width LDZ #02 / TOS 8** ++ #0004 ++ .grid/x2 STZ2
+	.Screen/height DEI2 
+		DUP2 #03 SFT2 SWP POP #07 - .grid/height STZ
+		DUP2 #0002 // .grid/height LDZ #02 / #01 + TOS 8** -- #0004 -- .grid/y1 STZ2
+		#0002 // .grid/height LDZ #02 / TOS 8** ++ #0004 -- .grid/y2 STZ2
 
 	;untitled-txt ;new-file JSR2
 
@@ -203,14 +216,19 @@ BRK
 	;cursor_icn .Screen/addr DEO2
 	#32 .Mouse/state DEI #01 = + .Screen/color DEO
 
-	.Mouse/state DEI #00 = ,&no-touch JCN
-		.Mouse/y DEI2 .Screen/height DEI2 #0008 -- -- #0008 << ,on-touch-bar JCN
-		.Mouse/y DEI2 .Screen/height DEI2 #0010 -- -- #0008 << ,&no-touch JCN
-		.Mouse/x DEI2 #03 SFT2 SWP POP .selection/x1 STZ
-		.Mouse/y DEI2 #03 SFT2 SWP POP .selection/y1 STZ
-		;redraw JSR2
-		&no-touch
+	( skip ) .Mouse/state DEI #00 ! #01 JCN [ BRK ]
+
+	.Mouse/x DEI2 .Mouse/y DEI2 .grid ;within-rect JSR2
+		;on-touch-grid JCN2
 	
+BRK
+
+@on-touch-grid ( -> )
+	
+	.Mouse/x DEI2 .grid/x1 LDZ2 -- #03 SFT2 SWP POP .selection/x1 STZ
+	.Mouse/y DEI2 .grid/y1 LDZ2 -- #03 SFT2 SWP POP .selection/y1 STZ
+	;redraw JSR2
+
 BRK
 
 @on-touch-bar ( -> )
@@ -264,7 +282,7 @@ RTN
 		POP2 ;font RTN
 	&no-bar
 	STH POP2 STHr
-	#20 - #00 SWP #30 SFT2 ;font ++
+	#20 - #00 SWP 8** ;font ++
 
 RTN
 
@@ -690,66 +708,61 @@ RTN
 
 RTN
 
-@draw-interface ( -- )
+@draw-toolbar ( -- )
 	
-	.Screen/height DEI2 #0008 -- .Screen/y DEO2
+	.grid/y2 LDZ2 #0008 ++ .Screen/y DEO2
 
 	( Positionx )
-	#0000 .Screen/x DEO2
+	.grid/x1 LDZ2 STH2k .Screen/x DEO2
 	.selection/x1 LDZ
-		DUP #04 SFT GET-CHAR #20 - #00 SWP #30 SFT2 ;font ++ .Screen/addr DEO2
+		DUP #04 SFT GET-CHAR #20 - #00 SWP 8** ;font ++ .Screen/addr DEO2
 	#21 .Screen/color DEO
-	#0008 .Screen/x DEO2
-		#0f AND GET-CHAR #20 - #00 SWP #30 SFT2 ;font ++ .Screen/addr DEO2
+	STH2kr #0008 ++ .Screen/x DEO2
+		#0f AND GET-CHAR #20 - #00 SWP 8** ;font ++ .Screen/addr DEO2
 	#21 .Screen/color DEO
-
 	( Positiony )
-	#0010 .Screen/x DEO2
+	STH2kr #0010 ++ .Screen/x DEO2
 	.selection/y1 LDZ
-		DUP #04 SFT GET-CHAR #20 - #00 SWP #30 SFT2 ;font ++ .Screen/addr DEO2
+		DUP #04 SFT GET-CHAR #20 - #00 SWP 8** ;font ++ .Screen/addr DEO2
 	#21 .Screen/color DEO
-	#0018 .Screen/x DEO2
-		#0f AND GET-CHAR #20 - #00 SWP #30 SFT2 ;font ++ .Screen/addr DEO2
+	STH2kr #0018 ++ .Screen/x DEO2
+		#0f AND GET-CHAR #20 - #00 SWP 8** ;font ++ .Screen/addr DEO2
 	#21 .Screen/color DEO
 
-	#0020 .Screen/x DEO2
+	STH2kr #0020 ++ .Screen/x DEO2
 	;position_icn .Screen/addr DEO2
 	#22 .Screen/color DEO
 
 	( Frame )
-	#0030 .Screen/x DEO2
+	STH2kr #0030 ++ .Screen/x DEO2
 	.timer/frame LDZ
-		DUP #04 SFT GET-CHAR #20 - #00 SWP #30 SFT2 ;font ++ .Screen/addr DEO2
+		DUP #04 SFT GET-CHAR #20 - #00 SWP 8** ;font ++ .Screen/addr DEO2
 	#21 .Screen/color DEO
-	#0038 .Screen/x DEO2
-		#0f AND GET-CHAR #20 - #00 SWP #30 SFT2 ;font ++ .Screen/addr DEO2
+	STH2kr #0038 ++ .Screen/x DEO2
+		#0f AND GET-CHAR #20 - #00 SWP 8** ;font ++ .Screen/addr DEO2
 	#21 .Screen/color DEO
 
-	#0040 .Screen/x DEO2
+	STH2kr #0040 ++ .Screen/x DEO2
 	;beat_icn .Screen/addr DEO2
 	#23 .timer/frame LDZ MOD8 #00 = - .Screen/color DEO
 
 	( Speed )
-	#0050 .Screen/x DEO2
+	STH2kr #0050 ++ .Screen/x DEO2
 	.timer/speed LDZ
-		DUP #04 SFT GET-CHAR #20 - #00 SWP #30 SFT2 ;font ++ .Screen/addr DEO2
+		DUP #04 SFT GET-CHAR #20 - #00 SWP 8** ;font ++ .Screen/addr DEO2
 	#21 .Screen/color DEO
-	#0058 .Screen/x DEO2
-		#0f AND GET-CHAR #20 - #00 SWP #30 SFT2 ;font ++ .Screen/addr DEO2
+	STH2r #0058 ++ .Screen/x DEO2
+		#0f AND GET-CHAR #20 - #00 SWP 8** ;font ++ .Screen/addr DEO2
 	#21 .Screen/color DEO
-
-	( TODO: Signal VU )
-
-	.Screen/width DEI2 .Screen/x DEO2
 
 	( File )
-	.Screen/x DEI2 #0008 -- .Screen/x DEO2
+	.grid/x2 LDZ2 STH2k #0008 -- .Screen/x DEO2
 	;save-icn .Screen/addr DEO2
 	#21 .Screen/color DEO
-	.Screen/x DEI2 #0010 -- .Screen/x DEO2
+	STH2kr #0018 -- .Screen/x DEO2
 	;load-icn .Screen/addr DEO2
 	#21 .Screen/color DEO
-	.Screen/x DEI2 #0008 -- .Screen/x DEO2
+	STH2r #0020 -- .Screen/x DEO2
 	;make-icn .Screen/addr DEO2
 	#21 .Screen/color DEO
 
@@ -762,10 +775,10 @@ RTN
 	
 	#00 .grid/height LDZ
 	&ver
-		( pos-y ) OVR #00 SWP #30 SFT2 .Screen/y DEO2
+		( pos-y ) OVR #00 SWP 8** [ .grid/y1 LDZ2 ++ ] .Screen/y DEO2
 		#00 .grid/width LDZ
 		&hor
-			( pos-x ) OVR #00 SWP #30 SFT2 .Screen/x DEO2
+			( pos-x ) OVR #00 SWP 8** [ .grid/x1 LDZ2 ++ ] .Screen/x DEO2
 			GET-ITERATORS
 			( sprite ) DUP2 ;get-cell-sprite JSR2 .Screen/addr DEO2
 			( draw ) ;get-cell-type JSR2 TOS ;cell-styles ++ LDA .Screen/color DEO
@@ -776,7 +789,7 @@ RTN
 		LTHk ,&ver JCN
 	POP2
 
-	;draw-interface JSR2
+	;draw-toolbar JSR2
 
 RTN
 
@@ -795,6 +808,23 @@ RTN
 	POPr
 	( clear last ) 
 	#20 .Screen/color DEO
+
+RTN
+
+@within-rect ( x* y* rect -- flag )
+	
+	STH
+	( y < rect.y1 ) DUP2 STHkr #02 ADD LDZ2 LTH2 ,&skip JCN
+	( y > rect.y2 ) DUP2 STHkr #06 ADD LDZ2 GTH2 ,&skip JCN
+	SWP2
+	( x < rect.x1 ) DUP2 STHkr LDZ2 LTH2 ,&skip JCN
+	( x > rect.x2 ) DUP2 STHkr #04 ADD LDZ2 GTH2 ,&skip JCN
+	POP2 POP2 POPr
+	#01 
+RTN
+	&skip
+	POP2 POP2 POPr
+	#00
 
 RTN
 
