@@ -467,8 +467,24 @@ RTN
 
 @op-t ( x y char -- )
 
-	POP POP2
-	
+	POP
+	( get key ) DUP2 SWP #02 - SWP GET-PORT-LEFT STH
+	( get len ) DUP2 SWP #01 - SWP GET-PORT-LEFT MIN1 STH
+	( stash y ) STH 
+	DUPk SWPr STHkr SWPr + 
+	&loop
+		( get x,y ) OVR #01 + STHkr 
+		( lock ) DUP2 #01 SET-LOCK 
+		( type ) LOCKED-TYPE SET-TYPE
+		INCR
+		LTHk ,&loop JCN
+	POP2
+	STHr
+	( select )
+	DUP2 INCR STH2r MOD ROT + SWP GET-PORT-RIGHT-RAW STH
+	#01 +
+	STHr SET-PORT-OUTPUT
+
 RTN
 
 @op-u ( x y char -- )
