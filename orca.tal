@@ -21,20 +21,17 @@
 %++ { ADD2 } %-- { SUB2 } %** { MUL2 } %// { DIV2 }
 %<< { LTH2 } %>> { GTH2 } %== { EQU2 } %!! { NEQ2 }
 
+%8** { #30 SFT2 }       %8// { #03 SFT2 }
+%TOB  { SWP POP }       %TOS  { #00 SWP }
+%INCR { SWP #01 + SWP } %DECR { SWP #01 - SWP }
+
 %DEBUG  { .Console/byte DEO #0a .Console/char DEO }
 %DEBUG2 { .Console/short DEO2 #0a .Console/char DEO }
 
-%TOB  { SWP POP }        
-%TOS  { #00 SWP }
-%INCR { SWP #01 + SWP } 
-%DECR { SWP #01 - SWP }
 %RTN  { JMP2r }
 %MOD  { DUP2 / * - } 
 %MOD8 { #07 AND }
 %MIN1 { DUP #00 = + }
-%LTS2 { #8000 ++ SWP2 #8000 ++ >> }
-
-%8** { #30 SFT2 }
 
 %TOGGLE { DUP LDZ #00 = SWP STZ }
 %GET-ITERATORS { SWP2k POP SWP POP }
@@ -120,11 +117,11 @@
 
 	( find size )
 	.Screen/width DEI2 
-		DUP2 #03 SFT2 SWP POP #07 - .grid/width STZ
+		DUP2 8// SWP POP #07 - .grid/width STZ
 		DUP2 #0002 // .grid/width LDZ #02 / #01 + TOS 8** -- #0004 ++ .grid/x1 STZ2
 		#0002 // .grid/width LDZ #02 / TOS 8** ++ #0004 ++ .grid/x2 STZ2
 	.Screen/height DEI2 
-		DUP2 #03 SFT2 SWP POP #07 - .grid/height STZ
+		DUP2 8// SWP POP #07 - .grid/height STZ
 		DUP2 #0002 // .grid/height LDZ #02 / #01 + TOS 8** -- #0004 -- .grid/y1 STZ2
 		#0002 // .grid/height LDZ #02 / TOS 8** ++ #0004 -- .grid/y2 STZ2
 
@@ -224,16 +221,22 @@ BRK
 BRK
 
 @on-touch-grid ( -> )
-	
-	.Mouse/x DEI2 .grid/x1 LDZ2 -- #03 SFT2 SWP POP .selection/x1 STZ
-	.Mouse/y DEI2 .grid/y1 LDZ2 -- #03 SFT2 SWP POP .selection/y1 STZ
+
+	.Mouse/x DEI2 .grid/x1 LDZ2 -- 8// SWP POP 
+		DUP .grid/width LDZ #01 - STHk < ,&no-clampx JCN
+			POP STHkr &no-clampx 
+		.selection/x1 STZ POPr
+	.Mouse/y DEI2 .grid/y1 LDZ2 -- 8// SWP POP 
+		DUP .grid/height LDZ #01 - STHk < ,&no-clampy JCN
+			POP STHkr &no-clampy 
+		.selection/y1 STZ POPr
 	;redraw JSR2
 
 BRK
 
 @on-touch-bar ( -> )
 	
-	.Screen/width DEI2 #03 SFT2 TOB .Mouse/x DEI2 #03 SFT2 TOB -
+	.Screen/width DEI2 8// TOB .Mouse/x DEI2 8// TOB -
 	DUP #01 ! ,&no-save JCN
 		#aa DEBUG
 		;save-file JSR2 &no-save
@@ -814,11 +817,11 @@ RTN
 @within-rect ( x* y* rect -- flag )
 	
 	STH
-	( y < rect.y1 ) DUP2 STHkr #02 ADD LDZ2 LTH2 ,&skip JCN
-	( y > rect.y2 ) DUP2 STHkr #06 ADD LDZ2 GTH2 ,&skip JCN
+	( y < rect.y1 ) DUP2 STHkr #02 + LDZ2 << ,&skip JCN
+	( y > rect.y2 ) DUP2 STHkr #06 + LDZ2 >> ,&skip JCN
 	SWP2
-	( x < rect.x1 ) DUP2 STHkr LDZ2 LTH2 ,&skip JCN
-	( x > rect.x2 ) DUP2 STHkr #04 ADD LDZ2 GTH2 ,&skip JCN
+	( x < rect.x1 ) DUP2 STHkr LDZ2 << ,&skip JCN
+	( x > rect.x2 ) DUP2 STHkr #04 + LDZ2 >> ,&skip JCN
 	POP2 POP2 POPr
 	#01 
 RTN
