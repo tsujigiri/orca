@@ -43,9 +43,9 @@
 %PORTER-TYPE   { #04 }
 %OUTPUT-TYPE   { #05 }
 
-%DATA-CELLS { #8000 }
-%DATA-LOCKS { #9000 }
-%DATA-TYPES { #a000 }
+%DATA-CELLS { #b000 }
+%DATA-LOCKS { #c000 }
+%DATA-TYPES { #d000 }
 %DATA-FILE { #e000 } ( file transfer )
 %DATA-CLIP { #f000 } ( copy/paste )
 
@@ -491,7 +491,24 @@ RTN
 
 @op-p ( x y char -- )
 
-	POP POP2
+	POP
+	( get key ) DUP2 SWP #02 - SWP GET-PORT-LEFT STH
+	( get len ) DUP2 SWP #01 - SWP GET-PORT-LEFT MIN1 STH
+	( get input ) DUP2 INCR GET-PORT-RIGHT-RAW STH
+	#00 OVRr STHr
+	&loop
+		( stash x-offset ) OVR STH
+		( stash x,y ) SWP2 STH2k SWP2
+		( get x+offset,y ) ROTr ROTr ADDr SWPr STH2r #01 +
+		( lock ) DUP2 #01 SET-LOCK
+		( type ) LOCKED-TYPE SET-TYPE
+		INCR
+		LTHk ,&loop JCN
+	POP2
+	( write )
+	( x-offset ) ROTr ROTr STH2r MOD
+	( x,y ) SWP #01 + STH + STHr
+	STHr SET-PORT-OUTPUT
 	
 RTN
 
@@ -536,9 +553,9 @@ RTN
 		LTHk ,&loop JCN
 	POP2
 	STHr
-	( select )
-	DUP2 INCR STH2r MOD ROT + SWP GET-PORT-RIGHT-RAW STH
-	#01 +
+	( read )
+	( x-offset ) DUP2 INCR STH2r MOD ROT + SWP 
+	( x,y ) GET-PORT-RIGHT-RAW STH #01 +
 	STHr SET-PORT-OUTPUT
 
 RTN
@@ -648,7 +665,6 @@ RTN
 	&no-uc
 
 	( TODO: skip lowercase )
-	( TODO: skip commented )
 
 	( TODO: Make into a lookup table )
 	( A ) DUP #41 = ;op-a JCN2 ( B ) DUP #42 = ;op-b JCN2
