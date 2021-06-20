@@ -84,6 +84,8 @@
 
 ( variables )
 
+|0000
+
 @timer
 	&beat $1 
 	&alive $1 
@@ -99,9 +101,12 @@
 	&y2 $2
 	&width $1 
 	&height $1
-
-@selection [ &x1 $1 &y1 $1 &x2 $1 &y2 $1 ]
-@cursor    [ &x $2 &y $2 ]
+@selection 
+	&x1 $1 &y1 $1 &x2 $1 &y2 $1
+@cursor
+	&x $2 &y $2
+@variables
+	$36
 
 |0100
 
@@ -516,8 +521,17 @@ RTN
 
 @op-v ( x y char -- )
 
-	POP POP2
-	
+	POP
+	( get write ) DUP2 DECR GET-PORT-LEFT STH
+	( get read ) DUP2 INCR GET-PORT-RIGHT-RAW STH
+	OVRr STHr ,&write JCN
+	( incr y ) #01 +
+	( load ) STHr GET-VALUE .variables + LDZ SET-PORT-OUTPUT
+	POPr
+	RTN
+	&write
+	( save ) STH2r SWP .variables + STZ POP2
+
 RTN
 
 @op-w ( x y char -- )
