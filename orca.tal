@@ -759,8 +759,8 @@ RTN
 		&continue
 		INCR2
 		LTH2k ,&loop JCN
-	POP2 POP2
 	&end
+	POP2 POP2 POP
 	#00 ,&x STR
 	#00 ,&y STR
 	RTN
