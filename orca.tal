@@ -24,6 +24,7 @@
 %8** { #30 SFT2 }       %8// { #03 SFT2 }
 %TOB  { SWP POP }       %TOS  { #00 SWP }
 %INCR { SWP #01 + SWP } %DECR { SWP #01 - SWP }
+%INCR2 { SWP2 #0001 ++ SWP2 }
 
 %DEBUG  { .Console/byte DEO #0a .Console/char DEO }
 %DEBUG2 { .Console/short DEO2 #0a .Console/char DEO }
@@ -45,7 +46,10 @@
 %DATA-CELLS { #8000 }
 %DATA-LOCKS { #9000 }
 %DATA-TYPES { #a000 }
+%DATA-FILE { #e000 } ( file transfer )
+%DATA-CLIP { #f000 } ( copy/paste )
 
+%CHAR-LINE { #0a }
 %CHAR-HASH { #23 }
 %CHAR-BANG { #2a }
 %CHAR-DOT  { #2e }
@@ -222,6 +226,8 @@ BRK
 
 	.Mouse/x DEI2 .Mouse/y DEI2 .grid ;within-rect JSR2
 		;on-touch-grid JCN2
+	.Mouse/y DEI2 .grid/y2 LDZ2 #0008 ++ -- 8// TOB #00 = 
+		;on-touch-toolbar JCN2
 	
 BRK
 
@@ -239,17 +245,22 @@ BRK
 
 BRK
 
-@on-touch-bar ( -> )
+@on-touch-toolbar ( -> )
 	
-	.Screen/width DEI2 8// TOB .Mouse/x DEI2 8// TOB -
-	DUP #01 ! ,&no-save JCN
+	( left-side )
+	.Mouse/x DEI2 .grid/x1 LDZ2 -- 8// TOB 
+		( TODO: touch controls )
+	POP
+
+	( right-side )
+	.grid/x2 LDZ2 .Mouse/x DEI2 -- 8// TOB 
+	DUP #00 ! ,&no-save JCN
 		#aa DEBUG
 		;save-file JSR2 &no-save
-	DUP #03 ! ,&no-load JCN
-		#bb DEBUG
+	DUP #02 ! ,&no-load JCN
 		;load-file JSR2
 		;redraw JSR22 &no-load
-	DUP #04 ! ,&no-name JCN
+	DUP #03 ! ,&no-name JCN
 		#cc DEBUG
 		#20 ;draw-filepath JSR2
 		;untitled-txt ;new-file JSR2
@@ -697,7 +708,7 @@ RTN
 
 	;clear JSR2
 	STH2
-	#00 #0c
+	#00 #0d
 	&loop
 		OVR DUP TOS STH2kr ++ LDA
 		SWP .path/name + STZ
@@ -710,10 +721,30 @@ RTN
 
 @load-file ( -- )
 
-	;clear JSR2
 	;path/name .File/name DEO2 
-	#2000 .File/length DEO2 
-	( BANK .File/load DEO2 )
+	#1000 .File/length DEO2 
+	DATA-FILE .File/load DEO2 
+	( parse )
+	#0000 #0200
+	&loop
+		( get char ) OVR2 DATA-FILE ++ LDA
+		DUP CHAR-LINE = ,&linebreak JCN
+			( write  ) STH ,&x LDR ,&y LDR STHr SET-CELL
+			( incr-x ) ,&x LDR #01 + ,&x STR
+			,&continue JMP
+		&linebreak
+			( reset x ) #00 ,&x STR
+			( incr-y  ) ,&y LDR #01 + ,&y STR
+			POP
+		&continue
+		INCR2
+		LTH2k ,&loop JCN
+	POP2 POP2
+	#00 ,&x STR
+	#00 ,&y STR
+	RTN
+	&x $1
+	&y $1
 
 RTN
 
@@ -875,7 +906,7 @@ RTN
 	28 ( 5 port-output )
 	29 ( 6 selected )
 
-@untitled-txt  "untitled.chr $1
+@untitled-txt  "untitled.orca $1
 
 @cursor_icn     80c0 e0f0 f8e0 1000
 @blank_icn      0000 0000 0000 0000
