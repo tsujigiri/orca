@@ -6,7 +6,7 @@
 		- lowcase/upcase bang
 		- Scale selection
 		- Rename file
-		- Load/Save
+		- Save file
 		- Copy/Paste
 
 	A - B
@@ -420,7 +420,25 @@ RTN
 
 @op-k ( x y char -- )
 
-	POP POP2
+	POP
+	( get len ) DUP2 DECR GET-PORT-LEFT MIN1
+	#00 SWP 
+	&loop
+		( stash x-offset ) OVR #01 + STH
+		( stash x,y ) SWP2 STH2k SWP2
+		( get x+offset,y ) ROTr ROTr ADDr SWPr STH2r 
+		( get variable ) DUP2 GET-PORT-RIGHT 
+		DUP #00 = ,&skip JCN
+			.variables + LDZ STH
+			( incr y ) #01 + 
+			DUP2 STHkr SET-PORT-OUTPUT
+			STHr
+		&skip
+		POP POP2
+		INCR
+		LTHk ;&loop JCN2
+	POP2
+	POP2
 	
 RTN
 
