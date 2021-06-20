@@ -49,6 +49,7 @@
 %DATA-FILE { #e000 } ( file transfer )
 %DATA-CLIP { #f000 } ( copy/paste )
 
+%CHAR-NULL { #00 }
 %CHAR-LINE { #0a }
 %CHAR-HASH { #23 }
 %CHAR-BANG { #2a }
@@ -725,21 +726,23 @@ RTN
 	#1000 .File/length DEO2 
 	DATA-FILE .File/load DEO2 
 	( parse )
-	#0000 #0200
+	#0000 #1000
 	&loop
 		( get char ) OVR2 DATA-FILE ++ LDA
+		DUP CHAR-NULL = ,&end JCN
 		DUP CHAR-LINE = ,&linebreak JCN
 			( write  ) STH ,&x LDR ,&y LDR STHr SET-CELL
-			( incr-x ) ,&x LDR #01 + ,&x STR
+			( incr x ) ,&x LDR #01 + ,&x STR
 			,&continue JMP
 		&linebreak
-			( reset x ) #00 ,&x STR
-			( incr-y  ) ,&y LDR #01 + ,&y STR
+			( undo x ) #00 ,&x STR
+			( incr y ) ,&y LDR #01 + ,&y STR
 			POP
 		&continue
 		INCR2
 		LTH2k ,&loop JCN
 	POP2 POP2
+	&end
 	#00 ,&x STR
 	#00 ,&y STR
 	RTN
