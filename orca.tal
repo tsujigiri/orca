@@ -391,9 +391,22 @@ RTN
 RTN
 
 @op-g ( x y char -- )
-
-	POP POP2
 	
+	POP
+	( get x ) DUP2 SWP #03 - SWP GET-PORT-LEFT STH
+	( get y ) DUP2 SWP #02 - SWP GET-PORT-LEFT STH
+	( get len ) DUP2 SWP #01 - SWP GET-PORT-LEFT MIN1 STH
+	#00 STHr
+	&loop
+		( x+i+1,y ) OVR STH OVR2 STHr ROT + #01 + SWP
+		GET-PORT-RIGHT-RAW DEBUG
+		( TODO )
+		( put value )
+		INCR
+		LTHk ,&loop JCN
+	POP2
+	POP2 POP2r
+
 RTN
 
 @op-h ( x y char -- )
@@ -433,9 +446,7 @@ RTN
 	( get len ) DUP2 DECR GET-PORT-LEFT MIN1
 	#00 SWP 
 	&loop
-		( stash x-offset ) OVR #01 + STH
-		( stash x,y ) SWP2 STH2k SWP2
-		( get x+offset,y ) ROTr ROTr ADDr SWPr STH2r 
+		( x+i+1,y ) OVR STH OVR2 STHr ROT + #01 + SWP
 		( get variable ) DUP2 GET-PORT-RIGHT 
 		DUP #00 = ,&skip JCN
 			.variables + LDZ STH
@@ -506,9 +517,7 @@ RTN
 	( get input ) DUP2 INCR GET-PORT-RIGHT-RAW STH
 	#00 OVRr STHr
 	&loop
-		( stash x-offset ) OVR STH
-		( stash x,y ) SWP2 STH2k SWP2
-		( get x+offset,y ) ROTr ROTr ADDr SWPr STH2r #01 +
+		( x+i+1,y ) OVR STH OVR2 STHr ROT + #01 + SWP
 		( lock ) DUP2 #01 SET-LOCK
 		( type ) LOCKED-TYPE SET-TYPE
 		INCR
@@ -562,16 +571,14 @@ RTN
 	POP
 	( get key ) DUP2 SWP #02 - SWP GET-PORT-LEFT STH
 	( get len ) DUP2 SWP #01 - SWP GET-PORT-LEFT MIN1 STH
-	( stash y ) STH 
-	DUPk SWPr STHkr SWPr + 
+	#00 STHkr
 	&loop
-		( get x,y ) OVR #01 + STHkr 
+		( x+i+1,y ) OVR STH OVR2 STHr ROT + #01 + SWP
 		( lock ) DUP2 #01 SET-LOCK 
 		( type ) LOCKED-TYPE SET-TYPE
 		INCR
 		LTHk ,&loop JCN
 	POP2
-	STHr
 	( read )
 	( x-offset ) DUP2 INCR STH2r MOD ROT + SWP 
 	( x,y ) GET-PORT-RIGHT-RAW STH #01 +
