@@ -33,6 +33,7 @@
 %MOD  { DUP2 / * - } 
 %MOD8 { #07 AND }
 %MIN1 { DUP #00 = + }
+%LTSk { #80 + SWP #80 + > }
 
 %TOGGLE { DUP LDZ #00 = SWP STZ }
 %GET-ITERATORS { SWP2k POP SWP POP }
@@ -402,7 +403,7 @@ RTN
 	( get mod ) DUP2 INCR GET-PORT-RIGHT MIN1 STH
 	( get rate ) DUP2 DECR GET-PORT-LEFT STH
 	( incr y ) #01 +
-	( get val ) DUP2 GET-PORT-RIGHT STH
+	( get val ) DUP2 GET-CELL GET-VALUE STH
 	( get result ) ADDr STH2r SWP MOD 
 	GET-CHAR SET-PORT-OUTPUT
 	
@@ -617,7 +618,23 @@ RTN
 
 @op-z ( x y char -- )
 
-	POP POP2
+	POP ( TODO: detect capitalization )
+	( get rate ) DUP2 DECR GET-PORT-LEFT MIN1 STH
+	( get target ) DUP2 INCR GET-PORT-RIGHT STH
+	( incr y ) #01 +
+	( get val ) DUP2 GET-CELL GET-VALUE STH
+	EQUkr STHr ,&end JCN 
+	LTHkr STHr #00 ! ,&no-below JCN 
+		( incr ) STHr OVRr STH SWPr ADDr
+		( clamp ) GTHkr STHr #01 JCN SWPr
+		,&end JMP
+		&no-below
+	GTHkr STHr #00 ! ,&no-above JCN 
+		( decr ) STHr OVRr STH SWPr SUBr
+		( clamp ) STH2kr LTSk #01 JCN SWPr
+		&no-above
+	&end
+	STHr GET-CHAR SET-PORT-OUTPUT POP2r
 	
 RTN
 
