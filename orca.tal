@@ -335,8 +335,7 @@ RTN
 	( get b ) DUP2 INCR GET-PORT-RIGHT STH
 	( incr y ) #01 +
 	( get result ) SUBr STHr
-	( loop-around ) DUP #80 < ,&no-bounds JCN 
-		#00 SWP - #24 SWP - &no-bounds 
+	( bounce ) DUP #80 < #04 JCN [ #24 SWP - ]
 	GET-CHAR SET-PORT-OUTPUT 
 
 RTN
@@ -395,17 +394,18 @@ RTN
 	POP
 	( get x ) DUP2 SWP #03 - SWP GET-PORT-LEFT STH
 	( get y ) DUP2 SWP #02 - SWP GET-PORT-LEFT STH
-	( get len ) DUP2 SWP #01 - SWP GET-PORT-LEFT MIN1 STH
-	#00 STHr
+	( get len ) DUP2 SWP #01 - SWP GET-PORT-LEFT MIN1
+	#00 SWP
 	&loop
 		( x+i+1,y ) OVR STH OVR2 STHr ROT + #01 + SWP
-		GET-PORT-RIGHT-RAW DEBUG
-		( TODO )
-		( put value )
+		DUP2 GET-PORT-RIGHT-RAW STH
+		( unstash x,y ) ROTr STHkr ROTr STHkr ROTr
+		( x0+x1-1,y0+y1+1 ) ROT + STH + #01 - STHr #01 +
+		STHr SET-PORT-OUTPUT
 		INCR
-		LTHk ,&loop JCN
+		LTHk ;&loop JCN2
 	POP2
-	POP2 POP2r
+	( clean ) POP2 POP2r
 
 RTN
 
