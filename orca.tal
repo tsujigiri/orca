@@ -87,6 +87,7 @@
 |80 @Controller [ &vector $2 &button $1 &key $1 ]
 |90 @Mouse      [ &vector $2 &x $2 &y $2 &state $1 &chord $1 ]
 |a0 @File       [ &vector $2 &success $2 &offset $2 &pad   $2 &name  $2 &length $2 &load $2 &save $2 ]
+|b0 @DateTime   [ &year   $2 &month    $1 &day    $1 &hour  $1 &minute $1 &second $1 &dotw $1 &doty $2 &isdst $1 ]
 
 ( variables )
 
@@ -95,8 +96,9 @@
 @timer
 	&beat $1 
 	&alive $1 
-	&frame $1 
 	&speed $1
+	&frame $2 
+	&seed $2
 @path 
 	&length $1
 	&name $20
@@ -136,6 +138,12 @@
 		DUP2 #0002 // .grid/height LDZ #02 / #01 + TOS 8** -- #0004 -- .grid/y1 STZ2
 		#0002 // .grid/height LDZ #02 / TOS 8** ++ #0004 -- .grid/y2 STZ2
 
+	( random seed )
+	.DateTime/second DEI .DateTime/minute DEI DUP2
+		.DateTime/hour DEI .DateTime/day DEI ++ ++
+		#1317 **
+		.timer/seed STZ2
+
 	;untitled-txt ;new-file JSR2
 
 	( start )
@@ -156,7 +164,7 @@ BRK
 
 	( skip ) #08 = ,&tick JCN BRK &tick
 
-	.timer/frame LDZ #01 + .timer/frame STZ
+	.timer/frame LDZ2 #0001 ++ .timer/frame STZ2
 
 	;run JSR2
 
@@ -339,7 +347,7 @@ RTN
 	( get rate ) DUP2 DECR GET-PORT-LEFT MIN1 STH
 	( get mod ) DUP2 INCR GET-PORT-RIGHT MIN1 STH
 	( incr y ) #01 +
-	( get result ) SWPr .timer/frame LDZ STHr / STHr MOD 
+	( get result ) SWPr .timer/frame LDZ [ ( TODO: ) TOB ] STHr / STHr MOD 
 	GET-CHAR SET-PORT-OUTPUT
 
 RTN
@@ -350,7 +358,7 @@ RTN
 	( get rate ) DUP2 DECR GET-PORT-LEFT MIN1 STH
 	( get mod ) DUP2 INCR GET-PORT-RIGHT MIN1 STH
 	( incr y ) #01 +
-	( get result ) .timer/frame LDZ MULr STHr MOD #00 =
+	( get result ) .timer/frame LDZ [ ( TODO: ) TOB ] MULr STHr MOD #00 =
 	( bang if equal ) #fc * #2e + 
 	SET-PORT-OUTPUT
 	
@@ -521,7 +529,17 @@ RTN
 
 @op-r ( x y char -- )
 
-	POP POP2
+	POP ( TODO: detect capitalization )
+	( get min ) DUP2 DECR GET-PORT-LEFT STH
+	( get max ) DUP2 INCR GET-PORT-RIGHT MIN1 STH
+	( unstash min,max ) STH2r 
+	( real max ) LTHk #01 JCN SWP
+	( no equal ) NEQk #04 JCN [ #01 - SWP ] 
+	( stash min,max ) STH2
+	( incr y ) #01 +
+	( get key ) .timer/seed LDZ2 .timer/frame LDZ2 ** SWP + 
+	( key % max + min ) STH2kr SWP - MOD POPr STHr +
+	GET-CHAR SET-PORT-OUTPUT
 	
 RTN
 
@@ -837,7 +855,7 @@ RTN
 
 	( Frame )
 	STH2kr #0030 ++ .Screen/x DEO2
-	.timer/frame LDZ
+	.timer/frame LDZ2 TOB
 		DUP #04 SFT GET-CHAR #20 - #00 SWP 8** ;font ++ .Screen/addr DEO2
 	#21 .Screen/color DEO
 	STH2kr #0038 ++ .Screen/x DEO2
@@ -846,7 +864,7 @@ RTN
 
 	STH2kr #0040 ++ .Screen/x DEO2
 	;beat_icn .Screen/addr DEO2
-	#23 .timer/frame LDZ MOD8 #00 = - .Screen/color DEO
+	#23 .timer/frame LDZ2 TOB MOD8 #00 = - .Screen/color DEO
 
 	( Speed )
 	STH2kr #0050 ++ .Screen/x DEO2
