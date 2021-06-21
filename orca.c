@@ -634,7 +634,7 @@ opt(Grid *g, int x, int y, char c)
 void
 opu(Grid *g, int x, int y, char c)
 {
-	char step = getport(g, x - 1, y, 1);
+	char step = getport(g, x - 1, y, 0);
 	char max = getport(g, x + 1, y, 1);
 	int step_ = cb36(step);
 	int max_ = cb36(max);

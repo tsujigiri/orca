@@ -347,7 +347,7 @@ RTN
 	( get rate ) DUP2 DECR GET-PORT-LEFT MIN1 STH
 	( get mod ) DUP2 INCR GET-PORT-RIGHT MIN1 STH
 	( incr y ) #01 +
-	( get result ) SWPr .timer/frame LDZ [ ( TODO: ) TOB ] STHr / STHr MOD 
+	( get result ) SWPr .timer/frame LDZ2 [ ( TODO: ) TOB ] STHr / STHr MOD 
 	GET-CHAR SET-PORT-OUTPUT
 
 RTN
@@ -358,8 +358,8 @@ RTN
 	( get rate ) DUP2 DECR GET-PORT-LEFT MIN1 STH
 	( get mod ) DUP2 INCR GET-PORT-RIGHT MIN1 STH
 	( incr y ) #01 +
-	( get result ) .timer/frame LDZ [ ( TODO: ) TOB ] MULr STHr MOD #00 =
-	( bang if equal ) #fc * #2e + 
+	( get result ) .timer/frame LDZ2 [ ( TODO: ) TOB ] MULr STHr MOD #00 =
+	( bang if equal ) #fc * CHAR-DOT + 
 	SET-PORT-OUTPUT
 	
 RTN
@@ -385,7 +385,7 @@ RTN
 	( get b ) DUP2 INCR GET-PORT-RIGHT STH
 	( incr y ) #01 +
 	( get result ) EQUr STHr
-	( bang if equal ) #fc * #2e + 
+	( bang if equal ) #fc * CHAR-DOT + 
 	SET-PORT-OUTPUT
 	
 RTN
@@ -581,7 +581,17 @@ RTN
 
 @op-u ( x y char -- )
 
-	POP POP2
+	POP
+	( get step ) DUP2 DECR GET-PORT-LEFT STH
+	( get max ) DUP2 INCR GET-PORT-RIGHT MIN1 STH
+	( incr y ) #01 +
+	( frame + max - 1 ) .timer/frame LDZ2 TOB STHkr + #01 -
+	( * step ) OVRr STHr *
+	( % max ) STHkr MOD
+	( + step ) SWPr STHr +
+	( bucket >= max ) STHr < #01 !
+	( bang if equal ) #fc * CHAR-DOT + 
+	SET-PORT-OUTPUT
 	
 RTN
 
