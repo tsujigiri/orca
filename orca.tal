@@ -3,8 +3,9 @@
 	TODO
 		- Catch ports that overflow out of grid
 		- Display character on cursor head
-		- lowcase/upcase bang
 		- Scale selection
+		- Get case from right-side port
+		- Display short timer
 		- Rename file
 		- Save file
 		- Copy/Paste
@@ -284,6 +285,14 @@ BRK
 ( operations )
 
 @get-bang ( x y -- bang )
+
+	DUP2 #01 + GET-CELL CHAR-BANG = ,&bang JCN
+	DUP2 #01 - GET-CELL CHAR-BANG = ,&bang JCN
+	DUP2 INCR GET-CELL CHAR-BANG = ,&bang JCN
+	DUP2 DECR GET-CELL CHAR-BANG = ,&bang JCN
+	POP2 #00 RTN
+	&bang
+		POP2 #01 
 
 RTN
 
@@ -725,14 +734,25 @@ RTN
 		POP POP2 RTN &not-locked
 	ROT
 
-	( is uppercase )
+	( lowercase )
+	DUP #60 < ,&no-lc JCN
+	DUP #7b > ,&no-lc JCN
+		STH DUP2 ;get-bang JSR2 ,&run JCN 
+		POPr POP2 RTN
+		&no-lc
+
+	( uppercase )
 	DUP #40 < ,&no-uc JCN
 	DUP #5a > ,&no-uc JCN
-		STH DUP2 OPERATOR-TYPE SET-TYPE STHr 
-		DUP GET-VALUE #0a - #02 * TOS ;operations ++ LDA2 JSR2
-		RTN &no-uc
+		STH DUP2 OPERATOR-TYPE SET-TYPE &run STHr 
+		DUP GET-VALUE #0a - #02 * TOS ;operations ++ LDA2 JMP2
+		&no-uc
 
-	( TODO: lowercase )
+	( special )
+	DUP CHAR-BANG = ;op-bang JCN2
+	DUP CHAR-HASH = ;op-comment JCN2
+
+	( unknown )
 	POP2 POP
 
 RTN
