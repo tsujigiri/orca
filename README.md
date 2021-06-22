@@ -15,8 +15,9 @@ uxnasm orca.tal orca.rom && uxnemu orca.rom
 To build the C version(old), you must have [SDL2](https://wiki.libsdl.org/).
 
 ```
-cc orca.c -std=c89 -O2 -DNDEBUG -g0 -s -Wall -L/usr/local/lib -lSDL2 -o orca
+cc orca.c -std=c89 -O2 -DNDEBUG -g0 -s -Wall -L/usr/local/lib -lSDL2 -lportmidi -o orca && ./orca
 ```
+
 
 ## Operators
 
