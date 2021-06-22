@@ -269,7 +269,7 @@ BRK
 		;save-file JSR2 &no-save
 	DUP #02 ! ,&no-load JCN
 		;load-file JSR2
-		;redraw JSR22 &no-load
+		;redraw JSR2 &no-load
 	DUP #03 ! ,&no-name JCN
 		#cc DEBUG
 		#20 ;draw-filepath JSR2
@@ -729,27 +729,11 @@ RTN
 	DUP #40 < ,&no-uc JCN
 	DUP #5a > ,&no-uc JCN
 		STH DUP2 OPERATOR-TYPE SET-TYPE STHr 
-	&no-uc
+		DUP GET-VALUE #0a - #02 * TOS ;operations ++ LDA2 JSR2
+		RTN &no-uc
 
-	( TODO: skip lowercase )
-
-	( TODO: Make into a lookup table )
-	( A ) DUP #41 = ;op-a JCN2 ( B ) DUP #42 = ;op-b JCN2
-	( C ) DUP #43 = ;op-c JCN2 ( D ) DUP #44 = ;op-d JCN2
-	( E ) DUP #45 = ;op-e JCN2 ( F ) DUP #46 = ;op-f JCN2
-	( G ) DUP #47 = ;op-g JCN2 ( H ) DUP #48 = ;op-h JCN2
-	( I ) DUP #49 = ;op-i JCN2 ( J ) DUP #4a = ;op-j JCN2
-	( K ) DUP #4b = ;op-k JCN2 ( L ) DUP #4c = ;op-l JCN2
-	( M ) DUP #4d = ;op-m JCN2 ( N ) DUP #4e = ;op-n JCN2
-	( O ) DUP #4f = ;op-o JCN2 ( P ) DUP #50 = ;op-p JCN2
-	( Q ) DUP #51 = ;op-q JCN2 ( R ) DUP #52 = ;op-r JCN2
-	( S ) DUP #53 = ;op-s JCN2 ( T ) DUP #54 = ;op-t JCN2
-	( U ) DUP #55 = ;op-u JCN2 ( V ) DUP #56 = ;op-v JCN2
-	( W ) DUP #57 = ;op-w JCN2 ( X ) DUP #58 = ;op-x JCN2
-	( Y ) DUP #59 = ;op-y JCN2 ( Z ) DUP #5a = ;op-z JCN2
-	( * ) DUP CHAR-BANG = ;op-bang JCN2
-	( # ) DUP CHAR-HASH = ;op-comment JCN2
-	POP POP2
+	( TODO: lowercase )
+	POP2 POP
 
 RTN
 
@@ -1009,6 +993,12 @@ RTN
 	22 ( 4 port-locked )
 	28 ( 5 port-output )
 	29 ( 6 selected )
+
+@operations
+	:op-a :op-b :op-c :op-d :op-e :op-f :op-g :op-h
+	:op-i :op-j :op-k :op-l :op-m :op-n :op-o :op-p
+	:op-q :op-r :op-s :op-t :op-u :op-v :op-w :op-x
+	:op-y :op-z
 
 @untitled-txt  "untitled.orca $1
 
