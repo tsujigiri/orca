@@ -532,7 +532,22 @@ RTN
 
 @op-q ( x y char -- )
 
-	POP POP2
+	POP
+	( get x ) DUP2 SWP #03 - SWP GET-PORT-LEFT STH
+	( get y ) DUP2 SWP #02 - SWP GET-PORT-LEFT STH
+	( get len ) DUP2 SWP #01 - SWP GET-PORT-LEFT MIN1
+	#00 SWP
+	&loop
+		( x+i+1,y ) OVR STH OVR2 STHr ROT + #01 + SWP
+		( x+x0,y+y0 ) STHkr + SWP OVRr STHr + SWP
+		GET-PORT-RIGHT-RAW STH
+		( x-i-len ) DUP2 SWP - STH 
+		( x,y ) OVR2 SWP STHr - #01 + SWP #01 +
+		STHr SET-PORT-OUTPUT
+		INCR
+		LTHk ;&loop JCN2
+	POP2
+	( clean ) POP2 POP2r
 	
 RTN
 
