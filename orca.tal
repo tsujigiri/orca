@@ -66,6 +66,8 @@
 %GET-PORT-RIGHT  { DUP2 PORTER-TYPE SET-TYPE DUP2 #01 SET-LOCK GET-CELL GET-VALUE } ( x y -- char )
 %GET-PORT-RIGHT-RAW  { DUP2 PORTER-TYPE SET-TYPE DUP2 #01 SET-LOCK GET-CELL } ( x y -- char )
 %SET-PORT-OUTPUT { STH DUP2 OUTPUT-TYPE SET-TYPE DUP2 #01 SET-LOCK STHr SET-CELL } ( x y char -- )
+%SET-STATE { #01 .state/changed STZ ;draw-state JSR2 }
+%RESET-STATE { #00 .state/changed STZ ;draw-state JSR2 }
 
 ( devices )
 
@@ -218,10 +220,10 @@ BRK
 		;redraw JSR2 POP BRK &no-space
 	DUP #08 ! ,&no-backspace JCN
 		.selection/x1 LDZ .selection/y1 LDZ CHAR-DOT SET-CELL ( put . char )
-		;redraw JSR2 POP BRK &no-backspace
+		SET-STATE ;redraw JSR2 POP BRK &no-backspace
 	DUP IS-CHAR-KEY #00 = ,&no-key JCN
 		.selection/x1 LDZ .selection/y1 LDZ .Controller/key DEI SET-CELL
-		;redraw JSR2 POP BRK &no-key
+		SET-STATE ;redraw JSR2 POP BRK &no-key
 	POP
 
 	( button )
@@ -897,6 +899,7 @@ RTN
 		LTHk ,&loop JCN
 	.path/length STZ POP 
 	POP2r
+	RESET-STATE
 
 RTN
 
@@ -925,6 +928,7 @@ RTN
 	POP2 POP2 POP
 	#00 ,&x STR
 	#00 ,&y STR
+	RESET-STATE
 	RTN
 	&x $1
 	&y $1
@@ -952,6 +956,7 @@ RTN
 	;path/name .File/name DEO2 
 	STH2r .File/length DEO2 
 	DATA-FILE .File/save DEO2 
+	RESET-STATE
 
 RTN
 
@@ -1024,10 +1029,7 @@ RTN
 	#21 .Screen/color DEO
 
 	( File )
-	.grid/x2 LDZ2 STH2k #0008 -- .Screen/x DEO2
-	;save-icn .Screen/addr DEO2
-	#21 .Screen/color DEO
-	STH2kr #0018 -- .Screen/x DEO2
+	.grid/x2 LDZ2 STH2k #0018 -- .Screen/x DEO2
 	;load-icn .Screen/addr DEO2
 	#21 .Screen/color DEO
 	STH2r #0020 -- .Screen/x DEO2
@@ -1036,6 +1038,15 @@ RTN
 
 	( filepath )
 	#23 ;draw-filepath JSR2
+
+RTN
+
+@draw-state ( -- )
+	
+	.grid/x2 LDZ2 #0008 -- .Screen/x DEO2
+	.grid/y2 LDZ2 #0008 ++ .Screen/y DEO2
+	;save-icn .Screen/addr DEO2
+	#21 .state/changed LDZ + .Screen/color DEO
 
 RTN
 
