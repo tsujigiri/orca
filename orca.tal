@@ -5,7 +5,6 @@
 		- Scale selection
 		- Get case from right-side port
 		- Display short timer
-		- Save file
 		- Copy Selection
 		- Paste Selection
 		- Drag Selection
@@ -290,7 +289,7 @@ BRK
 	.cursor/x LDZ2 .Screen/x DEO2
 	.cursor/y LDZ2 .Screen/y DEO2
 	;cursor_icn .Screen/addr DEO2
-	#32 .Mouse/state DEI #01 = + .Screen/color DEO
+	#31 .Mouse/state DEI #00 ! #02 * + .Screen/color DEO
 
 	( skip ) .Mouse/state DEI #00 ! #01 JCN [ BRK ]
 
@@ -906,7 +905,7 @@ RTN
 	;path/name .File/name DEO2 
 	#1000 .File/length DEO2 
 	DATA-FILE .File/load DEO2 
-	( parse )
+	( setup )
 	#0000 #1000
 	&loop
 		( get char ) OVR2 DATA-FILE ++ LDA
@@ -933,10 +932,26 @@ RTN
 RTN
 
 @save-file ( -- )
-
+	
+	( stash length ) #0000 STH2
+	( setup )
+	#00 .grid/height LDZ
+	&ver
+		#00 .grid/width LDZ
+		&hor
+			( write char ) GET-ITERATORS GET-CELL [ STH2kr DATA-FILE ++ ] STA
+			( incr index ) #0001 STH2 ADD2r
+			INCR
+			LTHk ,&hor JCN
+		POP2
+		( write linebreak ) CHAR-LINE [ STH2kr DATA-FILE ++ ] STA
+		( incr index ) #0001 STH2 ADD2r
+		INCR
+		LTHk ,&ver JCN
+	POP2
 	;path/name .File/name DEO2 
-	#2000 .File/length DEO2 
-	( BANK .File/save DEO2 )
+	STH2r .File/length DEO2 
+	DATA-FILE .File/save DEO2 
 
 RTN
 
