@@ -6,7 +6,6 @@
 		- Display short timer
 		- Drag Selection
 		- sharp notes
-		- Draw VU
 		- Change BPM
 		- Insert mode
 )
@@ -191,6 +190,8 @@ BRK
 	.state/trap LDZ ;on-frame-trap JCN2
 
 	( paused ) .timer/alive LDZ #01 JCN [ BRK ]
+
+	;draw-meter JSR2
 
 	.timer/beat LDZ #01 + DUP .timer/beat STZ
 
@@ -974,7 +975,7 @@ RTN
 	STH2kr #0008 ++ .Screen/x DEO2
 		#0f AND GET-CHAR #20 - #00 SWP 8** ;font ++ .Screen/addr DEO2
 	#21 .Screen/color DEO
-	
+
 	( Positiony )
 	STH2kr #0010 ++ .Screen/x DEO2
 	.selection/y1 LDZ
@@ -1009,6 +1010,35 @@ RTN
 
 	( filepath )
 	#23 ;draw-filepath JSR2
+
+RTN
+
+@draw-meter ( -- )
+	
+	.toolbar/y1 LDZ2 #0001 -- .Screen/y DEO2
+
+	( merge channels )
+	.Audio0/output DEI DUP #0f AND STH #04 SFT STH
+	.Audio1/output DEI DUP #0f AND STH #04 SFT STH
+		ROTr ADDr ROTr ROTr ADDr SWPr
+	.Audio2/output DEI DUP #0f AND STH #04 SFT STH
+		ROTr ADDr ROTr ROTr ADDr SWPr
+	.Audio3/output DEI DUP #0f AND STH #04 SFT STH
+		ROTr ADDr ROTr ROTr ADDr SWPr
+
+	( draw )
+	#08 #00
+	&loop
+		.toolbar/x2 LDZ2 #0028 -- .Screen/x DEO2
+		OVR OVRr STHr #04 / < .Screen/color DEO
+		.toolbar/x2 LDZ2 #0026 -- .Screen/x DEO2
+		OVR STHkr #04 / < .Screen/color DEO
+		.Screen/y DEI2 #0001 ++ .Screen/y DEO2
+		( incr ) DECR
+		GTHk ,&loop JCN
+	POP2
+
+	POP2r
 
 RTN
 
