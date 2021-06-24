@@ -2,7 +2,6 @@
 	
 	TODO
 		- Catch ports that overflow out of grid
-		- Scale selection
 		- Get case from right-side port
 		- Display short timer
 		- Copy Selection
@@ -11,6 +10,7 @@
 		- sharp notes
 		- Draw VU
 		- Change BPM
+		- Insert mode
 )
 
 %+  { ADD } %-   { SUB }  %*  { MUL }  %/  { DIV }
@@ -52,36 +52,38 @@
 
 %IS-CHAR-KEY { STHk #20 > STHr #7b < #0101 == }
 
+%SET-STATE   { #01 .state/changed STZ ;draw-state JSR2 }
+%RESET-STATE { #00 .state/changed STZ ;draw-state JSR2 }
+
 %GET-INDEX { #00 SWP #00 .grid/width LDZ ** ROT #00 SWP ++ } ( x y -- index )
 %GET-CHAR  { #24 MOD #00 SWP ;b36clc ++ LDA } ( b36 -- char )
 %GET-VALUE { #20 - #00 SWP ;values ++ LDA } ( char -- b36 )
-%GET-NOTE { GET-VALUE TOS ;uc-notes ++ LDA } ( char -- midi )
+%GET-NOTE  { GET-VALUE TOS ;uc-notes ++ LDA } ( char -- midi )
+
 %GET-CELL  { GET-INDEX DATA-CELLS ++ LDA } ( x y -- char )
 %SET-CELL  { ROT ROT GET-INDEX DATA-CELLS ++ STA } ( x y char -- )
 %GET-TYPE  { GET-INDEX DATA-TYPES ++ LDA } ( x y -- type )
 %SET-TYPE  { ROT ROT GET-INDEX DATA-TYPES ++ STA } ( x y type -- )
 %GET-LOCK  { GET-INDEX DATA-LOCKS ++ LDA } ( x y -- type )
 %SET-LOCK  { ROT ROT GET-INDEX DATA-LOCKS ++ STA } ( x y type -- )
-%GET-PORT-LEFT { DUP2 PORTEL-TYPE SET-TYPE GET-CELL GET-VALUE } ( x y -- char )
-%GET-PORT-RIGHT  { DUP2 PORTER-TYPE SET-TYPE DUP2 #01 SET-LOCK GET-CELL GET-VALUE } ( x y -- char )
-%GET-PORT-RIGHT-RAW  { DUP2 PORTER-TYPE SET-TYPE DUP2 #01 SET-LOCK GET-CELL } ( x y -- char )
+%GET-PORT-LEFT  { DUP2 PORTEL-TYPE SET-TYPE GET-CELL GET-VALUE } ( x y -- char )
+%GET-PORT-RIGHT { DUP2 PORTER-TYPE SET-TYPE DUP2 #01 SET-LOCK GET-CELL GET-VALUE } ( x y -- char )
+%GET-PORT-RIGHT-RAW { DUP2 PORTER-TYPE SET-TYPE DUP2 #01 SET-LOCK GET-CELL } ( x y -- char )
 %SET-PORT-OUTPUT { STH DUP2 OUTPUT-TYPE SET-TYPE DUP2 #01 SET-LOCK STHr SET-CELL } ( x y char -- )
-%SET-STATE { #01 .state/changed STZ ;draw-state JSR2 }
-%RESET-STATE { #00 .state/changed STZ ;draw-state JSR2 }
 
 ( devices )
 
-|00 @System     [ &vector $2 &pad $6 &r $2 &g $2 &b $2 ]
-|10 @Console    [ &vector $2 &pad $6 &char $1 &byte $1 &short $2 &string $2 ]
-|20 @Screen     [ &vector $2 &width $2 &height $2 &pad $2 &x $2 &y $2 &addr $2 &color $1 ]
-|30 @Audio0     [ &vector $2 &position $2 &output $1 &pad   $3 &adsr   $2 &length $2 &addr  $2 &volume $1 &pitch $1 ]
-|40 @Audio1     [ &vector $2 &position $2 &output $1 &pad   $3 &adsr   $2 &length $2 &addr  $2 &volume $1 &pitch $1 ]
-|50 @Audio2     [ &vector $2 &position $2 &output $1 &pad   $3 &adsr   $2 &length $2 &addr  $2 &volume $1 &pitch $1 ]
-|60 @Audio3     [ &vector $2 &position $2 &output $1 &pad   $3 &adsr   $2 &length $2 &addr  $2 &volume $1 &pitch $1 ]
-|80 @Controller [ &vector $2 &button $1 &key $1 ]
-|90 @Mouse      [ &vector $2 &x $2 &y $2 &state $1 &chord $1 ]
-|a0 @File       [ &vector $2 &success $2 &offset $2 &pad   $2 &name  $2 &length $2 &load $2 &save $2 ]
-|b0 @DateTime   [ &year   $2 &month    $1 &day    $1 &hour  $1 &minute $1 &second $1 &dotw $1 &doty $2 &isdst $1 ]
+|00 @System     &vector $2 &pad      $6 &r      $2 &g     $2 &b      $2 ]
+|10 @Console    &vector $2 &pad      $6 &char   $1 &byte  $1 &short  $2 &string $2 ]
+|20 @Screen     &vector $2 &width    $2 &height $2 &pad   $2 &x      $2 &y      $2 &addr  $2 &color  $1 ]
+|30 @Audio0     &vector $2 &position $2 &output $1 &pad   $3 &adsr   $2 &length $2 &addr  $2 &volume $1 &pitch $1 ]
+|40 @Audio1     &vector $2 &position $2 &output $1 &pad   $3 &adsr   $2 &length $2 &addr  $2 &volume $1 &pitch $1 ]
+|50 @Audio2     &vector $2 &position $2 &output $1 &pad   $3 &adsr   $2 &length $2 &addr  $2 &volume $1 &pitch $1 ]
+|60 @Audio3     &vector $2 &position $2 &output $1 &pad   $3 &adsr   $2 &length $2 &addr  $2 &volume $1 &pitch $1 ]
+|80 @Controller &vector $2 &button   $1 &key    $1 ]
+|90 @Mouse      &vector $2 &x        $2 &y      $2 &state $1 &chord  $1 ]
+|a0 @File       &vector $2 &success  $2 &offset $2 &pad   $2 &name   $2 &length $2 &load $2 &save $2 ]
+|b0 @DateTime   &year   $2 &month    $1 &day    $1 &hour  $1 &minute $1 &second $1 &dotw $1 &doty $2 &isdst $1 ]
 
 ( variables )
 
@@ -108,10 +110,15 @@
 	&y2 $2
 	&width $1 
 	&height $1
+@toolbar
+	&x1 $2
+	&y1 $2
+	&x2 $2
+	&y2 $2
 @selection 
 	&x1 $1 &y1 $1 &x2 $1 &y2 $1
 @cursor
-	&x $2 &y $2
+	&x $2 &y $2 &last $1
 @variables
 	$36
 
@@ -138,15 +145,21 @@
 	;on-mouse .Mouse/vector DEO2
 	;on-frame .Screen/vector DEO2
 
-	( find size )
+	( set grid size )
 	.Screen/width DEI2 
 		DUP2 8// SWP POP #07 - .grid/width STZ
 		DUP2 #0002 // .grid/width LDZ #02 / #01 + TOS 8** -- #0004 ++ .grid/x1 STZ2
-		#0002 // .grid/width LDZ #02 / TOS 8** ++ #0004 ++ .grid/x2 STZ2
+		#0002 // .grid/width LDZ #02 / TOS 8** ++ #0002 ++ .grid/x2 STZ2
 	.Screen/height DEI2 
 		DUP2 8// SWP POP #07 - .grid/height STZ
 		DUP2 #0002 // .grid/height LDZ #02 / #01 + TOS 8** -- #0004 -- .grid/y1 STZ2
-		#0002 // .grid/height LDZ #02 / TOS 8** ++ #0004 -- .grid/y2 STZ2
+		#0002 // .grid/height LDZ #02 / TOS 8** ++ #0008 -- .grid/y2 STZ2
+
+	( set toolbar size )
+	.grid/x1 LDZ2 .toolbar/x1 STZ2
+	.grid/y2 LDZ2 #0010 ++ .toolbar/y1 STZ2
+	.grid/x2 LDZ2 .toolbar/x2 STZ2
+	.toolbar/y1 LDZ2 #0008 ++ .toolbar/y2 STZ2
 
 	( random seed )
 	.DateTime/second DEI .DateTime/minute DEI DUP2
@@ -227,24 +240,32 @@ BRK
 	POP
 
 	( button )
-	.Controller/button DEI #f0 AND
+	.Controller/button DEI [ DUP #04 AND #00 ! #02 * STH ] #f0 AND
 		DUP #04 SFT #01 AND #01 NEQ ,&no-up JCN
-			.selection/y1 LDZ #00 = ,&no-up JCN
-			.selection/y1 LDZ #01 - .selection/y1 STZ
-			.selection/y2 LDZ #01 - .selection/y2 STZ &no-up
+			.selection/y1 STHkr + LDZ #00 = ,&no-up JCN
+			.selection/y1 STHkr + LDZ #01 - .selection/y1 STHkr + STZ
+			.selection/y2 STHkr + LDZ #01 - .selection/y2 STHkr + STZ 
+			;clamp-selection JSR2 &no-up
 		DUP #05 SFT #01 AND #01 NEQ ,&no-down JCN
-			.selection/y1 LDZ .grid/height LDZ #01 - = ,&no-down JCN
-			.selection/y1 LDZ #01 + .selection/y1 STZ
-			.selection/y2 LDZ #01 + .selection/y2 STZ &no-down
+			.selection/y1 STHkr + LDZ #01 + .selection/y1 STHkr + STZ
+			.selection/y2 STHkr + LDZ #01 + .selection/y2 STHkr + STZ 
+			;clamp-selection JSR2 &no-down
 		DUP #06 SFT #01 AND #01 NEQ ,&no-left JCN
-			.selection/x1 LDZ #00 = ,&no-left JCN
-			.selection/x1 LDZ #01 - .selection/x1 STZ
-			.selection/x2 LDZ #01 - .selection/x2 STZ &no-left
+			.selection/x1 STHkr + LDZ #00 = ,&no-left JCN
+			.selection/x1 STHkr + LDZ #01 - .selection/x1 STHkr + STZ
+			.selection/x2 STHkr + LDZ #01 - .selection/x2 STHkr + STZ 
+			;clamp-selection JSR2 &no-left
 		DUP #07 SFT #01 AND #01 NEQ ,&no-right JCN
-			.selection/x1 LDZ .grid/width LDZ #01 - = ,&no-right JCN
-			.selection/x1 LDZ #01 + .selection/x1 STZ
-			.selection/x2 LDZ #01 + .selection/x2 STZ &no-right
-	POP
+			.selection/x1 STHkr + LDZ #01 + .selection/x1 STHkr + STZ
+			.selection/x2 STHkr + LDZ #01 + .selection/x2 STHkr + STZ 
+			;clamp-selection JSR2 &no-right
+	POP POPr
+
+	( clear last cursor )
+	.cursor/x LDZ2 .Screen/x DEO2
+	.cursor/y LDZ2 .Screen/y DEO2
+	;blank_icn .Screen/addr DEO2
+	#30 .Screen/color DEO
 
 	;redraw JSR2
 
@@ -283,42 +304,50 @@ BRK
 	;blank_icn .Screen/addr DEO2
 	#30 .Screen/color DEO
 
-	( record cursor positions )
-	.Mouse/x DEI2 .cursor/x STZ2
-	.Mouse/y DEI2 .cursor/y STZ2
-
 	( draw new cursor )
-	.cursor/x LDZ2 .Screen/x DEO2
-	.cursor/y LDZ2 .Screen/y DEO2
+	.Mouse/x DEI2 DUP2 .cursor/x STZ2 .Screen/x DEO2
+	.Mouse/y DEI2 DUP2 .cursor/y STZ2 .Screen/y DEO2
 	;cursor_icn .Screen/addr DEO2
-	#31 .Mouse/state DEI #00 ! #02 * + .Screen/color DEO
+	.Mouse/state DEI #00 ! #02 * [ #31 + .Screen/color DEO ]
 
-	( skip ) .Mouse/state DEI #00 ! #01 JCN [ BRK ]
-
+	( route )
+	.Mouse/y DEI2 8// TOB .toolbar/y1 LDZ2 8// TOB = 
+		;on-mouse-toolbar JCN2
 	.Mouse/x DEI2 .Mouse/y DEI2 .grid ;within-rect JSR2
-		;on-touch-grid JCN2
-	.Mouse/y DEI2 .grid/y2 LDZ2 #0008 ++ -- 8// TOB #00 = 
-		;on-touch-toolbar JCN2
+		;on-mouse-grid JCN2
+
 	RELEASE-MOUSE
 	
 BRK
 
-@on-touch-grid ( -> )
-
-	.Mouse/x DEI2 .grid/x1 LDZ2 -- 8// SWP POP 
-		DUP .grid/width LDZ #01 - STHk < ,&no-clampx JCN
-			POP STHkr &no-clampx 
-		.selection/x1 STZ POPr
-	.Mouse/y DEI2 .grid/y1 LDZ2 -- 8// SWP POP 
-		DUP .grid/height LDZ #01 - STHk < ,&no-clampy JCN
-			POP STHkr &no-clampy 
-		.selection/y1 STZ POPr
-	;redraw JSR2
+@on-mouse-grid ( -> )
+	
+	.Mouse/state DEI DUP .cursor/last LDZ 
+		DUP2 #0000 == ,&end JCN
+		DUP2 #0100 !! ,&no-down JCN
+			.Mouse/x DEI2 .grid/x1 LDZ2 -- 8// TOB 
+				DUP .selection/x1 STZ .selection/x2 STZ
+			.Mouse/y DEI2 .grid/y1 LDZ2 -- 8// TOB 
+				DUP .selection/y1 STZ .selection/y2 STZ
+				;clamp-selection JSR2
+			;redraw JSR2
+			,&end JMP
+			&no-down
+		( release )
+		.Mouse/x DEI2 .grid/x1 LDZ2 -- 8// TOB .selection/x2 STZ
+		.Mouse/y DEI2 .grid/y1 LDZ2 -- 8// TOB .selection/y2 STZ
+		;clamp-selection JSR2
+		;redraw JSR2
+	&end
+	POP2
+	.cursor/last STZ
 
 BRK
 
-@on-touch-toolbar ( -> )
+@on-mouse-toolbar ( -> )
 	
+	( skip ) .Mouse/state DEI #00 ! #01 JCN [ BRK ]
+
 	( left-side )
 	.Mouse/x DEI2 .grid/x1 LDZ2 -- 8// TOB 
 	DUP #09 > OVR .grid/width LDZ SWP - #05 > #0101 !! ,&no-rename JCN
@@ -331,13 +360,11 @@ BRK
 	( right-side )
 	.grid/x2 LDZ2 .Mouse/x DEI2 -- 8// TOB 
 	DUP #00 ! ,&no-save JCN
-		#aa DEBUG
 		;save-file JSR2 &no-save
 	DUP #02 ! ,&no-load JCN
 		;load-file JSR2
 		;redraw JSR2 &no-load
 	DUP #03 ! ,&no-name JCN
-		#cc DEBUG
 		#20 ;draw-filepath JSR2
 		;untitled-txt ;new-file JSR2
 		;redraw JSR2 &no-name
@@ -358,14 +385,6 @@ BRK
 	POP2 #00 RTN
 	&bang
 		POP2 #01 
-
-RTN
-
-@get-cell-type ( x y -- type )
-	
-	DUP2 .selection/x1 LDZ .selection/y1 LDZ == #01 ! ,&unselected JCN
-		POP2 #06 RTN &unselected
-	GET-TYPE
 
 RTN
 
@@ -970,7 +989,7 @@ RTN
 			( pos-x ) OVR #00 SWP 8** [ .grid/x1 LDZ2 ++ ] .Screen/x DEO2
 			GET-ITERATORS
 			( sprite ) DUP2 ;get-cell-sprite JSR2 .Screen/addr DEO2
-			( draw ) ;get-cell-type JSR2 TOS ;cell-styles ++ LDA .Screen/color DEO
+			( draw ) ,get-cell-type JSR TOS ;cell-styles ++ LDA .Screen/color DEO
 			INCR
 			LTHk ,&hor JCN
 		POP2
@@ -981,9 +1000,21 @@ RTN
 
 RTN
 
+@get-cell-type ( x y -- type )
+	
+	OVR .selection/x1 LDZ < ,&end JCN
+	OVR .selection/x2 LDZ > ,&end JCN
+	DUP .selection/y1 LDZ < ,&end JCN
+	DUP .selection/y2 LDZ > ,&end JCN
+		POP2 #06 RTN 
+	&end
+	GET-TYPE
+
+RTN
+
 @draw-toolbar ( -- )
 	
-	.grid/y2 LDZ2 #0008 ++ .Screen/y DEO2
+	.toolbar/y1 LDZ2 .Screen/y DEO2
 
 	( Positionx )
 	.grid/x1 LDZ2 STH2k .Screen/x DEO2
@@ -1043,8 +1074,8 @@ RTN
 
 @draw-state ( -- )
 	
-	.grid/x2 LDZ2 #0008 -- .Screen/x DEO2
-	.grid/y2 LDZ2 #0008 ++ .Screen/y DEO2
+	.toolbar/x2 LDZ2 #0008 -- .Screen/x DEO2
+	.toolbar/y1 LDZ2 .Screen/y DEO2
 	;save-icn .Screen/addr DEO2
 	#21 .state/changed LDZ + .Screen/color DEO
 
@@ -1053,7 +1084,7 @@ RTN
 @draw-filepath ( color -- )
 	
 	STH
-	.grid/y2 LDZ2 #0008 ++ .Screen/y DEO2
+	.toolbar/y1 LDZ2 .Screen/y DEO2
 	#0068 .Screen/x DEO2
 	;path/name
 	&loop
@@ -1066,6 +1097,19 @@ RTN
 	POPr
 	( clear last ) 
 	#20 .Screen/color DEO
+
+RTN
+
+@clamp-selection ( -- )
+	
+	.selection/x2 LDZ .grid/width LDZ #01 - STHk < ,&ok-x JCN
+		STHkr .selection/x2 STZ &ok-x POPr
+	.selection/y2 LDZ .grid/height LDZ #01 - STHk < ,&ok-y JCN
+		STHkr .selection/y2 STZ &ok-y POPr
+	.selection/x2 LDZ .selection/x1 LDZ STHk > ,&ok-flipx JCN
+		STHkr .selection/x2 STZ &ok-flipx POPr
+	.selection/y2 LDZ .selection/y1 LDZ STHk > ,&ok-flipy JCN
+		STHkr .selection/y2 STZ &ok-flipy POPr
 
 RTN
 
