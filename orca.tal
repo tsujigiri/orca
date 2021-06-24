@@ -1,5 +1,18 @@
 ( Orca
 	
+	space - toggle play/paste
+	backspace - erase
+	escape - deselect
+	arrow - move
+	shift+arrow - scale selection
+	ctrl+n - new
+	ctrl+s - save
+	ctrl+r - rename
+	ctrl+o - open
+	ctrl+c - copy
+	ctrl+v - paste
+	ctrl+x - cut
+
 	TODO
 		- Catch ports that overflow out of grid
 		- Get case from right-side port
@@ -250,6 +263,9 @@ BRK
 	DUP2 #010e !! ,&no-make JCN
 		#20 ;draw-filepath JSR2 ;untitled-txt ;new-file JSR2 
 		;redraw JSR2 POP2 BRK &no-make
+	DUP2 #081b !! ,&no-escape JCN
+		RESET-SELECTION
+		;redraw JSR2 POP2 BRK &no-escape
 	SWP POP
 
 	( key )
@@ -262,7 +278,7 @@ BRK
 		.selection/x1 LDZ .selection/y1 LDZ .Controller/key DEI SET-CELL
 		SET-STATE ;redraw JSR2 POP BRK &no-key
 	POP
-	
+
 	( button )
 	.Controller/button DEI [ DUP #04 AND #00 ! #02 * STH ] #f0 AND
 		DUP #04 SFT #01 AND #01 NEQ ,&no-up JCN
