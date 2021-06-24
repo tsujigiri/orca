@@ -4,8 +4,6 @@
 		- Catch ports that overflow out of grid
 		- Get case from right-side port
 		- Display short timer
-		- Copy Selection
-		- Paste Selection
 		- Drag Selection
 		- sharp notes
 		- Draw VU
@@ -54,6 +52,7 @@
 
 %SET-STATE   { #01 .state/changed STZ ;draw-state JSR2 }
 %RESET-STATE { #00 .state/changed STZ ;draw-state JSR2 }
+%RESET-SELECTION { .selection/x1 LDZ .selection/x2 STZ .selection/y1 LDZ .selection/y2 STZ }
 
 %GET-INDEX { #00 SWP #00 .grid/width LDZ ** ROT #00 SWP ++ } ( x y -- index )
 %GET-CHAR  { #24 MOD #00 SWP ;b36clc ++ LDA } ( b36 -- char )
@@ -136,9 +135,9 @@
 	#ee .Audio3/volume DEO  #022c .Audio3/adsr DEO2 #0100 .Audio3/length DEO2
 
 	;piano-pcm .Audio0/addr DEO2
-	;piano-pcm .Audio1/addr DEO2
-	;tri-pcm .Audio2/addr DEO2
-	;saw-pcm .Audio3/addr DEO2
+	;violin-pcm .Audio1/addr DEO2
+	;piano-pcm .Audio2/addr DEO2
+	;violin-pcm .Audio3/addr DEO2
 
 	( vectors ) 
 	;on-button .Controller/vector DEO2
@@ -224,21 +223,45 @@ BRK
 	.Controller/key DEI #00 ! .state/trap LDZ #0101 == ;on-button-trap JCN2
 
 	( ignore release when key/button is blank )
-	.Controller/button DEI2 #0000 !! #01 JCN [ BRK ]
+	.Controller/button DEI2 
+		DUP2 #0000 !! #02 JCN [ POP2 BRK ]
+
+	( ctrl modes )
+	DUP2 #0103 !! ,&no-copy JCN
+		;copy-block JSR2 
+		;redraw JSR2 POP2 BRK &no-copy
+	DUP2 #0116 !! ,&no-paste JCN
+		;paste-block JSR2 RESET-SELECTION
+		;redraw JSR2 POP2 BRK &no-paste
+	DUP2 #0118 !! ,&no-cut JCN
+		;copy-block JSR2 CHAR-DOT ;fill-block JSR2 RESET-SELECTION
+		;redraw JSR2 POP2 BRK &no-cut
+	DUP2 #010f !! ,&no-open JCN
+		;load-file JSR2 ;redraw JSR2 
+		;redraw JSR2 POP2 BRK &no-open
+	DUP2 #0112 !! ,&no-name JCN
+		.state/trap TOGGLE
+		#00 .state/blink STZ 
+		#23 ;draw-filepath JSR2 POP2 BRK &no-name
+	DUP2 #0113 !! ,&no-save JCN
+		;save-file JSR2 
+		;redraw JSR2 POP2 BRK  &no-save
+	DUP2 #010e !! ,&no-make JCN
+		#20 ;draw-filepath JSR2 ;untitled-txt ;new-file JSR2 
+		;redraw JSR2 POP2 BRK &no-make
+	SWP POP
 
 	( key )
-	.Controller/key DEI 
 	DUP #20 ! ,&no-space JCN
 		.timer/alive TOGGLE
 		;redraw JSR2 POP BRK &no-space
 	DUP #08 ! ,&no-backspace JCN
-		.selection/x1 LDZ .selection/y1 LDZ CHAR-DOT SET-CELL ( put . char )
-		SET-STATE ;redraw JSR2 POP BRK &no-backspace
+		CHAR-DOT ;fill-block JSR2 POP BRK &no-backspace
 	DUP IS-CHAR-KEY #00 = ,&no-key JCN
 		.selection/x1 LDZ .selection/y1 LDZ .Controller/key DEI SET-CELL
 		SET-STATE ;redraw JSR2 POP BRK &no-key
 	POP
-
+	
 	( button )
 	.Controller/button DEI [ DUP #04 AND #00 ! #02 * STH ] #f0 AND
 		DUP #04 SFT #01 AND #01 NEQ ,&no-up JCN
@@ -906,6 +929,119 @@ RTN
 
 RTN
 
+@redraw ( -- )
+	
+	#00 .grid/height LDZ
+	&ver
+		( pos-y ) OVR #00 SWP 8** [ .grid/y1 LDZ2 ++ ] .Screen/y DEO2
+		#00 .grid/width LDZ
+		&hor
+			( pos-x ) OVR #00 SWP 8** [ .grid/x1 LDZ2 ++ ] .Screen/x DEO2
+			GET-ITERATORS
+			( sprite ) DUP2 ;get-cell-sprite JSR2 .Screen/addr DEO2
+			( draw ) ,get-cell-type JSR TOS ;cell-styles ++ LDA .Screen/color DEO
+			INCR
+			LTHk ,&hor JCN
+		POP2
+		INCR
+		LTHk ,&ver JCN
+	POP2
+	,draw-toolbar JSR
+
+RTN
+
+@get-cell-type ( x y -- type )
+	
+	OVR .selection/x1 LDZ < ,&end JCN
+	OVR .selection/x2 LDZ > ,&end JCN
+	DUP .selection/y1 LDZ < ,&end JCN
+	DUP .selection/y2 LDZ > ,&end JCN
+		POP2 #06 RTN 
+	&end
+	GET-TYPE
+
+RTN
+
+@draw-toolbar ( -- )
+	
+	.toolbar/y1 LDZ2 .Screen/y DEO2
+
+	( Positionx )
+	.grid/x1 LDZ2 STH2k .Screen/x DEO2
+	.selection/x1 LDZ
+		DUP #04 SFT GET-CHAR #20 - #00 SWP 8** ;font ++ .Screen/addr DEO2
+	#21 .Screen/color DEO
+	STH2kr #0008 ++ .Screen/x DEO2
+		#0f AND GET-CHAR #20 - #00 SWP 8** ;font ++ .Screen/addr DEO2
+	#21 .Screen/color DEO
+	
+	( Positiony )
+	STH2kr #0010 ++ .Screen/x DEO2
+	.selection/y1 LDZ
+		DUP #04 SFT GET-CHAR #20 - #00 SWP 8** ;font ++ .Screen/addr DEO2
+	#21 .Screen/color DEO
+	STH2kr #0018 ++ .Screen/x DEO2
+		#0f AND GET-CHAR #20 - #00 SWP 8** ;font ++ .Screen/addr DEO2
+	#21 .Screen/color DEO
+	STH2kr #0020 ++ .Screen/x DEO2
+	;position_icn .Screen/addr DEO2
+	#22 .Screen/color DEO
+
+	( Frame )
+	STH2kr #0030 ++ .Screen/x DEO2
+	.timer/frame LDZ2 TOB
+		DUP #04 SFT GET-CHAR #20 - #00 SWP 8** ;font ++ .Screen/addr DEO2
+	#21 .Screen/color DEO
+	STH2kr #0038 ++ .Screen/x DEO2
+		#0f AND GET-CHAR #20 - #00 SWP 8** ;font ++ .Screen/addr DEO2
+	#21 .Screen/color DEO
+	STH2r #0040 ++ .Screen/x DEO2
+	;beat_icn .Screen/addr DEO2
+	#23 .timer/frame LDZ2 TOB MOD8 #00 = - .Screen/color DEO
+
+	( File )
+	.grid/x2 LDZ2 STH2k #0018 -- .Screen/x DEO2
+	;load-icn .Screen/addr DEO2
+	#21 .Screen/color DEO
+	STH2r #0020 -- .Screen/x DEO2
+	;make-icn .Screen/addr DEO2
+	#21 .Screen/color DEO
+
+	( filepath )
+	#23 ;draw-filepath JSR2
+
+RTN
+
+@draw-state ( -- )
+	
+	.toolbar/x2 LDZ2 #0008 -- .Screen/x DEO2
+	.toolbar/y1 LDZ2 .Screen/y DEO2
+	;save-icn .Screen/addr DEO2
+	#21 .state/changed LDZ + .Screen/color DEO
+
+RTN
+
+@draw-filepath ( color -- )
+	
+	STH
+	.toolbar/y1 LDZ2 .Screen/y DEO2
+	#0068 .Screen/x DEO2
+	;path/name
+	&loop
+		DUP2 LDA DUP #00 ! #20 * - TOS #0008 ** ;font ++ .Screen/addr DEO2 
+		STHkr .Screen/color DEO
+		.Screen/x DEI2 #0008 ++ .Screen/x DEO2
+		#0001 ++
+		LDAk #00 ! ,&loop JCN
+	POP2
+	POPr
+	( clear last ) 
+	#20 .Screen/color DEO
+
+RTN
+
+( file )
+
 @new-file ( default* -- )
 
 	;clear JSR2
@@ -928,6 +1064,7 @@ RTN
 	#1000 .File/length DEO2 
 	DATA-FILE .File/load DEO2 
 	( setup )
+	( TODO: Stop at #00 instead of fixed length )
 	#0000 #1000
 	&loop
 		( get char ) OVR2 DATA-FILE ++ LDA
@@ -979,124 +1116,71 @@ RTN
 
 RTN
 
-@redraw ( -- )
+( clip )
+
+@copy-block ( -- )
 	
-	#00 .grid/height LDZ
+	( stash length ) #0000 STH2
+	.selection/y1 LDZ .selection/y2 LDZ #01 +
 	&ver
-		( pos-y ) OVR #00 SWP 8** [ .grid/y1 LDZ2 ++ ] .Screen/y DEO2
-		#00 .grid/width LDZ
+		.selection/x1 LDZ .selection/x2 LDZ #01 +
 		&hor
-			( pos-x ) OVR #00 SWP 8** [ .grid/x1 LDZ2 ++ ] .Screen/x DEO2
-			GET-ITERATORS
-			( sprite ) DUP2 ;get-cell-sprite JSR2 .Screen/addr DEO2
-			( draw ) ,get-cell-type JSR TOS ;cell-styles ++ LDA .Screen/color DEO
+			( write char ) GET-ITERATORS GET-CELL [ STH2kr DATA-CLIP ++ ] STA
+			( incr index ) #0001 STH2 ADD2r
+			INCR
+			LTHk ,&hor JCN
+		POP2
+		( write linebreak ) CHAR-LINE [ STH2kr DATA-CLIP ++ ] STA
+		( incr index ) #0001 STH2 ADD2r
+		INCR
+		LTHk ,&ver JCN
+	POP2
+	( close ) #00 [ STH2r DATA-CLIP ++ ] STA
+
+RTN
+
+@paste-block ( -- )
+	
+	#0000 #1000
+	&loop
+		( get char ) OVR2 DATA-CLIP ++ LDA
+		DUP CHAR-NULL = ,&end JCN
+		DUP CHAR-LINE = ,&linebreak JCN
+			( write  ) STH ,&x LDR [ .selection/x1 LDZ + ] ,&y LDR [ .selection/y1 LDZ + ] STHr SET-CELL
+			( incr x ) ,&x LDR #01 + ,&x STR
+			,&continue JMP
+		&linebreak
+			( undo x ) #00 ,&x STR
+			( incr y ) ,&y LDR #01 + ,&y STR
+			POP
+		&continue
+		( incr ) SWP2 #0001 ++ SWP2
+		LTH2k ,&loop JCN
+	&end
+	POP2 POP2 POP
+	#00 ,&x STR
+	#00 ,&y STR
+	RTN
+	&x $1
+	&y $1
+
+RTN
+
+@fill-block ( char -- )
+	
+	STH
+	.selection/y1 LDZ .selection/y2 LDZ #01 +
+	&ver
+		.selection/x1 LDZ .selection/x2 LDZ #01 +
+		&hor
+			( write char ) GET-ITERATORS STHkr SET-CELL
 			INCR
 			LTHk ,&hor JCN
 		POP2
 		INCR
 		LTHk ,&ver JCN
 	POP2
-	,draw-toolbar JSR
-
-RTN
-
-@get-cell-type ( x y -- type )
-	
-	OVR .selection/x1 LDZ < ,&end JCN
-	OVR .selection/x2 LDZ > ,&end JCN
-	DUP .selection/y1 LDZ < ,&end JCN
-	DUP .selection/y2 LDZ > ,&end JCN
-		POP2 #06 RTN 
-	&end
-	GET-TYPE
-
-RTN
-
-@draw-toolbar ( -- )
-	
-	.toolbar/y1 LDZ2 .Screen/y DEO2
-
-	( Positionx )
-	.grid/x1 LDZ2 STH2k .Screen/x DEO2
-	.selection/x1 LDZ
-		DUP #04 SFT GET-CHAR #20 - #00 SWP 8** ;font ++ .Screen/addr DEO2
-	#21 .Screen/color DEO
-	STH2kr #0008 ++ .Screen/x DEO2
-		#0f AND GET-CHAR #20 - #00 SWP 8** ;font ++ .Screen/addr DEO2
-	#21 .Screen/color DEO
-	( Positiony )
-	STH2kr #0010 ++ .Screen/x DEO2
-	.selection/y1 LDZ
-		DUP #04 SFT GET-CHAR #20 - #00 SWP 8** ;font ++ .Screen/addr DEO2
-	#21 .Screen/color DEO
-	STH2kr #0018 ++ .Screen/x DEO2
-		#0f AND GET-CHAR #20 - #00 SWP 8** ;font ++ .Screen/addr DEO2
-	#21 .Screen/color DEO
-
-	STH2kr #0020 ++ .Screen/x DEO2
-	;position_icn .Screen/addr DEO2
-	#22 .Screen/color DEO
-
-	( Frame )
-	STH2kr #0030 ++ .Screen/x DEO2
-	.timer/frame LDZ2 TOB
-		DUP #04 SFT GET-CHAR #20 - #00 SWP 8** ;font ++ .Screen/addr DEO2
-	#21 .Screen/color DEO
-	STH2kr #0038 ++ .Screen/x DEO2
-		#0f AND GET-CHAR #20 - #00 SWP 8** ;font ++ .Screen/addr DEO2
-	#21 .Screen/color DEO
-
-	STH2kr #0040 ++ .Screen/x DEO2
-	;beat_icn .Screen/addr DEO2
-	#23 .timer/frame LDZ2 TOB MOD8 #00 = - .Screen/color DEO
-
-	( Speed )
-	STH2kr #0050 ++ .Screen/x DEO2
-	.timer/speed LDZ
-		DUP #04 SFT GET-CHAR #20 - #00 SWP 8** ;font ++ .Screen/addr DEO2
-	#21 .Screen/color DEO
-	STH2r #0058 ++ .Screen/x DEO2
-		#0f AND GET-CHAR #20 - #00 SWP 8** ;font ++ .Screen/addr DEO2
-	#21 .Screen/color DEO
-
-	( File )
-	.grid/x2 LDZ2 STH2k #0018 -- .Screen/x DEO2
-	;load-icn .Screen/addr DEO2
-	#21 .Screen/color DEO
-	STH2r #0020 -- .Screen/x DEO2
-	;make-icn .Screen/addr DEO2
-	#21 .Screen/color DEO
-
-	( filepath )
-	#23 ;draw-filepath JSR2
-
-RTN
-
-@draw-state ( -- )
-	
-	.toolbar/x2 LDZ2 #0008 -- .Screen/x DEO2
-	.toolbar/y1 LDZ2 .Screen/y DEO2
-	;save-icn .Screen/addr DEO2
-	#21 .state/changed LDZ + .Screen/color DEO
-
-RTN
-
-@draw-filepath ( color -- )
-	
-	STH
-	.toolbar/y1 LDZ2 .Screen/y DEO2
-	#0068 .Screen/x DEO2
-	;path/name
-	&loop
-		DUP2 LDA DUP #00 ! #20 * - TOS #0008 ** ;font ++ .Screen/addr DEO2 
-		STHkr .Screen/color DEO
-		.Screen/x DEI2 #0008 ++ .Screen/x DEO2
-		#0001 ++
-		LDAk #00 ! ,&loop JCN
-	POP2
 	POPr
-	( clear last ) 
-	#20 .Screen/color DEO
 
 RTN
 
@@ -1291,24 +1375,6 @@ RTN
 	0000 0032 4c00 0000 
 	3c42 99a1 a199 423c
 
-@sine-pcm
-	8083 8689 8c8f 9295 989b 9ea1 a4a7 aaad
-	b0b3 b6b9 bbbe c1c3 c6c9 cbce d0d2 d5d7
-	d9db dee0 e2e4 e6e7 e9eb ecee f0f1 f2f4
-	f5f6 f7f8 f9fa fbfb fcfd fdfe fefe fefe
-	fffe fefe fefe fdfd fcfb fbfa f9f8 f7f6
-	f5f4 f2f1 f0ee eceb e9e7 e6e4 e2e0 dedb
-	d9d7 d5d2 d0ce cbc9 c6c3 c1be bbb9 b6b3
-	b0ad aaa7 a4a1 9e9b 9895 928f 8c89 8683
-	807d 7a77 7471 6e6b 6865 625f 5c59 5653
-	504d 4a47 4542 3f3d 3a37 3532 302e 2b29
-	2725 2220 1e1c 1a19 1715 1412 100f 0e0c
-	0b0a 0908 0706 0505 0403 0302 0202 0202
-	0102 0202 0202 0303 0405 0506 0708 090a
-	0b0c 0e0f 1012 1415 1719 1a1c 1e20 2225
-	2729 2b2e 3032 3537 3a3d 3f42 4547 4a4d
-	5053 5659 5c5f 6265 686b 6e71 7477 7a7d
-
 @piano-pcm
 	8182 8588 8d91 959b a1a6 aaad b2b5 b8bd
 	c1c7 cbd0 d5d9 dde1 e5e5 e4e4 e1dc d7d1
@@ -1344,39 +1410,3 @@ RTN
 	6164 686c 7074 7677 7979 7a7b 7b7a 7977
 	7473 6f6e 6b69 696b 6f72 7576 7574 716b
 	655d 554e 4742 3f3f 4045 4b52 5a62 6b74
-
-@tri-pcm
-	8082 8486 888a 8c8e 9092 9496 989a 9c9e
-	a0a2 a4a6 a8aa acae b0b2 b4b6 b8ba bcbe
-	c0c2 c4c6 c8ca ccce d0d2 d4d6 d8da dcde
-	e0e2 e4e6 e8ea ecee f0f2 f4f6 f8fa fcfe
-	fffd fbf9 f7f5 f3f1 efed ebe9 e7e5 e3e1
-	dfdd dbd9 d7d5 d3d1 cfcd cbc9 c7c5 c3c1
-	bfbd bbb9 b7b5 b3b1 afad aba9 a7a5 a3a1
-	9f9d 9b99 9795 9391 8f8d 8b89 8785 8381
-	7f7d 7b79 7775 7371 6f6d 6b69 6765 6361
-	5f5d 5b59 5755 5351 4f4d 4b49 4745 4341
-	3f3d 3b39 3735 3331 2f2d 2b29 2725 2321
-	1f1d 1b19 1715 1311 0f0d 0b09 0705 0301
-	0103 0507 090b 0d0f 1113 1517 191b 1d1f
-	2123 2527 292b 2d2f 3133 3537 393b 3d3f
-	4143 4547 494b 4d4f 5153 5557 595b 5d5f
-	6163 6567 696b 6d6f 7173 7577 797b 7d7f
-
-@saw-pcm
-	8282 8183 8384 8685 8888 8889 8a8b 8c8c
-	8e8e 8f90 9092 9193 9494 9596 9699 9899
-	9b9a 9c9c 9c9d 9ea0 a1a0 a2a2 a3a5 a4a6
-	a7a7 a9a8 a9aa aaac adad aeae b0b0 b1b3
-	b2b4 b5b5 b6b7 b9b8 b9bb babc bdbc bdbe
-	bfc1 bfc1 c3c1 c4c5 c5c6 c6c7 c9c7 cbca
-	cbcc cdcd cfcf d2d0 d2d2 d2d5 d4d5 d6d7
-	d8d8 d9dc d9df dadf dce1 dde5 dce6 dceb
-	cb1f 1b1e 1c21 1c21 1f23 2025 2127 2329
-	2529 2829 2a2b 2b2e 2d2f 302f 3231 3234
-	3334 3536 3836 3939 3a3b 3b3d 3e3d 3f40
-	4042 4242 4444 4646 4748 474a 4a4b 4d4c
-	4e4e 4f50 5052 5252 5554 5557 5759 5959
-	5b5b 5c5d 5d5f 5e60 6160 6264 6365 6566
-	6867 6969 6a6c 6c6d 6d6e 706f 7071 7174
-	7475 7576 7777 797a 7a7c 7b7c 7e7d 7f7f
