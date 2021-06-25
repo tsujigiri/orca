@@ -5,6 +5,7 @@
 	escape - deselect
 	arrow - move
 	shift+arrow - scale selection
+	ctrl+arrow - drag selection
 	ctrl+n - new
 	ctrl+s - save
 	ctrl+r - rename

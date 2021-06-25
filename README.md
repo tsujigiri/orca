@@ -18,7 +18,6 @@ To build the C version(old), you must have [SDL2](https://wiki.libsdl.org/).
 cc orca.c -std=c89 -O2 -DNDEBUG -g0 -s -Wall -L/usr/local/lib -lSDL2 -lportmidi -o orca && ./orca
 ```
 
-
 ## Operators
 
 To display the list of operators inside of Orca, use `CmdOrCtrl+G`.
@@ -54,19 +53,19 @@ To display the list of operators inside of Orca, use `CmdOrCtrl+G`.
 
 ## Controls
 
-- `PAGEUP`, incr. bpm.
-- `PAGEDOWN`, decr. bpm.
-- `SHIFT+ARROW` scale selection.
-- `CTRL+ARROW` drag selection.
-- `ALT+ARROW` skip selection.
-- `ARROW` move selection.
-- `SPACE` toggle play.
-- `BACKSPACE` erase.
-- `CTRL+/` comment selection.
-- `CTRL+U` uppercase selection.
-- `CTRL+L` lowercase selection.
-- `CTRL+[` decrement selection.
-- `CTRL+]` increment selection.
+`space` - toggle play/paste
+`backspace` - erase
+`escape` - deselect
+`arrow` - move
+`shift+arrow` - scale selection
+`ctrl+arrow` - drag selection
+`ctrl+n` - new
+`ctrl+s` - save
+`ctrl+r` - rename
+`ctrl+o` - open
+`ctrl+c` - copy
+`ctrl+v` - paste
+`ctrl+x` - cut
 
 ## Syntax Highlight
 
