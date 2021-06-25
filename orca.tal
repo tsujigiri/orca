@@ -22,6 +22,7 @@
 		- Change BPM
 		- Insert mode
 		- Display on-screen guide
+		- P operator is broken
 )
 
 %+  { ADD } %-   { SUB }  %*  { MUL }  %/  { DIV }
@@ -237,74 +238,75 @@ BRK
 	
 	.Controller/key DEI #00 ! .state/trap LDZ #0101 == ;on-button-trap JCN2
 
-	( ignore release when key/button is blank )
-	.Controller/button DEI2 
-		DUP2 #0000 !! #02 JCN [ POP2 BRK ]
-
-	( ctrl modes )
-	DUP2 #0103 !! ,&no-copy JCN
-		;copy-block JSR2 
-		;redraw JSR2 POP2 BRK &no-copy
-	DUP2 #0116 !! ,&no-paste JCN
-		;paste-block JSR2 RESET-SELECTION
-		;redraw JSR2 POP2 BRK &no-paste
-	DUP2 #0118 !! ,&no-cut JCN
-		;copy-block JSR2 CHAR-DOT ;fill-block JSR2 RESET-SELECTION
-		;redraw JSR2 POP2 BRK &no-cut
-	DUP2 #010f !! ,&no-open JCN
-		;load-file JSR2 ;redraw JSR2 
-		;redraw JSR2 POP2 BRK &no-open
-	DUP2 #0112 !! ,&no-name JCN
-		.state/trap TOGGLE
-		#00 .state/blink STZ 
-		#23 ;draw-filepath JSR2 POP2 BRK &no-name
-	DUP2 #0113 !! ,&no-save JCN
-		;save-file JSR2 
-		;redraw JSR2 POP2 BRK  &no-save
-	DUP2 #010e !! ,&no-make JCN
-		#20 ;draw-filepath JSR2 ;untitled-txt ;new-file JSR2 
-		;redraw JSR2 POP2 BRK &no-make
-	DUP2 #081b !! ,&no-escape JCN
-		RESET-SELECTION
-		;redraw JSR2 POP2 BRK &no-escape
-	SWP POP
+	( arrows )
+	.Controller/button DEI DUP #f0 AND ;&arrows JCN2 POP
+	.Controller/button DEI DUP #0f AND #01 = ;&control JCN2 POP
 
 	( key )
+	.Controller/key DEI
 	DUP #20 ! ,&no-space JCN
 		.timer/alive TOGGLE
 		;redraw JSR2 POP BRK &no-space
 	DUP #08 ! ,&no-backspace JCN
-		CHAR-DOT ;fill-block JSR2 POP BRK &no-backspace
+		CHAR-DOT ;fill-block JSR2 
+		;redraw JSR2 POP BRK &no-backspace
+	DUP #1b ! ,&no-escape JCN
+		RESET-SELECTION 
+		;redraw JSR2 POP BRK &no-escape
 	DUP IS-CHAR-KEY #00 = ,&no-key JCN
 		.selection/x1 LDZ .selection/y1 LDZ .Controller/key DEI SET-CELL
-		SET-STATE ;redraw JSR2 POP BRK &no-key
-	POP
+		SET-STATE 
+		;redraw JSR2 POP BRK &no-key
+	POP BRK
 
-	( arrows )
-	.Controller/button DEI 
-	DUP #f0 AND #00 = ,&end JCN
-	DUP #f0 AND #10 ! ,&no-up JCN 
-		#00ff ROT ;edit-selection JSR2 
-		;redraw JSR2 BRK &no-up
-	DUP #f0 AND #20 ! ,&no-down JCN 
-		#0001 ROT ;edit-selection JSR2 
-		;redraw JSR2 BRK &no-down
-	DUP #f0 AND #40 ! ,&no-left JCN 
-		#ff00 ROT ;edit-selection JSR2 
-		;redraw JSR2 BRK &no-left
-	DUP #f0 AND #80 ! ,&no-right JCN 
-		#0100 ROT ;edit-selection JSR2 
-		;redraw JSR2 BRK &no-right
-	&end
-	POP
+	&control ( button -- )
 
-	( clear last cursor )
-	.cursor/x LDZ2 .Screen/x DEO2
-	.cursor/y LDZ2 .Screen/y DEO2
-	;blank_icn .Screen/addr DEO2
-	#30 .Screen/color DEO
+		POP .Controller/key DEI
+		( ctrl modes )
+		DUP #61 ! ,&no-expand JCN
+			#00 .selection/x1 STZ
+			#00 .selection/y1 STZ
+			.grid/width LDZ .selection/x2 STZ
+			.grid/height LDZ .selection/y2 STZ
+			;redraw JSR2 POP BRK &no-expand
+		DUP #63 ! ,&no-copy JCN
+			;copy-block JSR2 
+			;redraw JSR2 POP BRK &no-copy
+		DUP #76 ! ,&no-paste JCN
+			;paste-block JSR2 RESET-SELECTION
+			;redraw JSR2 POP BRK &no-paste
+		DUP #78 ! ,&no-cut JCN
+			;copy-block JSR2 CHAR-DOT ;fill-block JSR2 RESET-SELECTION
+			;redraw JSR2 POP BRK &no-cut
+		DUP #6f ! ,&no-open JCN
+			;load-file JSR2 ;redraw JSR2 
+			;redraw JSR2 POP BRK &no-open
+		DUP #72 ! ,&no-name JCN
+			.state/trap TOGGLE
+			#00 .state/blink STZ 
+			#23 ;draw-filepath JSR2 POP BRK &no-name
+		DUP #73 ! ,&no-save JCN
+			;save-file JSR2 
+			;redraw JSR2 POP BRK  &no-save
+		DUP #6e ! ,&no-make JCN
+			#20 ;draw-filepath JSR2 ;untitled-txt ;new-file JSR2 
+			;redraw JSR2 POP BRK &no-make
+		POP BRK
 
-	;redraw JSR2
+	&arrows ( button -- )
+		DUP #f0 AND #10 ! ,&no-up JCN 
+			#00ff ROT ;edit-selection JSR2 
+			;redraw JSR2 BRK &no-up
+		DUP #f0 AND #20 ! ,&no-down JCN 
+			#0001 ROT ;edit-selection JSR2 
+			;redraw JSR2 BRK &no-down
+		DUP #f0 AND #40 ! ,&no-left JCN 
+			#ff00 ROT ;edit-selection JSR2 
+			;redraw JSR2 BRK &no-left
+		DUP #f0 AND #80 ! ,&no-right JCN 
+			#0100 ROT ;edit-selection JSR2 
+			;redraw JSR2 BRK &no-right
+		POP BRK
 
 BRK
 
@@ -1277,10 +1279,14 @@ RTN
 
 @clamp-selection ( -- )
 	
-	.selection/x2 LDZ .grid/width LDZ #01 - STHk < ,&ok-x JCN
-		STHkr .selection/x2 STZ &ok-x POPr
-	.selection/y2 LDZ .grid/height LDZ #01 - STHk < ,&ok-y JCN
-		STHkr .selection/y2 STZ &ok-y POPr
+	.selection/x1 LDZ .grid/width LDZ #01 - STHk < ,&ok-limitx1 JCN
+		STHkr .selection/x1 STZ &ok-limitx1 POPr
+	.selection/y1 LDZ .grid/height LDZ #01 - STHk < ,&ok-limity1 JCN
+		STHkr .selection/y1 STZ &ok-limity1 POPr
+	.selection/x2 LDZ .grid/width LDZ #01 - STHk < ,&ok-limitx2 JCN
+		STHkr .selection/x2 STZ &ok-limitx2 POPr
+	.selection/y2 LDZ .grid/height LDZ #01 - STHk < ,&ok-limity2 JCN
+		STHkr .selection/y2 STZ &ok-limity2 POPr
 	.selection/x2 LDZ .selection/x1 LDZ STHk > ,&ok-flipx JCN
 		STHkr .selection/x2 STZ &ok-flipx POPr
 	.selection/y2 LDZ .selection/y1 LDZ STHk > ,&ok-flipy JCN
