@@ -22,7 +22,6 @@
 		- Change BPM
 		- Insert mode
 		- Display on-screen guide
-		- P operator is broken
 )
 
 %+  { ADD } %-   { SUB }  %*  { MUL }  %/  { DIV }
@@ -649,7 +648,7 @@ RTN
 	( get input ) DUP2 INCR GET-PORT-RIGHT-RAW STH
 	#00 OVRr STHr
 	&loop
-		( x+i+1,y ) OVR STH OVR2 STHr ROT + #01 + SWP
+		( x+i+1,y ) OVR STH OVR2 STHr ROT + SWP #01 +
 		( lock ) DUP2 #01 SET-LOCK
 		( type ) LOCKED-TYPE SET-TYPE
 		INCR
