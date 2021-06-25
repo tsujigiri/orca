@@ -17,10 +17,10 @@
 		- Catch ports that overflow out of grid
 		- Get case from right-side port
 		- Display short timer
-		- Drag Selection
 		- sharp notes
 		- Change BPM
 		- Insert mode
+		- Display on-screen guide
 )
 
 %+  { ADD } %-   { SUB }  %*  { MUL }  %/  { DIV }
@@ -279,27 +279,23 @@ BRK
 		SET-STATE ;redraw JSR2 POP BRK &no-key
 	POP
 
-	( button )
-	.Controller/button DEI [ DUP #04 AND #00 ! #02 * STH ] #f0 AND
-		DUP #04 SFT #01 AND #01 NEQ ,&no-up JCN
-			.selection/y1 STHkr + LDZ #00 = ,&no-up JCN
-			.selection/y1 STHkr + LDZ #01 - .selection/y1 STHkr + STZ
-			.selection/y2 STHkr + LDZ #01 - .selection/y2 STHkr + STZ 
-			;clamp-selection JSR2 &no-up
-		DUP #05 SFT #01 AND #01 NEQ ,&no-down JCN
-			.selection/y1 STHkr + LDZ #01 + .selection/y1 STHkr + STZ
-			.selection/y2 STHkr + LDZ #01 + .selection/y2 STHkr + STZ 
-			;clamp-selection JSR2 &no-down
-		DUP #06 SFT #01 AND #01 NEQ ,&no-left JCN
-			.selection/x1 STHkr + LDZ #00 = ,&no-left JCN
-			.selection/x1 STHkr + LDZ #01 - .selection/x1 STHkr + STZ
-			.selection/x2 STHkr + LDZ #01 - .selection/x2 STHkr + STZ 
-			;clamp-selection JSR2 &no-left
-		DUP #07 SFT #01 AND #01 NEQ ,&no-right JCN
-			.selection/x1 STHkr + LDZ #01 + .selection/x1 STHkr + STZ
-			.selection/x2 STHkr + LDZ #01 + .selection/x2 STHkr + STZ 
-			;clamp-selection JSR2 &no-right
-	POP POPr
+	( arrows )
+	.Controller/button DEI 
+	DUP #f0 AND #00 = ,&end JCN
+	DUP #f0 AND #10 ! ,&no-up JCN 
+		#00ff ROT ;edit-selection JSR2 
+		;redraw JSR2 BRK &no-up
+	DUP #f0 AND #20 ! ,&no-down JCN 
+		#0001 ROT ;edit-selection JSR2 
+		;redraw JSR2 BRK &no-down
+	DUP #f0 AND #40 ! ,&no-left JCN 
+		#ff00 ROT ;edit-selection JSR2 
+		;redraw JSR2 BRK &no-left
+	DUP #f0 AND #80 ! ,&no-right JCN 
+		#0100 ROT ;edit-selection JSR2 
+		;redraw JSR2 BRK &no-right
+	&end
+	POP
 
 	( clear last cursor )
 	.cursor/x LDZ2 .Screen/x DEO2
@@ -1002,7 +998,7 @@ RTN
 	#21 .Screen/color DEO
 	STH2kr #0020 ++ .Screen/x DEO2
 	;position_icn .Screen/addr DEO2
-	#22 .Screen/color DEO
+	#22 .selection/x1 LDZ .selection/y1 LDZ .selection/x2 LDZ .selection/y2 LDZ == + .Screen/color DEO
 
 	( Frame )
 	STH2kr #0030 ++ .Screen/x DEO2
@@ -1227,6 +1223,54 @@ RTN
 		LTHk ,&ver JCN
 	POP2
 	POPr
+
+RTN
+
+@cut-block ( -- )
+
+	;copy-block JSR2 
+	CHAR-DOT ;fill-block JSR2
+
+RTN
+
+@edit-selection ( x y mod -- )
+	
+	( set modifiers )
+	DUP 
+		#01 AND #00 ! ;&drag STA
+		#04 AND #00 ! #02 * ;&scale STA
+	STH2
+
+	;&drag LDA #00 = ,&no-drag-start JCN 
+		;cut-block JSR2 &no-drag-start
+
+	( y )
+	STHkr #00 = ,&no-ver JCN
+		( clamp ) STHkr #ff = .selection/y1 [ ,&scale LDR + ] LDZ #00 = #0101 == ,&no-ver JCN
+		.selection/y1 [ ,&scale LDR + ] LDZ STHkr + 
+			.selection/y1 [ ,&scale LDR + ] STZ
+		,&scale LDR ,&no-ver JCN
+			.selection/y2 LDZ STHkr + .selection/y2 STZ 
+		&no-ver POPr
+
+	( x )
+	STHkr #00 = ,&no-hor JCN
+		( clamp ) STHkr #ff = .selection/x1 [ ,&scale LDR + ] LDZ #00 = #0101 == ,&no-hor JCN
+		.selection/x1 [ ,&scale LDR + ] LDZ STHkr + 
+			.selection/x1 [ ,&scale LDR + ] STZ
+		,&scale LDR ,&no-hor JCN
+			.selection/x2 LDZ STHkr + .selection/x2 STZ 
+		&no-hor POPr
+
+	;clamp-selection JSR2 
+
+	,&drag LDR #00 = ,&no-drag-end JCN 
+		;paste-block JSR2 &no-drag-end
+
+	RTN
+
+	&drag $1
+	&scale $1
 
 RTN
 
