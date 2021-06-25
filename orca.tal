@@ -22,6 +22,7 @@
 		- Change BPM
 		- Insert mode
 		- Display on-screen guide
+		- Leap move with alt modifier
 )
 
 %+  { ADD } %-   { SUB }  %*  { MUL }  %/  { DIV }
@@ -35,8 +36,6 @@
 
 %DEBUG  { .Console/byte DEO #0a .Console/char DEO }
 %DEBUG2 { .Console/short DEO2 #0a .Console/char DEO }
-
-%RELEASE-MOUSE { #00 .Mouse/state DEO }
 
 %RTN  { JMP2r }
 %MOD  { DUP2 / * - } 
@@ -145,7 +144,7 @@
 	#dd .Audio0/volume DEO  #0118 .Audio0/adsr DEO2 #0100 .Audio0/length DEO2
 	#ce .Audio1/volume DEO  #0334 .Audio1/adsr DEO2 #0100 .Audio1/length DEO2
 	#ec .Audio2/volume DEO  #0414 .Audio2/adsr DEO2 #0100 .Audio2/length DEO2
-	#ee .Audio3/volume DEO  #022c .Audio3/adsr DEO2 #0100 .Audio3/length DEO2
+	#dd .Audio3/volume DEO  #022c .Audio3/adsr DEO2 #0100 .Audio3/length DEO2
 
 	;sin-pcm .Audio0/addr DEO2
 	;tri-pcm .Audio1/addr DEO2
@@ -241,7 +240,7 @@ BRK
 	.Controller/button DEI DUP #f0 AND ;&arrows JCN2 POP
 	.Controller/button DEI DUP #0f AND #01 = ;&control JCN2 POP
 
-	( key )
+	( default )
 	.Controller/key DEI
 	DUP #20 ! ,&no-space JCN
 		.timer/alive TOGGLE
@@ -259,9 +258,8 @@ BRK
 	POP BRK
 
 	&control ( button -- )
-
-		POP .Controller/key DEI
-		( ctrl modes )
+		POP 
+		.Controller/key DEI
 		DUP #61 ! ,&no-expand JCN
 			#00 .selection/x1 STZ
 			#00 .selection/y1 STZ
@@ -290,22 +288,19 @@ BRK
 		DUP #6e ! ,&no-make JCN
 			#20 ;draw-filepath JSR2 ;untitled-txt ;new-file JSR2 
 			;redraw JSR2 POP BRK &no-make
-		POP BRK
+		POP 
+	BRK
 
-	&arrows ( button -- )
-		DUP #f0 AND #10 ! ,&no-up JCN 
-			#00ff ROT ;edit-selection JSR2 
-			;redraw JSR2 BRK &no-up
-		DUP #f0 AND #20 ! ,&no-down JCN 
-			#0001 ROT ;edit-selection JSR2 
-			;redraw JSR2 BRK &no-down
-		DUP #f0 AND #40 ! ,&no-left JCN 
-			#ff00 ROT ;edit-selection JSR2 
-			;redraw JSR2 BRK &no-left
-		DUP #f0 AND #80 ! ,&no-right JCN 
-			#0100 ROT ;edit-selection JSR2 
-			;redraw JSR2 BRK &no-right
+	&arrows ( button -> )
+		DUP #f0 AND #10 ! ,&no-up JCN    [ #00ff ROT ,&move JMP ] &no-up
+		DUP #f0 AND #20 ! ,&no-down JCN  [ #0001 ROT ,&move JMP ] &no-down
+		DUP #f0 AND #40 ! ,&no-left JCN  [ #ff00 ROT ,&move JMP ] &no-left
+		DUP #f0 AND #80 ! ,&no-right JCN [ #0100 ROT ,&move JMP ] &no-right
 		POP BRK
+		&move 
+		;edit-selection JSR2 
+		;redraw JSR2 
+	BRK
 
 BRK
 
@@ -329,7 +324,7 @@ BRK
 	.path/length LDZ #1f = ,&edit-end JCN
 		.Controller/key DEI .path/name .path/length LDZ + STZ
 		.path/length LDZ #01 + .path/length STZ
-	&edit-end
+		&edit-end
 	#00 .path/name .path/length LDZ + STZ
 
 BRK
@@ -354,7 +349,7 @@ BRK
 	.Mouse/x DEI2 .Mouse/y DEI2 .grid ;within-rect JSR2
 		;on-mouse-grid JCN2
 
-	RELEASE-MOUSE
+	( release-record ) #00 DUP .Mouse/state DEO .cursor/last STZ
 	
 BRK
 
@@ -367,15 +362,12 @@ BRK
 				DUP .selection/x1 STZ .selection/x2 STZ
 			.Mouse/y DEI2 .grid/y1 LDZ2 -- 8// TOB 
 				DUP .selection/y1 STZ .selection/y2 STZ
-				;clamp-selection JSR2
-			;redraw JSR2
-			,&end JMP
-			&no-down
+			;clamp-selection JSR2 ;redraw JSR2
+			,&end JMP &no-down
 		( release )
 		.Mouse/x DEI2 .grid/x1 LDZ2 -- 8// TOB .selection/x2 STZ
 		.Mouse/y DEI2 .grid/y1 LDZ2 -- 8// TOB .selection/y2 STZ
-		;clamp-selection JSR2
-		;redraw JSR2
+		;clamp-selection JSR2 ;redraw JSR2
 	&end
 	POP2
 	.cursor/last STZ
@@ -408,7 +400,7 @@ BRK
 		;redraw JSR2 &no-name
 	POP
 
-	RELEASE-MOUSE
+	( release ) #00 .Mouse/state DEO
 
 BRK
 
