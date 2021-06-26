@@ -856,14 +856,17 @@ RTN
 	POP
 	( get channel ) DUP2 [ SWP #01 + SWP ] GET-PORT-RIGHT STH
 	( get octave ) DUP2 [ SWP #02 + SWP ] GET-PORT-RIGHT [ #0c * ] STH 
-	( get note ) DUP2 [ SWP #03 + SWP ] GET-PORT-RIGHT-RAW GET-NOTE STH
+	( get note ) DUP2 [ SWP #03 + SWP ] GET-PORT-RIGHT-RAW GET-NOTE STH 
 	( req bang ) DUP2 ;get-bang JSR2 ,&is-bang JCN POP2 POP2r POPr RTN &is-bang
 	IO-TYPE SET-TYPE
-	ADDr SWPr 
-	STHr .Midi/wchan DEO 
-	STHr .Midi/wnote DEO
+	ADDr
+	( note on ) OVRr STHr .Console/char DEO STHkr .Console/char DEO #7f .Console/char DEO
+	( note off ) OVRr STHr .Console/char DEO STHkr .Console/char DEO #00 .Console/char DEO
+	POP2r
 
 RTN
+
+@string "hello $1
 
 @run-char ( x y char -- )
 	
