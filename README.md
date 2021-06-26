@@ -51,6 +51,11 @@ To display the list of operators inside of Orca, use `CmdOrCtrl+G`.
 - `*` **bang**: Bangs neighboring operands.
 - `#` **comment**: Halts a line.
 
+### Special
+
+- `=` **synth**(channel octave note): Plays a note.
+- `:` **midi**(channel octave note): Send a midi note.
+
 ## Controls
 
 `space` - toggle play/paste

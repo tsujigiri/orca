@@ -48,7 +48,7 @@
 
 %LOCKED-TYPE   { #01 } %PORTEL-TYPE   { #02 }
 %OPERATOR-TYPE { #03 } %PORTER-TYPE   { #04 }
-%OUTPUT-TYPE   { #05 }
+%OUTPUT-TYPE   { #05 } %IO-TYPE       { #07 }
 
 %DATA-CELLS { #b000 }
 %DATA-LOCKS { #c000 }
@@ -58,7 +58,8 @@
 
 %CHAR-NULL  { #00 } %CHAR-LINE  { #0a }
 %CHAR-HASH  { #23 } %CHAR-BANG  { #2a }
-%CHAR-DOT   { #2e } %CHAR-EQUAL { #3d }
+%CHAR-DOT   { #2e } %CHAR-COLON { #3a }
+%CHAR-EQUAL { #3d }
 
 %IS-CHAR-KEY { STHk #20 > STHr #7b < #0101 == }
 
@@ -84,17 +85,18 @@
 
 ( devices )
 
-|00 @System     &vector $2 &pad      $6 &r      $2 &g     $2 &b      $2 ]
-|10 @Console    &vector $2 &pad      $6 &char   $1 &byte  $1 &short  $2 &string $2 ]
-|20 @Screen     &vector $2 &width    $2 &height $2 &pad   $2 &x      $2 &y      $2 &addr  $2 &color  $1 ]
-|30 @Audio0     &vector $2 &position $2 &output $1 &pad   $3 &adsr   $2 &length $2 &addr  $2 &volume $1 &pitch $1 ]
-|40 @Audio1     &vector $2 &position $2 &output $1 &pad   $3 &adsr   $2 &length $2 &addr  $2 &volume $1 &pitch $1 ]
-|50 @Audio2     &vector $2 &position $2 &output $1 &pad   $3 &adsr   $2 &length $2 &addr  $2 &volume $1 &pitch $1 ]
-|60 @Audio3     &vector $2 &position $2 &output $1 &pad   $3 &adsr   $2 &length $2 &addr  $2 &volume $1 &pitch $1 ]
-|80 @Controller &vector $2 &button   $1 &key    $1 ]
-|90 @Mouse      &vector $2 &x        $2 &y      $2 &state $1 &chord  $1 ]
-|a0 @File       &vector $2 &success  $2 &offset $2 &pad   $2 &name   $2 &length $2 &load $2 &save $2 ]
-|b0 @DateTime   &year   $2 &month    $1 &day    $1 &hour  $1 &minute $1 &second $1 &dotw $1 &doty $2 &isdst $1 ]
+|00 @System     &vector $2 &pad      $6 &r      $2 &g     $2 &b      $2 
+|10 @Console    &vector $2 &pad      $6 &char   $1 &byte  $1 &short  $2 &string $2 
+|20 @Screen     &vector $2 &width    $2 &height $2 &pad   $2 &x      $2 &y      $2 &addr  $2 &color  $1 
+|30 @Audio0     &vector $2 &position $2 &output $1 &pad   $3 &adsr   $2 &length $2 &addr  $2 &volume $1 &pitch $1 
+|40 @Audio1     &vector $2 &position $2 &output $1 &pad   $3 &adsr   $2 &length $2 &addr  $2 &volume $1 &pitch $1 
+|50 @Audio2     &vector $2 &position $2 &output $1 &pad   $3 &adsr   $2 &length $2 &addr  $2 &volume $1 &pitch $1 
+|60 @Audio3     &vector $2 &position $2 &output $1 &pad   $3 &adsr   $2 &length $2 &addr  $2 &volume $1 &pitch $1 
+|70 @Midi       &vector $2 &rchan    $1 &rnote  $1 &rvelo $1 &pad    $3 &wchan  $1 &wnote $1 &wvelo  $1
+|80 @Controller &vector $2 &button   $1 &key    $1 
+|90 @Mouse      &vector $2 &x        $2 &y      $2 &state $1 &chord  $1 
+|a0 @File       &vector $2 &success  $2 &offset $2 &pad   $2 &name   $2 &length $2 &load $2 &save $2 
+|b0 @DateTime   &year   $2 &month    $1 &day    $1 &hour  $1 &minute $1 &second $1 &dotw $1 &doty $2 &isdst $1 
 
 ( variables )
 
@@ -837,14 +839,29 @@ RTN
 
 RTN
 
-@op-play ( x y char -- )
+@op-synth ( x y char -- )
 	
 	POP
 	( get channel ) DUP2 [ SWP #01 + SWP ] GET-PORT-RIGHT STH 
 	( get octave ) DUP2 [ SWP #02 + SWP ] GET-PORT-RIGHT [ #0c * ] STH 
 	( get note ) DUP2 [ SWP #03 + SWP ] GET-PORT-RIGHT-RAW GET-NOTE STH ADDr
-	( req bang ) ;get-bang JSR2 ,&is-bang JCN POP2r RTN &is-bang
+	( req bang ) DUP2 ;get-bang JSR2 ,&is-bang JCN POP2 POP2r RTN &is-bang
 	STHr .Audio0/pitch STHr #10 * + DEO
+	IO-TYPE SET-TYPE
+
+RTN
+
+@op-midi ( x y char -- )
+
+	POP
+	( get channel ) DUP2 [ SWP #01 + SWP ] GET-PORT-RIGHT STH
+	( get octave ) DUP2 [ SWP #02 + SWP ] GET-PORT-RIGHT [ #0c * ] STH 
+	( get note ) DUP2 [ SWP #03 + SWP ] GET-PORT-RIGHT-RAW GET-NOTE STH
+	( req bang ) DUP2 ;get-bang JSR2 ,&is-bang JCN POP2 POP2r POPr RTN &is-bang
+	IO-TYPE SET-TYPE
+	ADDr SWPr 
+	STHr .Midi/wchan DEO 
+	STHr .Midi/wnote DEO
 
 RTN
 
@@ -876,7 +893,8 @@ RTN
 	( special )
 	DUP CHAR-BANG = ;op-bang JCN2
 	DUP CHAR-HASH = ;op-comment JCN2
-	DUP CHAR-EQUAL = ;op-play JCN2
+	DUP CHAR-EQUAL = ;op-synth JCN2
+	DUP CHAR-COLON = ;op-midi JCN2
 
 	( unknown )
 	POP2 POP
@@ -1343,6 +1361,7 @@ RTN
 	22 ( 4 port-locked )
 	28 ( 5 port-output )
 	29 ( 6 selected )
+	2c ( 7 io )
 	
 @operations
 	:op-a :op-b :op-c :op-d :op-e :op-f :op-g :op-h
