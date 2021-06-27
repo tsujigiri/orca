@@ -2,7 +2,7 @@
 
 [Orca](https://wiki.xxiivv.com/orca) is an esoteric programming language, written in [Uxntal](https://wiki.xxiivv.com/site/uxntal.html).
 
-In Orca, every letter of the alphabet is an operation, where lowercase letters operate on bang, uppercase letters operate each frame. This repository also contain a ANSI C version.
+In Orca, every letter of the alphabet is an operation, where lowercase letters operate on bang, uppercase letters operate each frame. This repository also contain a C implementation.
 
 ## Build
 
@@ -12,10 +12,12 @@ You must have the [Uxn](https://git.sr.ht/~rabbits/uxn/) assembler and emulator.
 uxnasm orca.tal orca.rom && uxnemu orca.rom
 ```
 
-To build the C version(old), you must have [SDL2](https://wiki.libsdl.org/).
+### I/O
+
+The `:` operator is used to send note values to other applications, to convert the signal to midi, use the [shim](https://git.sr.ht/~rabbits/shim/).
 
 ```
-cc orca.c -std=c89 -O2 -DNDEBUG -g0 -s -Wall -L/usr/local/lib -lSDL2 -lportmidi -o orca && ./orca
+uxnemu orca.rom | shim
 ```
 
 ## Operators
@@ -54,7 +56,7 @@ To display the list of operators inside of Orca, use `CmdOrCtrl+G`.
 ### Special
 
 - `=` **synth**(channel octave note): Plays a note.
-- `:` **midi**(channel octave note): Send a midi note.
+- `:` **data**(channel octave note): Send a note.
 
 ## Controls
 

@@ -17,7 +17,6 @@
 	TODO
 		- Catch ports that overflow out of grid
 		- Get case from right-side port
-		- Display short timer
 		- sharp notes
 		- Change BPM
 		- Insert mode
@@ -39,6 +38,7 @@
 
 %RTN  { JMP2r }
 %MOD  { DUP2 / * - } 
+%MOD2 { OVR2 OVR2 // ** -- } 
 %MOD8 { #07 AND }
 %MIN1 { DUP #00 = + }
 %LTSk { #80 + SWP #80 + > }
@@ -71,6 +71,7 @@
 %GET-CHAR  { #24 MOD #00 SWP ;b36clc ++ LDA } ( b36 -- char )
 %GET-VALUE { #20 - #00 SWP ;values ++ LDA } ( char -- b36 )
 %GET-NOTE  { GET-VALUE TOS ;uc-notes ++ LDA } ( char -- midi )
+%GET-CHAR-SPRITE { GET-CHAR #20 - #00 SWP 8** ;font ++ }
 
 %GET-CELL  { GET-INDEX DATA-CELLS ++ LDA } ( x y -- char )
 %SET-CELL  { ROT ROT GET-INDEX DATA-CELLS ++ STA } ( x y char -- )
@@ -471,7 +472,7 @@ RTN
 	( get rate ) DUP2 DECR GET-PORT-LEFT MIN1 STH
 	( get mod ) DUP2 INCR GET-PORT-RIGHT MIN1 STH
 	( incr y ) #01 +
-	( get result ) SWPr .timer/frame LDZ2 [ ( TODO: ) TOB ] STHr / STHr MOD 
+	( get result ) SWPr .timer/frame LDZ2 STHr TOS // STHr TOS MOD2 TOB
 	GET-CHAR SET-PORT-OUTPUT
 
 RTN
@@ -482,7 +483,7 @@ RTN
 	( get rate ) DUP2 DECR GET-PORT-LEFT MIN1 STH
 	( get mod ) DUP2 INCR GET-PORT-RIGHT MIN1 STH
 	( incr y ) #01 +
-	( get result ) .timer/frame LDZ2 [ ( TODO: ) TOB ] MULr STHr MOD #00 =
+	( get result ) .timer/frame LDZ2 MULr STHr TOS MOD2 #0000 ==
 	( bang if equal ) #fc * CHAR-DOT + 
 	SET-PORT-OUTPUT
 	
@@ -732,11 +733,11 @@ RTN
 	( get step ) DUP2 DECR GET-PORT-LEFT STH
 	( get max ) DUP2 INCR GET-PORT-RIGHT MIN1 STH
 	( incr y ) #01 +
-	( frame + max - 1 ) .timer/frame LDZ2 TOB STHkr + #01 -
-	( * step ) OVRr STHr *
-	( % max ) STHkr MOD
-	( + step ) SWPr STHr +
-	( bucket >= max ) STHr < #01 !
+	( frame + max - 1 ) .timer/frame LDZ2 STHkr TOS ++ #0001 --
+	( * step ) OVRr STHr TOS **
+	( % max ) STHkr TOS MOD2
+	( + step ) SWPr STHr TOS ++
+	( bucket >= max ) STHr TOS << #01 !
 	( bang if equal ) #fc * CHAR-DOT + 
 	SET-PORT-OUTPUT
 	
@@ -997,19 +998,19 @@ RTN
 	( Positionx )
 	.grid/x1 LDZ2 STH2k .Screen/x DEO2
 	.selection/x1 LDZ
-		DUP #04 SFT GET-CHAR #20 - #00 SWP 8** ;font ++ .Screen/addr DEO2
+		DUP #04 SFT GET-CHAR-SPRITE .Screen/addr DEO2
 	#21 .Screen/color DEO
 	STH2kr #0008 ++ .Screen/x DEO2
-		#0f AND GET-CHAR #20 - #00 SWP 8** ;font ++ .Screen/addr DEO2
+		#0f AND GET-CHAR-SPRITE .Screen/addr DEO2
 	#21 .Screen/color DEO
 
 	( Positiony )
 	STH2kr #0010 ++ .Screen/x DEO2
 	.selection/y1 LDZ
-		DUP #04 SFT GET-CHAR #20 - #00 SWP 8** ;font ++ .Screen/addr DEO2
+		DUP #04 SFT GET-CHAR-SPRITE .Screen/addr DEO2
 	#21 .Screen/color DEO
 	STH2kr #0018 ++ .Screen/x DEO2
-		#0f AND GET-CHAR #20 - #00 SWP 8** ;font ++ .Screen/addr DEO2
+		#0f AND GET-CHAR-SPRITE .Screen/addr DEO2
 	#21 .Screen/color DEO
 	STH2kr #0020 ++ .Screen/x DEO2
 	;position_icn .Screen/addr DEO2
@@ -1017,15 +1018,17 @@ RTN
 
 	( Frame )
 	STH2kr #0030 ++ .Screen/x DEO2
-	.timer/frame LDZ2 TOB
-		DUP #04 SFT GET-CHAR #20 - #00 SWP 8** ;font ++ .Screen/addr DEO2
+	.timer/frame #01 + LDZ
+		DUP #04 SFT GET-CHAR-SPRITE .Screen/addr DEO2
 	#21 .Screen/color DEO
 	STH2kr #0038 ++ .Screen/x DEO2
-		#0f AND GET-CHAR #20 - #00 SWP 8** ;font ++ .Screen/addr DEO2
+		#0f AND GET-CHAR-SPRITE .Screen/addr DEO2
 	#21 .Screen/color DEO
 	STH2r #0040 ++ .Screen/x DEO2
 	;beat_icn .Screen/addr DEO2
-	#23 .timer/frame LDZ2 TOB MOD8 #00 = - .Screen/color DEO
+	#23 .timer/frame LDZ MOD8 #00 = - .Screen/color DEO
+
+	( TODO: Speed )
 
 	( File )
 	.grid/x2 LDZ2 STH2k #0018 -- .Screen/x DEO2
