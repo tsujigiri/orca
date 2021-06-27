@@ -60,19 +60,19 @@ To display the list of operators inside of Orca, use `CmdOrCtrl+G`.
 
 ## Controls
 
-`space` - toggle play/paste
-`backspace` - erase
-`escape` - deselect
-`arrow` - move
-`shift+arrow` - scale selection
-`ctrl+arrow` - drag selection
-`ctrl+n` - new
-`ctrl+s` - save
-`ctrl+r` - rename
-`ctrl+o` - open
-`ctrl+c` - copy
-`ctrl+v` - paste
-`ctrl+x` - cut
+- `shift+arrow` scale selection
+- `ctrl+arrow` drag selection
+- `space` toggle play/paste
+- `backspace` erase
+- `escape` deselect
+- `arrow` move
+- `ctrl+n` new
+- `ctrl+s` save
+- `ctrl+r` rename
+- `ctrl+o` open
+- `ctrl+c` copy
+- `ctrl+v` paste
+- `ctrl+x` cut
 
 ## Syntax Highlight
 
@@ -81,3 +81,4 @@ To display the list of operators inside of Orca, use `CmdOrCtrl+G`.
 - `3` operator
 - `4` port-locked
 - `5` port-output
+- `7` port-bang
