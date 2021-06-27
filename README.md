@@ -56,7 +56,8 @@ To display the list of operators inside of Orca, use `CmdOrCtrl+G`.
 ### Special
 
 - `=` **synth**(channel octave note): Plays a note.
-- `:` **data**(channel octave note): Send a note.
+- `:` **midi**(channel octave note): Send a note.
+- `;` **byte**(octave note): Send a byte.
 
 ## Controls
 
