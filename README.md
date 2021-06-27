@@ -67,18 +67,13 @@ To display the list of operators inside of Orca, use `CmdOrCtrl+G`.
 - `escape` deselect
 - `arrow` move
 - `ctrl+n` new
-- `ctrl+s` save
 - `ctrl+r` rename
 - `ctrl+o` open
+- `ctrl+s` save
 - `ctrl+c` copy
 - `ctrl+v` paste
 - `ctrl+x` cut
 
-## Syntax Highlight
+## Help
 
-- `1` locked
-- `2` port-unlocked
-- `3` operator
-- `4` port-locked
-- `5` port-output
-- `7` port-bang
+For more details, see the complete [operation manual](https://wiki.xxiivv.com/site/orca.html).
