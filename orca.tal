@@ -33,8 +33,8 @@
 %TOB  { SWP POP }       %TOS  { #00 SWP }
 %INCR { SWP #01 + SWP } %DECR { SWP #01 - SWP }
 
-%DEBUG  { .Console/byte DEO #0a .Console/char DEO }
-%DEBUG2 { .Console/short DEO2 #0a .Console/char DEO }
+%DEBUG  { ;print-hex JSR2 #0a .Console/write DEO }
+%DEBUG2 { SWP ;print-hex JSR2 ;print-hex JSR2 #0a .Console/write DEO }
 
 %RTN  { JMP2r }
 %MOD  { DUP2 / * - } 
@@ -87,7 +87,7 @@
 ( devices )
 
 |00 @System     &vector $2 &pad      $6 &r      $2 &g     $2 &b      $2 
-|10 @Console    &vector $2 &rbyte    $1 &pad    $5 &char  $1 &wbyte  $1 &short  $2 &string $2 
+|10 @Console    &vector $2 &read     $1 &pad    $5 &write $1 
 |20 @Screen     &vector $2 &width    $2 &height $2 &pad   $2 &x      $2 &y      $2 &addr  $2 &color  $1 
 |30 @Audio0     &vector $2 &position $2 &output $1 &pad   $3 &adsr   $2 &length $2 &addr  $2 &volume $1 &pitch $1 
 |40 @Audio1     &vector $2 &position $2 &output $1 &pad   $3 &adsr   $2 &length $2 &addr  $2 &volume $1 &pitch $1 
@@ -289,7 +289,7 @@ BRK
 			;copy-block JSR2 CHAR-DOT ;fill-block JSR2 RESET-SELECTION
 			;redraw JSR2 POP BRK &no-cut
 		DUP #6f ! ,&no-open JCN
-			;load-file JSR2 ;redraw JSR2 
+			;load-file JSR2
 			;redraw JSR2 POP BRK &no-open
 		DUP #72 ! ,&no-name JCN
 			.state/trap TOGGLE
@@ -871,8 +871,8 @@ RTN
 	( req bang ) DUP2 ;get-bang JSR2 ,&is-bang JCN POP2 POP2r POPr RTN &is-bang
 	IO-TYPE SET-TYPE
 	ADDr
-	( note on ) OVRr STHr .Console/char DEO STHkr .Console/char DEO #7f .Console/char DEO
-	( note off ) OVRr STHr .Console/char DEO STHkr .Console/char DEO #00 .Console/char DEO
+	( note on ) OVRr STHr .Console/write DEO STHkr .Console/write DEO #7f .Console/write DEO
+	( note off ) OVRr STHr .Console/write DEO STHkr .Console/write DEO #00 .Console/write DEO
 	POP2r
 
 RTN
@@ -884,7 +884,7 @@ RTN
 	( get note ) DUP2 [ SWP #02 + SWP ] GET-PORT-RIGHT-RAW GET-NOTE STH 
 	( req bang ) DUP2 ;get-bang JSR2 ,&is-bang JCN POP2 POP2r RTN &is-bang
 	IO-TYPE SET-TYPE
-	ADDr STHr .Console/char DEO
+	ADDr STHr .Console/write DEO
 
 RTN
 
@@ -1137,7 +1137,8 @@ RTN
 		SWP .path/name + STZ
 		INCR
 		LTHk ,&loop JCN
-	.path/length STZ POP 
+	( end ) #00 SWP .path/name + STZ 
+	.path/length STZ 
 	POP2r
 	RESET-STATE
 
