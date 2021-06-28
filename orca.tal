@@ -169,6 +169,16 @@
 		DUP2 #0002 // .grid/height LDZ #02 / #01 + TOS 8** -- #0004 -- .grid/y1 STZ2
 		#0002 // .grid/height LDZ #02 / TOS 8** ++ #0008 -- .grid/y2 STZ2
 
+	( adjust for small sizes )
+	.Screen/width DEI2 #0100 >> ,&hor-skip JCN
+		#0000 .grid/x1 STZ2
+		.Screen/width DEI2 DUP2 .grid/x2 STZ2 8// TOB .grid/width STZ
+		&hor-skip
+	.Screen/height DEI2 #0080 >> ,&ver-skip JCN
+		#0000 .grid/y1 STZ2
+		.Screen/height DEI2 DUP2 .grid/y2 STZ2 8// TOB .grid/height STZ
+		&ver-skip
+
 	( set toolbar size )
 	.grid/x1 LDZ2 .toolbar/x1 STZ2
 	.grid/y2 LDZ2 #0010 ++ .toolbar/y1 STZ2
@@ -1004,7 +1014,10 @@ RTN
 RTN
 
 @draw-toolbar ( -- )
-	
+		
+	( skip on samll screens )
+	.toolbar/y1 LDZ2 .Screen/height DEI2 << #01 JCN [ RTN ]
+
 	.toolbar/y1 LDZ2 .Screen/y DEO2
 
 	( Positionx )
@@ -1341,7 +1354,6 @@ RTN
 @uc-notes
 	00 00 00 00 00 00 00 00 
 	00 00 
-
 	09 0b 00 02 04 05 07 09
 	0b 0c 0e 10 11 13 15 17
 	18 1a 1c 1d 1f 21 23 24

@@ -75,6 +75,10 @@ To display the list of operators inside of Orca, use `CmdOrCtrl+G`.
 - `ctrl+v` paste
 - `ctrl+x` cut
 
+## Systems
+
+The teletype resolution is `128 x 64`(16x8), some of the features have been adapted to that resolution.
+
 ## Help
 
 For more details, see the complete [operation manual](https://wiki.xxiivv.com/site/orca.html).
