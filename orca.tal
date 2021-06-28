@@ -16,8 +16,7 @@
 
 	TODO
 		- Catch ports that overflow out of grid
-		- Get case from right-side port
-		- sharp notes
+		- Sharp notes
 		- Change BPM
 		- Insert mode
 		- Display on-screen guide
@@ -62,6 +61,10 @@
 %CHAR-COLON { #3a } %CHAR-EQUAL { #3d }
 
 %IS-CHAR-KEY { STHk #20 > STHr #7b < #0101 == }
+%CIUC { STHk #40 > STHr #5b < #0101 == } ( char -- flag )
+
+%GET-CASE { GET-CELL CIUC STH } ( x y -- uc )
+%SET-CASE { DUP #60 > STHr #20 * * - } ( char uc -- char )
 
 %SET-STATE   { #01 .state/changed STZ ;draw-state JSR2 }
 %RESET-STATE { #00 .state/changed STZ ;draw-state JSR2 }
@@ -455,35 +458,38 @@ RTN
 
 @op-a ( x y char -- )
 
-	POP ( TODO: detect capitalization )
+	POP
+	( get case ) DUP2 INCR GET-CASE
 	( get a ) DUP2 DECR GET-PORT-LEFT STH
 	( get b ) DUP2 INCR GET-PORT-RIGHT STH
 	( incr y ) #01 +
 	( get result ) ADDr STHr 
-	GET-CHAR SET-PORT-OUTPUT 
+	GET-CHAR SET-CASE SET-PORT-OUTPUT 
 
 RTN
 
 @op-b ( x y char -- )
 	
-	POP ( TODO: detect capitalization )
+	POP
+	( get case ) DUP2 INCR GET-CASE
 	( get a ) DUP2 DECR GET-PORT-LEFT STH
 	( get b ) DUP2 INCR GET-PORT-RIGHT STH
 	( incr y ) #01 +
 	( get result ) SUBr STHr
 	( bounce ) DUP #80 < #04 JCN [ #24 SWP - ]
-	GET-CHAR SET-PORT-OUTPUT 
+	GET-CHAR SET-CASE SET-PORT-OUTPUT 
 
 RTN
 
 @op-c ( x y char -- )
 	
-	POP ( TODO: detect capitalization )
+	POP
+	( get case ) DUP2 INCR GET-CASE
 	( get rate ) DUP2 DECR GET-PORT-LEFT MIN1 STH
 	( get mod ) DUP2 INCR GET-PORT-RIGHT MIN1 STH
 	( incr y ) #01 +
 	( get result ) SWPr .timer/frame LDZ2 STHr TOS // STHr TOS MOD2 TOB
-	GET-CHAR SET-PORT-OUTPUT
+	GET-CHAR SET-CASE SET-PORT-OUTPUT
 
 RTN
 
@@ -556,13 +562,14 @@ RTN
 
 @op-i ( x y char -- )
 
-	POP ( TODO: detect capitalization )
+	POP
+	( get case ) DUP2 INCR GET-CASE
 	( get mod ) DUP2 INCR GET-PORT-RIGHT MIN1 STH
 	( get rate ) DUP2 DECR GET-PORT-LEFT STH
 	( incr y ) #01 +
 	( get val ) DUP2 GET-CELL GET-VALUE STH
 	( get result ) ADDr STH2r SWP MOD 
-	GET-CHAR SET-PORT-OUTPUT
+	GET-CHAR SET-CASE SET-PORT-OUTPUT
 	
 RTN
 
@@ -600,23 +607,25 @@ RTN
 
 @op-l ( x y char -- )
 
-	POP ( TODO: detect capitalization )
+	POP
+	( get case ) DUP2 INCR GET-CASE
 	( get left ) DUP2 DECR GET-PORT-LEFT STH
 	( get right ) DUP2 INCR GET-PORT-RIGHT STH
 	( incr y ) #01 +
 	( min ) STH2r LTHk #01 JCN SWP POP 
-	GET-CHAR SET-PORT-OUTPUT
+	GET-CHAR SET-CASE SET-PORT-OUTPUT
 	
 RTN
 
 @op-m ( x y char -- )
 
-	POP ( TODO: detect capitalization )
+	POP
+	( get case ) DUP2 INCR GET-CASE
 	( get left ) DUP2 DECR GET-PORT-LEFT STH
 	( get right ) DUP2 INCR GET-PORT-RIGHT STH
 	( incr y ) #01 +
 	( get result ) MULr STHr 
-	GET-CHAR SET-PORT-OUTPUT
+	GET-CHAR SET-CASE SET-PORT-OUTPUT
 	
 RTN
 
@@ -689,7 +698,8 @@ RTN
 
 @op-r ( x y char -- )
 
-	POP ( TODO: detect capitalization )
+	POP 
+	( get case ) DUP2 INCR GET-CASE
 	( get min ) DUP2 DECR GET-PORT-LEFT STH
 	( get max ) DUP2 INCR GET-PORT-RIGHT MIN1 STH
 	( unstash min,max ) STH2r 
@@ -699,7 +709,7 @@ RTN
 	( incr y ) #01 +
 	( get key ) .timer/seed LDZ2 .timer/frame LDZ2 ** SWP + 
 	( key % max + min ) STH2kr SWP - MOD POPr STHr +
-	GET-CHAR SET-PORT-OUTPUT
+	GET-CHAR SET-CASE SET-PORT-OUTPUT
 	
 RTN
 
@@ -804,7 +814,8 @@ RTN
 
 @op-z ( x y char -- )
 
-	POP ( TODO: detect capitalization )
+	POP
+	( get case ) DUP2 INCR GET-CASE
 	( get rate ) DUP2 DECR GET-PORT-LEFT MIN1 STH
 	( get target ) DUP2 INCR GET-PORT-RIGHT STH
 	( incr y ) #01 +
@@ -820,7 +831,7 @@ RTN
 		( clamp ) STH2kr LTSk #01 JCN SWPr
 		&no-above
 	&end
-	STHr GET-CHAR SET-PORT-OUTPUT POP2r
+	STHr GET-CHAR SET-CASE SET-PORT-OUTPUT POP2r
 	
 RTN
 
@@ -1352,6 +1363,24 @@ RTN
 
 RTN
 
+@print-hex ( value -- )
+	
+	STHk #04 SFT ,&parse JSR .Console/write DEO
+	STHr #0f AND ,&parse JSR .Console/write DEO
+	RTN
+	&parse ( value -- char )
+		DUP #09 GTH ,&above JCN #30 ADD RTN &above #09 SUB #60 ADD RTN
+
+RTN
+
+@operations
+	:op-a :op-b :op-c :op-d :op-e :op-f :op-g :op-h
+	:op-i :op-j :op-k :op-l :op-m :op-n :op-o :op-p
+	:op-q :op-r :op-s :op-t :op-u :op-v :op-w :op-x
+	:op-y :op-z
+
+@untitled-txt  "untitled.orca $1
+
 @uc-notes
 	00 00 00 00 00 00 00 00 
 	00 00 
@@ -1396,14 +1425,6 @@ RTN
 	28 ( 5 port-output )
 	29 ( 6 selected )
 	2c ( 7 io )
-	
-@operations
-	:op-a :op-b :op-c :op-d :op-e :op-f :op-g :op-h
-	:op-i :op-j :op-k :op-l :op-m :op-n :op-o :op-p
-	:op-q :op-r :op-s :op-t :op-u :op-v :op-w :op-x
-	:op-y :op-z
-
-@untitled-txt  "untitled.orca $1
 
 @cursor_icn     80c0 e0f0 f8e0 1000
 @blank_icn      0000 0000 0000 0000
