@@ -61,12 +61,12 @@ To display the list of operators inside of Orca, use `CmdOrCtrl+G`.
 
 ## Controls
 
+- `arrow` move
 - `shift+arrow` scale selection
 - `ctrl+arrow` drag selection
 - `space` toggle play/paste
 - `backspace` erase
 - `escape` deselect
-- `arrow` move
 - `ctrl+n` new
 - `ctrl+r` rename
 - `ctrl+o` open

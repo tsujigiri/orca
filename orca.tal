@@ -1,7 +1,7 @@
 ( Orca
 	
 	space - toggle play/paste
-	backspace - erase
+	backspace/delete - erase
 	escape - deselect
 	arrow - move
 	shift+arrow - scale selection
@@ -21,7 +21,7 @@
 		- Insert mode
 		- Display on-screen guide
 		- Leap move with alt modifier
-)
+		- Hide cursor when moving with arrows )
 
 %+  { ADD } %-   { SUB }  %*  { MUL }  %/  { DIV }
 %<  { LTH } %>   { GTH }  %=  { EQU }  %!  { NEQ }
@@ -261,7 +261,7 @@ BRK
 	DUP #20 ! ,&no-space JCN
 		.timer/alive TOGGLE
 		;redraw JSR2 POP BRK &no-space
-	DUP #08 ! ,&no-backspace JCN
+	DUP #08 ! OVR #7f ! #0101 == ,&no-backspace JCN
 		CHAR-DOT ;fill-block JSR2 
 		;redraw JSR2 POP BRK &no-backspace
 	DUP #1b ! ,&no-escape JCN
