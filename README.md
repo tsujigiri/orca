@@ -67,6 +67,8 @@ To display the list of operators inside of Orca, use `CmdOrCtrl+G`.
 - `space` toggle play/paste
 - `backspace` erase
 - `escape` deselect
+- `ctrl+,` speed down
+- `ctrl+.` speed up
 - `ctrl+n` new
 - `ctrl+r` rename
 - `ctrl+o` open

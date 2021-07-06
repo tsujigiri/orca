@@ -5,6 +5,8 @@
 	escape - deselect
 	arrow - move
 	shift+arrow - scale selection
+	ctrl+, - speed down
+	ctrl+. - speed up
 	ctrl+arrow - drag selection
 	ctrl+n - new
 	ctrl+s - save
@@ -17,7 +19,6 @@
 	TODO
 		- Catch ports that overflow out of grid
 		- Sharp notes
-		- Change BPM
 		- Insert mode
 		- Display on-screen guide
 		- Leap move with alt modifier
@@ -74,7 +75,7 @@
 %GET-CHAR  { #24 MOD #00 SWP ;b36clc ++ LDA } ( b36 -- char )
 %GET-VALUE { #20 - #00 SWP ;values ++ LDA } ( char -- b36 )
 %GET-NOTE  { GET-VALUE TOS ;uc-notes ++ LDA } ( char -- midi )
-%GET-CHAR-SPRITE { GET-CHAR #20 - #00 SWP 8** ;font ++ }
+%GET-CHAR-SPRITE { GET-CHAR #00 SWP #0010 ** ;page437 ++ }
 
 %GET-CELL  { GET-INDEX DATA-CELLS ++ LDA } ( x y -- char )
 %SET-CELL  { ROT ROT GET-INDEX DATA-CELLS ++ STA } ( x y char -- )
@@ -164,13 +165,13 @@
 
 	( set grid size )
 	.Screen/width DEI2 
-		DUP2 8// SWP POP #07 - .grid/width STZ
+		DUP2 8// SWP POP #03 - .grid/width STZ
 		DUP2 #0002 // .grid/width LDZ #02 / #01 + TOS 8** -- #0004 ++ .grid/x1 STZ2
 		#0002 // .grid/width LDZ #02 / TOS 8** ++ #0002 ++ .grid/x2 STZ2
 	.Screen/height DEI2 
-		DUP2 8// SWP POP #07 - .grid/height STZ
-		DUP2 #0002 // .grid/height LDZ #02 / #01 + TOS 8** -- #0004 -- .grid/y1 STZ2
-		#0002 // .grid/height LDZ #02 / TOS 8** ++ #0008 -- .grid/y2 STZ2
+		DUP2 #0010 // SWP POP #03 - .grid/height STZ
+		DUP2 #0002 // .grid/height LDZ #02 / #01 + TOS #0010 ** -- #0004 -- .grid/y1 STZ2
+		#0002 // .grid/height LDZ #02 / TOS #0010 ** ++ #0008 -- .grid/y2 STZ2
 
 	( adjust for small sizes )
 	.Screen/width DEI2 #0100 >> ,&hor-skip JCN
@@ -207,7 +208,7 @@
 	( start )
 	;clear JSR2
 	;init JSR2
-	#9a .timer/speed STZ
+	#08 .timer/speed STZ
 	#01 .timer/alive STZ
 
 	;redraw JSR2
@@ -224,7 +225,7 @@ BRK
 
 	.timer/beat LDZ #01 + DUP .timer/beat STZ
 
-	( skip ) #08 = #01 JCN [ BRK ]
+	( skip ) .timer/speed LDZ = #01 JCN [ BRK ]
 
 	.timer/frame LDZ2 #0001 ++ .timer/frame STZ2
 
@@ -304,6 +305,18 @@ BRK
 		DUP #6e ! ,&no-make JCN
 			#20 ;draw-filepath JSR2 ;untitled-txt ;new-file JSR2 
 			;redraw JSR2 POP BRK &no-make
+		DUP #2c ! ,&no-slow JCN
+			( clamp ) .timer/speed LDZ #03 < ,&no-slow JCN
+			.timer/speed LDZ #01 - .timer/speed STZ
+			#00 .timer/beat STZ
+			;redraw JSR2 POP BRK
+			&no-slow
+		DUP #2e ! ,&no-fast JCN
+			( clamp ) .timer/speed LDZ #15 > ,&no-fast JCN
+			.timer/speed LDZ #01 + .timer/speed STZ
+			#00 .timer/beat STZ
+			;redraw JSR2 POP BRK
+			&no-fast
 		POP 
 	BRK
 
@@ -331,6 +344,7 @@ BRK
 	( backspace )
 	.Controller/key DEI #08 ! ,&no-edit-backspace JCN
 		.path/length LDZ #00 = ,&edit-end JCN
+		#20 ;draw-filepath JSR2
 		.path/length LDZ #01 - .path/length STZ
 		#00 .path/name .path/length LDZ + STZ
 		#23 ;draw-filepath JSR2
@@ -345,7 +359,7 @@ BRK
 
 BRK
 
-@on-mouse (-> )
+@on-mouse ( -> )
 	
 	( clear last cursor )
 	.cursor/x LDZ2 .Screen/x DEO2
@@ -360,7 +374,7 @@ BRK
 	.Mouse/state DEI #00 ! #02 * [ #31 + .Screen/color DEO ]
 
 	( route )
-	.Mouse/y DEI2 8// TOB .toolbar/y1 LDZ2 8// TOB = 
+	.Mouse/y DEI2 .toolbar/y1 LDZ2 -- #0010 // #0000 == 
 		;on-mouse-toolbar JCN2
 	.Mouse/x DEI2 .Mouse/y DEI2 .grid ;within-rect JSR2
 		;on-mouse-grid JCN2
@@ -376,13 +390,13 @@ BRK
 		DUP2 #0100 !! ,&no-down JCN
 			.Mouse/x DEI2 .grid/x1 LDZ2 -- 8// TOB 
 				DUP .selection/x1 STZ .selection/x2 STZ
-			.Mouse/y DEI2 .grid/y1 LDZ2 -- 8// TOB 
+			.Mouse/y DEI2 .grid/y1 LDZ2 -- #0010 // TOB 
 				DUP .selection/y1 STZ .selection/y2 STZ
 			;clamp-selection JSR2 ;redraw JSR2
 			,&end JMP &no-down
 		( release )
 		.Mouse/x DEI2 .grid/x1 LDZ2 -- 8// TOB .selection/x2 STZ
-		.Mouse/y DEI2 .grid/y1 LDZ2 -- 8// TOB .selection/y2 STZ
+		.Mouse/y DEI2 .grid/y1 LDZ2 -- #0010 // TOB .selection/y2 STZ
 		;clamp-selection JSR2 ;redraw JSR2
 	&end
 	POP2
@@ -396,7 +410,7 @@ BRK
 
 	( left-side )
 	.Mouse/x DEI2 .grid/x1 LDZ2 -- 8// TOB 
-	DUP #09 > OVR .grid/width LDZ SWP - #05 > #0101 !! ,&no-rename JCN
+	DUP #0e > OVR .grid/width LDZ SWP - #05 > #0101 !! ,&no-rename JCN
 		.state/trap TOGGLE
 		#00 .state/blink STZ 
 		#23 ;draw-filepath JSR2
@@ -434,23 +448,21 @@ BRK
 
 RTN
 
-@get-cell-sprite ( x y -- addr )
+@get-cell-sprite ( x y -- addr* )
 	
 	DUP2 GET-CELL
 	( if character is dot )
 	DUP CHAR-DOT NEQ ,&no-bar JCN
 		( check if x,y is grid )
 		POP
-		DUP2 MOD8 #00 = SWP MOD8 #00 = #0101 NEQ2 ,&no-marker8 JCN 
-			POP2 ;marker8_icn RTN &no-marker8
-		DUP2 #01 AND #00 = SWP #01 AND #00 = #0101 NEQ2 ,&no-marker4 JCN 
-			POP2 ;marker4_icn RTN &no-marker4
+		DUP2 #01 AND #00 = SWP #03 AND #00 = #0101 NEQ2 ,&no-marker4 JCN 
+			POP2 ;page437/marker RTN &no-marker4
 		DUP2 GET-TYPE #00 = ,&no-port JCN
-			POP2 ;marker4_icn RTN &no-port
-		POP2 ;font RTN
+			POP2 ;page437/marker RTN &no-port
+		POP2 ;page437 RTN
 	&no-bar
 	STH POP2 STHr
-	#20 - #00 SWP 8** ;font ++
+	#00 SWP #0010 ** ;page437 ++
 
 RTN
 
@@ -899,8 +911,6 @@ RTN
 
 RTN
 
-@string "hello $1
-
 @run-char ( x y char -- )
 	
 	( skip dot )
@@ -991,17 +1001,39 @@ RTN
 
 RTN
 
+@draw-byte ( byte color -- )
+	
+	STH
+	DUP #04 SFT GET-CHAR-SPRITE STHkr ;draw-char JSR2
+	.Screen/x DEI2 #0008 ++ .Screen/x DEO2
+	#0f AND GET-CHAR-SPRITE STHr ;draw-char JSR2
+	.Screen/x DEI2 #0008 ++ .Screen/x DEO2
+
+RTN
+
+@draw-char ( addr* color -- )
+	
+	STH .Screen/addr DEO2
+	STHkr .Screen/color DEO
+	.Screen/addr DEI2 #0008 ++ .Screen/addr DEO2
+	.Screen/y DEI2 STH2k #0008 ++ .Screen/y DEO2
+	ROTr STHr .Screen/color DEO
+	STH2r .Screen/y DEO2
+
+RTN
+
 @redraw ( -- )
 	
 	#00 .grid/height LDZ
 	&ver
-		( pos-y ) OVR #00 SWP 8** [ .grid/y1 LDZ2 ++ ] .Screen/y DEO2
+		( pos-y ) OVR #00 SWP #0010 ** [ .grid/y1 LDZ2 ++ ] .Screen/y DEO2
 		#00 .grid/width LDZ
 		&hor
 			( pos-x ) OVR #00 SWP 8** [ .grid/x1 LDZ2 ++ ] .Screen/x DEO2
 			GET-ITERATORS
-			( sprite ) DUP2 ;get-cell-sprite JSR2 .Screen/addr DEO2
-			( draw ) ,get-cell-type JSR TOS ;cell-styles ++ LDA .Screen/color DEO
+			( sprite ) DUP2 ;get-cell-sprite JSR2
+			( color ) SWP2 ,get-cell-type JSR TOS ;cell-styles ++ LDA
+			;draw-char JSR2
 			INCR
 			LTHk ,&hor JCN
 		POP2
@@ -1031,40 +1063,23 @@ RTN
 
 	.toolbar/y1 LDZ2 .Screen/y DEO2
 
-	( Positionx )
-	.grid/x1 LDZ2 STH2k .Screen/x DEO2
-	.selection/x1 LDZ
-		DUP #04 SFT GET-CHAR-SPRITE .Screen/addr DEO2
-	#21 .Screen/color DEO
-	STH2kr #0008 ++ .Screen/x DEO2
-		#0f AND GET-CHAR-SPRITE .Screen/addr DEO2
-	#21 .Screen/color DEO
+	( Positions )
+	.grid/x1 LDZ2 .Screen/x DEO2
+	.selection/x1 LDZ #21 ;draw-byte JSR2
+	.selection/y1 LDZ #21 ;draw-byte JSR2
 
-	( Positiony )
-	STH2kr #0010 ++ .Screen/x DEO2
-	.selection/y1 LDZ
-		DUP #04 SFT GET-CHAR-SPRITE .Screen/addr DEO2
-	#21 .Screen/color DEO
-	STH2kr #0018 ++ .Screen/x DEO2
-		#0f AND GET-CHAR-SPRITE .Screen/addr DEO2
-	#21 .Screen/color DEO
-	STH2kr #0020 ++ .Screen/x DEO2
 	;position_icn .Screen/addr DEO2
 	#22 .selection/x1 LDZ .selection/y1 LDZ .selection/x2 LDZ .selection/y2 LDZ == + .Screen/color DEO
+	.grid/x1 LDZ2 #0030 ++ .Screen/x DEO2
 
 	( Frame )
-	STH2kr #0030 ++ .Screen/x DEO2
-	.timer/frame #01 + LDZ
-		DUP #04 SFT GET-CHAR-SPRITE .Screen/addr DEO2
-	#21 .Screen/color DEO
-	STH2kr #0038 ++ .Screen/x DEO2
-		#0f AND GET-CHAR-SPRITE .Screen/addr DEO2
-	#21 .Screen/color DEO
-	STH2r #0040 ++ .Screen/x DEO2
+	.timer/frame #01 + LDZ #21 ;draw-byte JSR2
 	;beat_icn .Screen/addr DEO2
-	#23 .timer/frame LDZ MOD8 #00 = - .Screen/color DEO
+	#23 .timer/frame #01 + LDZ MOD8 #00 = - .Screen/color DEO
+	.grid/x1 LDZ2 #0050 ++ .Screen/x DEO2
 
-	( TODO: Speed )
+	( Speed )
+	.timer/speed LDZ #21 ;draw-byte JSR2
 
 	( File )
 	.grid/x2 LDZ2 STH2k #0018 -- .Screen/x DEO2
@@ -1121,11 +1136,10 @@ RTN
 	
 	STH
 	.toolbar/y1 LDZ2 .Screen/y DEO2
-	#0068 .Screen/x DEO2
+	.toolbar/x1 LDZ2 #0070 ++ .Screen/x DEO2
 	;path/name
 	&loop
-		DUP2 LDA DUP #00 ! #20 * - TOS #0008 ** ;font ++ .Screen/addr DEO2 
-		STHkr .Screen/color DEO
+		DUP2 LDA DUP #00 ! #00 * - TOS #0010 ** ;page437 ++ STHkr ;draw-char JSR2
 		.Screen/x DEI2 #0008 ++ .Screen/x DEO2
 		#0001 ++
 		LDAk #00 ! ,&loop JCN
@@ -1441,102 +1455,6 @@ RTN
 	0038 4492 2810 0000 ( open )
 	0000 0082 4438 0000 ( closed )
 
-@font ( specter8-frag font )
-	0000 0000 0000 0000 0008 0808 0800 0800
-	0014 1400 0000 0000 0024 7e24 247e 2400
-	0008 1e28 1c0a 3c08 0000 2204 0810 2200
-	0030 4832 4c44 3a00 0008 1000 0000 0000
-	0004 0808 0808 0400 0020 1010 1010 2000
-	005a 2442 4224 5a00 0000 0808 3e08 0800
-	0000 0000 0000 0810 0000 0000 3e00 0000
-	0000 0000 0000 0800 0000 0204 0810 2000
-&numbers
-	0000 3c42 4242 3c00
-	0000 3010 1010 1000
-	0000 7c02 3c40 7e00
-	0000 7c02 7c02 7c00
-	0000 1222 427e 0200
-	0000 7e40 3c02 7e00
-	0000 3e40 7c42 3c00
-	0000 7e02 0408 1000
-	0000 7e42 3c42 7e00
-	0000 7e42 3e02 0200
-	( -- )
-	0000 0010 0000 1000 
-	0000 1000 0010 1020
-	0000 0810 2010 0800 
-	0000 003e 003e 0000
-	0000 1008 0408 1000 
-	003c 420c 1000 1000
-	003c 4232 4a42 3c00 
-&uc
-	0000 3c42 7e42 4200
-	0000 7c42 7c42 7c00
-	0000 3e40 4040 3e00
-	0000 7c42 4242 7c00
-	0000 7e40 7e40 7e00
-	0000 7e40 7040 4000
-	0000 3e40 5c42 3e00
-	0000 4242 7e42 4200
-	0000 1010 1010 1000
-	0000 7e02 0242 3c00
-	0000 4648 7048 4600
-	0000 4040 4040 7e00
-	0000 6e52 5252 5200
-	0000 6252 4a46 4200
-	0000 3c42 4242 3c00
-	0000 7e42 7c40 4000
-	0000 3c42 4a44 3a00
-	0000 7e42 7c42 4200
-	0000 3e40 7e02 7c00
-	0000 7e10 1010 1000
-	0000 4242 4242 3c00
-	0000 4242 4224 1800
-	0000 5252 5252 6e00
-	0000 4224 1824 4200
-	0000 4224 1010 1000
-	0000 7e02 3c40 7e00
-	( ? )
-	000c 0808 0808 0c00
-	0040 2010 0804 0200 
-	0030 1010 1010 3000
-	0008 1400 0000 0000 
-	0000 0000 0000 7e00
-	0008 0400 0000 0000 
-&lc
-	0000 7c02 3e42 7a00
-	0000 4040 7c42 7c00
-	0000 003e 4040 3e00
-	0000 0202 3e42 3e00
-	0000 3c42 7c40 3e00
-	0000 3c42 7040 4000
-	0000 3e42 3e02 7c00
-	0000 4040 7c42 4200
-	0000 1000 1010 1000
-	0000 7e04 0444 3800
-	0000 4244 7844 4200
-	0000 4040 4040 3e00
-	0000 6c52 5252 5200
-	0000 5c62 4242 4200
-	0000 1c22 4244 3800
-	0000 7c42 7c40 4000
-	0000 3e42 3e02 0200
-	0000 5c62 4040 4000
-	0000 3e40 3c02 7c00
-	0000 7e10 1010 0800
-	0000 4242 4246 3a00
-	0000 4242 2424 1800
-	0000 4242 5252 6c00
-	0000 4242 3c42 4200
-	0000 4242 3e02 7c00
-	0000 7e04 1820 7e00 
-
-	000c 0810 1008 0c00
-	0008 0808 0808 0800 
-	0030 1008 0810 3000
-	0000 0032 4c00 0000 
-	3c42 99a1 a199 423c
-
 @tri-pcm
 	8082 8486 888a 8c8e 9092 9496 989a 9c9e
 	a0a2 a4a6 a8aa acae b0b2 b4b6 b8ba bcbe
@@ -1572,3 +1490,262 @@ RTN
 	0b0c 0e0f 1012 1415 1719 1a1c 1e20 2225
 	2729 2b2e 3032 3537 3a3d 3f42 4547 4a4d
 	5053 5659 5c5f 6265 686b 6e71 7477 7a7d
+
+@page437
+	0000 0000 0000 0000 0000 0000 0000 0000
+	0000 7e81 a581 81bd 9981 817e 0000 0000
+	0000 7eff dbff ffc3 e7ff ff7e 0000 0000
+	0000 0000 6cfe fefe fe7c 3810 0000 0000
+	0000 0000 1038 7cfe 7c38 1000 0000 0000
+	0000 0018 3c3c e7e7 e718 183c 0000 0000
+	0000 0018 3c7e ffff 7e18 183c 0000 0000
+	0000 0000 0000 183c 3c18 0000 0000 0000
+	ffff ffff ffff e7c3 c3e7 ffff ffff ffff
+	0000 0000 003c 6642 4266 3c00 0000 0000
+	ffff ffff ffc3 99bd bd99 c3ff ffff ffff
+	0000 1e0e 1a32 78cc cccc cc78 0000 0000
+	0000 3c66 6666 663c 187e 1818 0000 0000
+	0000 3f33 3f30 3030 3070 f0e0 0000 0000
+	0000 7f63 7f63 6363 6367 e7e6 c000 0000
+	0000 0018 18db 3ce7 3cdb 1818 0000 0000
+	0080 c0e0 f0f8 fef8 f0e0 c080 0000 0000
+	0002 060e 1e3e fe3e 1e0e 0602 0000 0000
+	0000 183c 7e18 1818 7e3c 1800 0000 0000
+	0000 6666 6666 6666 6600 6666 0000 0000
+	0000 7fdb dbdb 7b1b 1b1b 1b1b 0000 0000
+	007c c660 386c c6c6 6c38 0cc6 7c00 0000
+	0000 0000 0000 0000 fefe fefe 0000 0000
+
+	0000 183c 7e18 1818 7e3c 187e 0000 0000
+	0000 183c 7e18 1818 1818 1818 0000 0000
+	0000 1818 1818 1818 187e 3c18 0000 0000
+	0000 0000 0018 0cfe 0c18 0000 0000 0000
+
+	0000 0000 0030 60fe 6030 0000 0000 0000
+	0000 0000 0000 c0c0 c0fe 0000 0000 0000
+	0000 0000 0028 6cfe 6c28 0000 0000 0000 
+	0000 0000 1038 387c 7cfe fe00 0000 0000
+	0000 0000 fefe 7c7c 3838 1000 0000 0000
+	0000 0000 0000 0000 0000 0000 0000 0000
+	0000 183c 3c3c 1818 1800 1818 0000 0000
+	0066 6666 2400 0000 0000 0000 0000 0000
+	0000 006c 6cfe 6c6c 6cfe 6c6c 0000 0000
+	1818 7cc6 c2c0 7c06 0686 c67c 1818 0000 
+	0000 0000 c2c6 0c18 3060 c686 0000 0000
+	0000 386c 6c38 76dc cccc cc76 0000 0000
+	0030 3030 6000 0000 0000 0000 0000 0000 
+	0000 0c18 3030 3030 3030 180c 0000 0000
+	0000 3018 0c0c 0c0c 0c0c 1830 0000 0000
+	0000 0000 0066 3cff 3c66 0000 0000 0000
+	0000 0000 0018 187e 1818 0000 0000 0000
+	0000 0000 0000 0000 0018 1818 3000 0000 
+	0000 0000 0000 00fe 0000 0000 0000 0000 &marker
+	0000 0000 0000 0000 0000 1818 0000 0000 
+	0000 0000 0206 0c18 3060 c080 0000 0000
+	0000 386c c6c6 d6d6 c6c6 6c38 0000 0000
+	0000 1838 7818 1818 1818 187e 0000 0000
+	0000 7cc6 060c 1830 60c0 c6fe 0000 0000
+	0000 7cc6 0606 3c06 0606 c67c 0000 0000
+	0000 0c1c 3c6c ccfe 0c0c 0c1e 0000 0000
+	0000 fec0 c0c0 fc06 0606 c67c 0000 0000
+	0000 3860 c0c0 fcc6 c6c6 c67c 0000 0000
+	0000 fec6 0606 0c18 3030 3030 0000 0000
+	0000 7cc6 c6c6 7cc6 c6c6 c67c 0000 0000
+	0000 7cc6 c6c6 7e06 0606 0c78 0000 0000
+	0000 0000 1818 0000 0018 1800 0000 0000
+	0000 0000 1818 0000 0018 1830 0000 0000
+	0000 0006 0c18 3060 3018 0c06 0000 0000
+	0000 0000 007e 0000 7e00 0000 0000 0000
+	0000 0060 3018 0c06 0c18 3060 0000 0000
+	0000 7cc6 c60c 1818 1800 1818 0000 0000
+	0000 007c c6c6 dede dedc c07c 0000 0000
+	0000 1038 6cc6 c6fe c6c6 c6c6 0000 0000
+	0000 fc66 6666 7c66 6666 66fc 0000 0000
+	0000 3c66 c2c0 c0c0 c0c2 663c 0000 0000
+	0000 f86c 6666 6666 6666 6cf8 0000 0000
+	0000 fe66 6268 7868 6062 66fe 0000 0000
+	0000 fe66 6268 7868 6060 60f0 0000 0000
+	0000 3c66 c2c0 c0de c6c6 663a 0000 0000
+	0000 c6c6 c6c6 fec6 c6c6 c6c6 0000 0000
+	0000 3c18 1818 1818 1818 183c 0000 0000
+	0000 1e0c 0c0c 0c0c cccc cc78 0000 0000
+	0000 e666 666c 7878 6c66 66e6 0000 0000
+	0000 f060 6060 6060 6062 66fe 0000 0000
+	0000 c6ee fefe d6c6 c6c6 c6c6 0000 0000
+	0000 c6e6 f6fe dece c6c6 c6c6 0000 0000
+	0000 7cc6 c6c6 c6c6 c6c6 c67c 0000 0000
+	0000 fc66 6666 7c60 6060 60f0 0000 0000
+	0000 7cc6 c6c6 c6c6 c6d6 de7c 0c0e 0000
+	0000 fc66 6666 7c6c 6666 66e6 0000 0000
+	0000 7cc6 c660 380c 06c6 c67c 0000 0000
+	0000 7e7e 5a18 1818 1818 183c 0000 0000
+	0000 c6c6 c6c6 c6c6 c6c6 c67c 0000 0000
+	0000 c6c6 c6c6 c6c6 c66c 3810 0000 0000
+	0000 c6c6 c6c6 d6d6 d6fe ee6c 0000 0000
+	0000 c6c6 6c7c 3838 7c6c c6c6 0000 0000
+	0000 6666 6666 3c18 1818 183c 0000 0000
+	0000 fec6 860c 1830 60c2 c6fe 0000 0000
+	0000 3c30 3030 3030 3030 303c 0000 0000
+	0000 0080 c0e0 7038 1c0e 0602 0000 0000
+	0000 3c0c 0c0c 0c0c 0c0c 0c3c 0000 0000
+	1038 6cc6 0000 0000 0000 0000 0000 0000
+	0000 0000 0000 0000 0000 0000 00ff 0000
+	3030 1800 0000 0000 0000 0000 0000 0000
+	0000 0000 0078 0c7c cccc cc76 0000 0000
+	0000 e060 6078 6c66 6666 667c 0000 0000
+	0000 0000 007c c6c0 c0c0 c67c 0000 0000
+	0000 1c0c 0c3c 6ccc cccc cc76 0000 0000
+	0000 0000 007c c6fe c0c0 c67c 0000 0000
+	0000 386c 6460 f060 6060 60f0 0000 0000
+	0000 0000 0076 cccc cccc cc7c 0ccc 7800
+	0000 e060 606c 7666 6666 66e6 0000 0000
+	0000 1818 0038 1818 1818 183c 0000 0000
+	0000 0606 000e 0606 0606 0606 6666 3c00
+	0000 e060 6066 6c78 786c 66e6 0000 0000
+	0000 3818 1818 1818 1818 183c 0000 0000
+	0000 0000 00ec fed6 d6d6 d6c6 0000 0000
+	0000 0000 00dc 6666 6666 6666 0000 0000
+	0000 0000 007c c6c6 c6c6 c67c 0000 0000
+	0000 0000 00dc 6666 6666 667c 6060 f000
+	0000 0000 0076 cccc cccc cc7c 0c0c 1e00
+	0000 0000 00dc 7666 6060 60f0 0000 0000
+	0000 0000 007c c660 380c c67c 0000 0000
+	0000 1030 30fc 3030 3030 361c 0000 0000
+	0000 0000 00cc cccc cccc cc76 0000 0000
+	0000 0000 0066 6666 6666 3c18 0000 0000
+	0000 0000 00c6 c6d6 d6d6 fe6c 0000 0000
+	0000 0000 00c6 6c38 3838 6cc6 0000 0000
+	0000 0000 00c6 c6c6 c6c6 c67e 060c f800
+	0000 0000 00fe cc18 3060 c6fe 0000 0000
+	0000 0e18 1818 7018 1818 180e 0000 0000
+	0000 1818 1818 0018 1818 1818 0000 0000
+	0000 7018 1818 0e18 1818 1870 0000 0000
+	0000 76dc 0000 0000 0000 0000 0000 0000
+	0000 0000 1038 6cc6 c6c6 fe00 0000 0000
+	0000 3c66 c2c0 c0c0 c266 3c0c 067c 0000
+	0000 cc00 00cc cccc cccc cc76 0000 0000
+	000c 1830 007c c6fe c0c0 c67c 0000 0000
+	0010 386c 0078 0c7c cccc cc76 0000 0000
+	0000 cc00 0078 0c7c cccc cc76 0000 0000
+	0060 3018 0078 0c7c cccc cc76 0000 0000
+	0038 6c38 0078 0c7c cccc cc76 0000 0000
+	0000 0000 3c66 6060 663c 0c06 3c00 0000
+	0010 386c 007c c6fe c0c0 c67c 0000 0000
+	0000 c600 007c c6fe c0c0 c67c 0000 0000
+	0060 3018 007c c6fe c0c0 c67c 0000 0000
+	0000 6600 0038 1818 1818 183c 0000 0000
+	0018 3c66 0038 1818 1818 183c 0000 0000
+	0060 3018 0038 1818 1818 183c 0000 0000
+	00c6 0010 386c c6c6 fec6 c6c6 0000 0000
+	386c 3800 386c c6c6 fec6 c6c6 0000 0000
+	1830 6000 fe66 607c 6060 66fe 0000 0000
+	0000 0000 00cc 7636 7ed8 d86e 0000 0000
+	0000 3e6c cccc fecc cccc ccce 0000 0000
+	0010 386c 007c c6c6 c6c6 c67c 0000 0000
+	0000 c600 007c c6c6 c6c6 c67c 0000 0000
+	0060 3018 007c c6c6 c6c6 c67c 0000 0000
+	0030 78cc 00cc cccc cccc cc76 0000 0000
+	0060 3018 00cc cccc cccc cc76 0000 0000
+	0000 c600 00c6 c6c6 c6c6 c67e 060c 7800
+	00c6 007c c6c6 c6c6 c6c6 c67c 0000 0000
+	00c6 00c6 c6c6 c6c6 c6c6 c67c 0000 0000
+	0018 183c 6660 6060 663c 1818 0000 0000
+	0038 6c64 60f0 6060 6060 e6fc 0000 0000
+	0000 6666 3c18 7e18 7e18 1818 0000 0000
+	00f8 cccc f8c4 ccde cccc ccc6 0000 0000
+	000e 1b18 1818 7e18 1818 1818 d870 0000
+	0018 3060 0078 0c7c cccc cc76 0000 0000
+	000c 1830 0038 1818 1818 183c 0000 0000
+	0018 3060 007c c6c6 c6c6 c67c 0000 0000
+	0018 3060 00cc cccc cccc cc76 0000 0000
+	0000 76dc 00dc 6666 6666 6666 0000 0000
+	76dc 00c6 e6f6 fede cec6 c6c6 0000 0000
+	003c 6c6c 3e00 7e00 0000 0000 0000 0000
+	0038 6c6c 3800 7c00 0000 0000 0000 0000
+	0000 3030 0030 3060 c0c6 c67c 0000 0000
+	0000 0000 0000 fec0 c0c0 c000 0000 0000
+	0000 0000 0000 fe06 0606 0600 0000 0000
+	00c0 c0c2 c6cc 1830 60dc 860c 183e 0000
+	00c0 c0c2 c6cc 1830 66ce 9e3e 0606 0000
+	0000 1818 0018 1818 3c3c 3c18 0000 0000
+	0000 0000 0036 6cd8 6c36 0000 0000 0000
+	0000 0000 00d8 6c36 6cd8 0000 0000 0000
+	1144 1144 1144 1144 1144 1144 1144 1144
+	55aa 55aa 55aa 55aa 55aa 55aa 55aa 55aa
+	dd77 dd77 dd77 dd77 dd77 dd77 dd77 dd77
+	1818 1818 1818 1818 1818 1818 1818 1818
+	1818 1818 1818 18f8 1818 1818 1818 1818
+	1818 1818 18f8 18f8 1818 1818 1818 1818
+	3636 3636 3636 36f6 3636 3636 3636 3636
+	0000 0000 0000 00fe 3636 3636 3636 3636
+	0000 0000 00f8 18f8 1818 1818 1818 1818
+	3636 3636 36f6 06f6 3636 3636 3636 3636
+	3636 3636 3636 3636 3636 3636 3636 3636
+	0000 0000 00fe 06f6 3636 3636 3636 3636
+	3636 3636 36f6 06fe 0000 0000 0000 0000
+	3636 3636 3636 36fe 0000 0000 0000 0000
+	1818 1818 18f8 18f8 0000 0000 0000 0000
+	0000 0000 0000 00f8 1818 1818 1818 1818
+	1818 1818 1818 181f 0000 0000 0000 0000
+	1818 1818 1818 18ff 0000 0000 0000 0000
+	0000 0000 0000 00ff 1818 1818 1818 1818
+	1818 1818 1818 181f 1818 1818 1818 1818
+	0000 0000 0000 00ff 0000 0000 0000 0000
+	1818 1818 1818 18ff 1818 1818 1818 1818
+	1818 1818 181f 181f 1818 1818 1818 1818
+	3636 3636 3636 3637 3636 3636 3636 3636
+	3636 3636 3637 303f 0000 0000 0000 0000
+	0000 0000 003f 3037 3636 3636 3636 3636
+	3636 3636 36f7 00ff 0000 0000 0000 0000
+	0000 0000 00ff 00f7 3636 3636 3636 3636
+	3636 3636 3637 3037 3636 3636 3636 3636
+	0000 0000 00ff 00ff 0000 0000 0000 0000
+	3636 3636 36f7 00f7 3636 3636 3636 3636
+	1818 1818 18ff 00ff 0000 0000 0000 0000
+	3636 3636 3636 36ff 0000 0000 0000 0000
+	0000 0000 00ff 00ff 1818 1818 1818 1818
+	0000 0000 0000 00ff 3636 3636 3636 3636
+	3636 3636 3636 363f 0000 0000 0000 0000
+	1818 1818 181f 181f 0000 0000 0000 0000
+	0000 0000 001f 181f 1818 1818 1818 1818
+	0000 0000 0000 003f 3636 3636 3636 3636
+	3636 3636 3636 36ff 3636 3636 3636 3636
+	1818 1818 18ff 18ff 1818 1818 1818 1818
+	1818 1818 1818 18f8 0000 0000 0000 0000
+	0000 0000 0000 001f 1818 1818 1818 1818
+	ffff ffff ffff ffff ffff ffff ffff ffff
+	0000 0000 0000 00ff ffff ffff ffff ffff
+	f0f0 f0f0 f0f0 f0f0 f0f0 f0f0 f0f0 f0f0
+	0f0f 0f0f 0f0f 0f0f 0f0f 0f0f 0f0f 0f0f
+	ffff ffff ffff ff00 0000 0000 0000 0000
+	0000 0000 0070 d8d8 d8d8 dc76 0000 0000
+	0000 78cc cccc d8cc c6c6 c6cc 0000 0000
+	0000 fec6 c6c0 c0c0 c0c0 c0c0 0000 0000
+	0000 0000 fe6c 6c6c 6c6c 6c6c 0000 0000
+	0000 00fe c660 3018 3060 c6fe 0000 0000
+	0000 0000 007e d8d8 d8d8 d870 0000 0000
+	0000 0000 6666 6666 667c 6060 c000 0000
+	0000 0000 76dc 1818 1818 1818 0000 0000
+	0000 007e 183c 6666 663c 187e 0000 0000
+	0000 0038 6cc6 c6fe c6c6 6c38 0000 0000
+	0000 386c c6c6 c66c 6c6c 6cee 0000 0000
+	0000 1e30 180c 3e66 6666 663c 0000 0000
+	0000 0000 007e dbdb db7e 0000 0000 0000
+	0000 0003 067e dbdb f37e 60c0 0000 0000
+	0000 1c30 6060 7c60 6060 301c 0000 0000
+	0000 007c c6c6 c6c6 c6c6 c6c6 0000 0000
+	0000 0000 fe00 00fe 0000 fe00 0000 0000
+	0000 0000 1818 7e18 1800 00ff 0000 0000
+	0000 0030 180c 060c 1830 007e 0000 0000
+	0000 000c 1830 6030 180c 007e 0000 0000
+	0000 0e1b 1b18 1818 1818 1818 1818 1818
+	1818 1818 1818 1818 d8d8 d870 0000 0000
+	0000 0000 1818 007e 0018 1800 0000 0000
+	0000 0000 0076 dc00 76dc 0000 0000 0000
+	0038 6c6c 3800 0000 0000 0000 0000 0000
+	0000 0000 0000 0018 1800 0000 0000 0000
+	0000 0000 0000 0000 1800 0000 0000 0000
+	000f 0c0c 0c0c 0cec 6c6c 3c1c 0000 0000
+	00d8 6c6c 6c6c 6c00 0000 0000 0000 0000
+	0070 d830 60c8 f800 0000 0000 0000 0000
+	0000 0000 7c7c 7c7c 7c7c 7c00 0000 0000
