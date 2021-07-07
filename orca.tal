@@ -18,7 +18,6 @@
 
 	TODO
 		- Catch ports that overflow out of grid
-		- Sharp notes
 		- Insert mode
 		- Display on-screen guide
 		- Leap move with alt modifier
@@ -70,12 +69,13 @@
 %SET-STATE   { #01 .state/changed STZ ;draw-state JSR2 }
 %RESET-STATE { #00 .state/changed STZ ;draw-state JSR2 }
 %RESET-SELECTION { .selection/x1 LDZ .selection/x2 STZ .selection/y1 LDZ .selection/y2 STZ }
+%RESET-INSERT { #00 .selection/insert STZ }
 
 %GET-INDEX { #00 SWP #00 .grid/width LDZ ** ROT #00 SWP ++ } ( x y -- index )
 %GET-CHAR  { #24 MOD #00 SWP ;b36clc ++ LDA } ( b36 -- char )
 %GET-VALUE { #20 - #00 SWP ;values ++ LDA } ( char -- b36 )
-%GET-NOTE  { GET-VALUE TOS ;uc-notes ++ LDA } ( char -- midi )
-%GET-CHAR-SPRITE { GET-CHAR #00 SWP #0010 ** ;page437 ++ }
+%GET-NOTE  { DUP GET-VALUE SWP CIUC #24 * + TOS ;lc-notes ++ LDA } ( char -- midi )
+%GET-CHAR-ADDR { #20 - TOS #0010 ** ;page437 ++ }
 
 %GET-CELL  { GET-INDEX DATA-CELLS ++ LDA } ( x y -- char )
 %SET-CELL  { ROT ROT GET-INDEX DATA-CELLS ++ STA } ( x y char -- )
@@ -134,7 +134,9 @@
 	&x2 $2
 	&y2 $2
 @selection 
-	&x1 $1 &y1 $1 &x2 $1 &y2 $1
+	&x1 $1 &y1 $1 
+	&x2 $1 &y2 $1 
+	&insert $1
 @cursor
 	&x $2 &y $2 &last $1
 @variables
@@ -245,7 +247,7 @@ BRK
 		.state/blink TOGGLE
 		#23 .state/blink LDZ #09 * + ;draw-filepath JSR2
 		#00 .state/timer STZ 
-	&no-toggle
+		&no-toggle
 
 BRK
 
@@ -261,17 +263,33 @@ BRK
 	.Controller/key DEI
 	DUP #20 ! ,&no-space JCN
 		.timer/alive TOGGLE
-		;redraw JSR2 POP BRK &no-space
+		.selection/insert LDZ #00 = ,&no-space-insert JCN
+			.timer/alive TOGGLE
+			#01 #00 #00 ;edit-selection JSR2 
+			&no-space-insert
+		;redraw JSR2 POP BRK 
+		&no-space
 	DUP #08 ! OVR #7f ! #0101 == ,&no-backspace JCN
-		CHAR-DOT ;fill-block JSR2 
-		;redraw JSR2 POP BRK &no-backspace
+		CHAR-DOT ;fill-selection JSR2 
+		.selection/insert LDZ #00 = ,&no-backspace-insert JCN
+			#ff #00 #00 ;edit-selection JSR2 
+			&no-backspace-insert
+		SET-STATE 
+		;redraw JSR2 POP BRK 
+		&no-backspace
 	DUP #1b ! ,&no-escape JCN
 		RESET-SELECTION 
-		;redraw JSR2 POP BRK &no-escape
+		RESET-INSERT
+		;redraw JSR2 POP BRK 
+		&no-escape
 	DUP IS-CHAR-KEY #00 = ,&no-key JCN
 		.selection/x1 LDZ .selection/y1 LDZ .Controller/key DEI SET-CELL
+		.selection/insert LDZ #00 = ,&no-key-insert JCN
+			#01 #00 #00 ;edit-selection JSR2 
+			&no-key-insert
 		SET-STATE 
-		;redraw JSR2 POP BRK &no-key
+		;redraw JSR2 POP BRK 
+		&no-key
 	POP BRK
 
 	&control ( button -- )
@@ -282,29 +300,37 @@ BRK
 			#00 .selection/y1 STZ
 			.grid/width LDZ .selection/x2 STZ
 			.grid/height LDZ .selection/y2 STZ
-			;redraw JSR2 POP BRK &no-expand
+			;redraw JSR2 POP BRK 
+			&no-expand
 		DUP #63 ! ,&no-copy JCN
-			;copy-block JSR2 
-			;redraw JSR2 POP BRK &no-copy
+			;copy-selection JSR2 
+			;redraw JSR2 POP BRK 
+			&no-copy
 		DUP #76 ! ,&no-paste JCN
-			;paste-block JSR2 RESET-SELECTION
-			;redraw JSR2 POP BRK &no-paste
+			;paste-selection JSR2 RESET-SELECTION
+			;redraw JSR2 POP BRK 
+			&no-paste
 		DUP #78 ! ,&no-cut JCN
-			;copy-block JSR2 CHAR-DOT ;fill-block JSR2 RESET-SELECTION
-			;redraw JSR2 POP BRK &no-cut
+			;copy-selection JSR2 CHAR-DOT ;fill-selection JSR2 RESET-SELECTION
+			;redraw JSR2 POP BRK 
+			&no-cut
 		DUP #6f ! ,&no-open JCN
 			;load-file JSR2
-			;redraw JSR2 POP BRK &no-open
+			;redraw JSR2 POP BRK 
+			&no-open
 		DUP #72 ! ,&no-name JCN
 			.state/trap TOGGLE
 			#00 .state/blink STZ 
-			#23 ;draw-filepath JSR2 POP BRK &no-name
+			#23 ;draw-filepath JSR2 POP BRK 
+			&no-name
 		DUP #73 ! ,&no-save JCN
 			;save-file JSR2 
-			;redraw JSR2 POP BRK  &no-save
+			;redraw JSR2 POP BRK  
+			&no-save
 		DUP #6e ! ,&no-make JCN
 			#20 ;draw-filepath JSR2 ;untitled-txt ;new-file JSR2 
-			;redraw JSR2 POP BRK &no-make
+			;redraw JSR2 POP BRK 
+			&no-make
 		DUP #2c ! ,&no-slow JCN
 			( clamp ) .timer/speed LDZ #03 < ,&no-slow JCN
 			.timer/speed LDZ #01 - .timer/speed STZ
@@ -317,6 +343,10 @@ BRK
 			#00 .timer/beat STZ
 			;redraw JSR2 POP BRK
 			&no-fast
+		DUP #69 ! ,&no-insert JCN
+			.selection/insert TOGGLE
+			;redraw JSR2 POP BRK
+			&no-insert
 		POP 
 	BRK
 
@@ -364,13 +394,13 @@ BRK
 	( clear last cursor )
 	.cursor/x LDZ2 .Screen/x DEO2
 	.cursor/y LDZ2 .Screen/y DEO2
-	;blank_icn .Screen/addr DEO2
+	;blank-icn .Screen/addr DEO2
 	#30 .Screen/color DEO
 
 	( draw new cursor )
 	.Mouse/x DEI2 DUP2 .cursor/x STZ2 .Screen/x DEO2
 	.Mouse/y DEI2 DUP2 .cursor/y STZ2 .Screen/y DEO2
-	;cursor_icn .Screen/addr DEO2
+	;cursor-icn .Screen/addr DEO2
 	.Mouse/state DEI #00 ! #02 * [ #31 + .Screen/color DEO ]
 
 	( route )
@@ -393,7 +423,8 @@ BRK
 			.Mouse/y DEI2 .grid/y1 LDZ2 -- #0010 // TOB 
 				DUP .selection/y1 STZ .selection/y2 STZ
 			;clamp-selection JSR2 ;redraw JSR2
-			,&end JMP &no-down
+			,&end JMP 
+			&no-down
 		( release )
 		.Mouse/x DEI2 .grid/x1 LDZ2 -- 8// TOB .selection/x2 STZ
 		.Mouse/y DEI2 .grid/y1 LDZ2 -- #0010 // TOB .selection/y2 STZ
@@ -410,24 +441,36 @@ BRK
 
 	( left-side )
 	.Mouse/x DEI2 .grid/x1 LDZ2 -- 8// TOB 
+
+	DUP #04 ! ,&no-insert JCN
+		.selection/insert TOGGLE
+		;redraw JSR2 
+		&no-insert
+	DUP #08 ! ,&no-pause JCN
+		.timer/alive TOGGLE
+		;redraw JSR2 
+		&no-pause 
 	DUP #0e > OVR .grid/width LDZ SWP - #05 > #0101 !! ,&no-rename JCN
 		.state/trap TOGGLE
 		#00 .state/blink STZ 
-		#23 ;draw-filepath JSR2
+		#23 ;draw-filepath JSR2 
 		&no-rename
 	POP
 
 	( right-side )
 	.grid/x2 LDZ2 .Mouse/x DEI2 -- 8// TOB 
 	DUP #00 ! ,&no-save JCN
-		;save-file JSR2 &no-save
+		;save-file JSR2 
+		&no-save
 	DUP #02 ! ,&no-load JCN
 		;load-file JSR2
-		;redraw JSR2 &no-load
+		;redraw JSR2 
+		&no-load
 	DUP #03 ! ,&no-name JCN
 		#20 ;draw-filepath JSR2
 		;untitled-txt ;new-file JSR2
-		;redraw JSR2 &no-name
+		;redraw JSR2 
+		&no-name
 	POP
 
 	( release ) #00 .Mouse/state DEO
@@ -456,13 +499,15 @@ RTN
 		( check if x,y is grid )
 		POP
 		DUP2 #01 AND #00 = SWP #03 AND #00 = #0101 NEQ2 ,&no-marker4 JCN 
-			POP2 ;page437/marker RTN &no-marker4
+			POP2 ;page437/marker RTN 
+			&no-marker4
 		DUP2 GET-TYPE #00 = ,&no-port JCN
-			POP2 ;page437/marker RTN &no-port
+			POP2 ;page437/marker RTN 
+			&no-port
 		POP2 ;page437 RTN
 	&no-bar
 	STH POP2 STHr
-	#00 SWP #0010 ** ;page437 ++
+	GET-CHAR-ADDR
 
 RTN
 
@@ -608,7 +653,7 @@ RTN
 			( incr y ) #01 + 
 			DUP2 STHkr SET-PORT-OUTPUT
 			STHr
-		&skip
+			&skip
 		POP POP2
 		INCR
 		LTHk ;&loop JCN2
@@ -878,8 +923,9 @@ RTN
 	POP
 	( get channel ) DUP2 [ SWP #01 + SWP ] GET-PORT-RIGHT STH 
 	( get octave ) DUP2 [ SWP #02 + SWP ] GET-PORT-RIGHT [ #0c * ] STH 
-	( get note ) DUP2 [ SWP #03 + SWP ] GET-PORT-RIGHT-RAW GET-NOTE STH ADDr
-	( req bang ) DUP2 ;get-bang JSR2 ,&is-bang JCN POP2 POP2r RTN &is-bang
+	( get note ) DUP2 [ SWP #03 + SWP ] GET-PORT-RIGHT-RAW 
+		( req note ) DUP CHAR-DOT ! ,&is-active JCN [ POP POP2 POP2r RTN ] &is-active GET-NOTE STH ADDr
+	( req bang ) DUP2 ;get-bang JSR2 ,&is-bang [ JCN POP2 POP2r RTN ] &is-bang
 	STHr .Audio0/pitch STHr #10 * + DEO
 	IO-TYPE SET-TYPE
 
@@ -890,8 +936,9 @@ RTN
 	POP
 	( get channel ) DUP2 [ SWP #01 + SWP ] GET-PORT-RIGHT STH
 	( get octave ) DUP2 [ SWP #02 + SWP ] GET-PORT-RIGHT [ #0c * ] STH 
-	( get note ) DUP2 [ SWP #03 + SWP ] GET-PORT-RIGHT-RAW GET-NOTE STH 
-	( req bang ) DUP2 ;get-bang JSR2 ,&is-bang JCN POP2 POP2r POPr RTN &is-bang
+	( get note ) DUP2 [ SWP #03 + SWP ] GET-PORT-RIGHT-RAW 
+		( req note ) DUP CHAR-DOT ! ,&is-active JCN [ POP POP2 POP2r RTN ] &is-active GET-NOTE STH 
+	( req bang ) DUP2 ;get-bang JSR2 ,&is-bang JCN [ POP2 POP2r POPr RTN ] &is-bang
 	IO-TYPE SET-TYPE
 	ADDr
 	( note on ) OVRr STHr .Console/write DEO STHkr .Console/write DEO #7f .Console/write DEO
@@ -904,7 +951,8 @@ RTN
 
 	POP
 	( get octave ) DUP2 [ SWP #01 + SWP ] GET-PORT-RIGHT [ #0c * ] STH 
-	( get note ) DUP2 [ SWP #02 + SWP ] GET-PORT-RIGHT-RAW GET-NOTE STH 
+	( get note ) DUP2 [ SWP #02 + SWP ] GET-PORT-RIGHT-RAW 
+		( req note ) DUP CHAR-DOT ! ,&is-active JCN [ POP POP2 POPr RTN ] &is-active GET-NOTE STH
 	( req bang ) DUP2 ;get-bang JSR2 ,&is-bang JCN POP2 POP2r RTN &is-bang
 	IO-TYPE SET-TYPE
 	ADDr STHr .Console/write DEO
@@ -915,11 +963,13 @@ RTN
 	
 	( skip dot )
 	DUP CHAR-DOT NEQ ,&not-dot JCN
-		POP POP2 RTN &not-dot
+		POP POP2 RTN 
+		&not-dot
 
 	( skip locked )
 	ROT ROT DUP2 GET-LOCK #00 = ,&not-locked JCN
-		POP POP2 RTN &not-locked
+		POP POP2 RTN 
+		&not-locked
 	ROT
 
 	( lowercase )
@@ -1004,9 +1054,9 @@ RTN
 @draw-byte ( byte color -- )
 	
 	STH
-	DUP #04 SFT GET-CHAR-SPRITE STHkr ;draw-char JSR2
+	DUP #04 SFT GET-CHAR GET-CHAR-ADDR STHkr ,draw-char JSR
 	.Screen/x DEI2 #0008 ++ .Screen/x DEO2
-	#0f AND GET-CHAR-SPRITE STHr ;draw-char JSR2
+	#0f AND GET-CHAR GET-CHAR-ADDR STHr ,draw-char JSR
 	.Screen/x DEI2 #0008 ++ .Screen/x DEO2
 
 RTN
@@ -1068,13 +1118,13 @@ RTN
 	.selection/x1 LDZ #21 ;draw-byte JSR2
 	.selection/y1 LDZ #21 ;draw-byte JSR2
 
-	;position_icn .Screen/addr DEO2
+	;selection-icns .selection/insert LDZ TOS #0008 ** ++ .Screen/addr DEO2
 	#22 .selection/x1 LDZ .selection/y1 LDZ .selection/x2 LDZ .selection/y2 LDZ == + .Screen/color DEO
 	.grid/x1 LDZ2 #0030 ++ .Screen/x DEO2
 
 	( Frame )
 	.timer/frame #01 + LDZ #21 ;draw-byte JSR2
-	;beat_icn .Screen/addr DEO2
+	;beat-icn .Screen/addr DEO2
 	#23 .timer/frame #01 + LDZ MOD8 #00 = - .Screen/color DEO
 	.grid/x1 LDZ2 #0050 ++ .Screen/x DEO2
 
@@ -1139,7 +1189,7 @@ RTN
 	.toolbar/x1 LDZ2 #0070 ++ .Screen/x DEO2
 	;path/name
 	&loop
-		DUP2 LDA DUP #00 ! #00 * - TOS #0010 ** ;page437 ++ STHkr ;draw-char JSR2
+		DUP2 LDA GET-CHAR-ADDR STHkr ;draw-char JSR2
 		.Screen/x DEI2 #0008 ++ .Screen/x DEO2
 		#0001 ++
 		LDAk #00 ! ,&loop JCN
@@ -1229,7 +1279,7 @@ RTN
 
 ( clip )
 
-@copy-block ( -- )
+@copy-selection ( -- )
 	
 	( stash length ) #0000 STH2
 	.selection/y1 LDZ .selection/y2 LDZ #01 +
@@ -1250,7 +1300,7 @@ RTN
 
 RTN
 
-@paste-block ( -- )
+@paste-selection ( -- )
 	
 	#0000 #1000
 	&loop
@@ -1277,7 +1327,7 @@ RTN
 
 RTN
 
-@fill-block ( char -- )
+@fill-selection ( char -- )
 	
 	STH
 	.selection/y1 LDZ .selection/y2 LDZ #01 +
@@ -1295,10 +1345,10 @@ RTN
 
 RTN
 
-@cut-block ( -- )
+@cut-selection ( -- )
 
-	;copy-block JSR2 
-	CHAR-DOT ;fill-block JSR2
+	;copy-selection JSR2 
+	CHAR-DOT ;fill-selection JSR2
 
 RTN
 
@@ -1311,7 +1361,7 @@ RTN
 	STH2
 
 	;&drag LDA #00 = ,&no-drag-start JCN 
-		;cut-block JSR2 &no-drag-start
+		;cut-selection JSR2 &no-drag-start
 
 	( y )
 	STHkr #00 = ,&no-ver JCN
@@ -1334,7 +1384,7 @@ RTN
 	;clamp-selection JSR2 
 
 	,&drag LDR #00 = ,&no-drag-end JCN 
-		;paste-block JSR2 &no-drag-end
+		;paste-selection JSR2 &no-drag-end
 
 	RTN
 
@@ -1395,6 +1445,14 @@ RTN
 
 @untitled-txt  "untitled.orca $1
 
+@lc-notes
+	00 00 00 00 00 00 00 00 
+	00 00 
+	0a 0c 01 03 05 06 08 0a
+	0c 0d 0f 11 12 14 16 18
+	19 1b 1d 1e 20 22 24 25
+	27 29
+
 @uc-notes
 	00 00 00 00 00 00 00 00 
 	00 00 
@@ -1402,12 +1460,6 @@ RTN
 	0b 0c 0e 10 11 13 15 17
 	18 1a 1c 1d 1f 21 23 24
 	26 28
-
-@lc-notes
-	0a 0c 01 03 05 06 08 0a
-	0c 0d 0f 11 12 14 16 18
-	19 1b 1d 1e 20 22 24 25
-	27 29
 
 @values ( char to b36 )
 	00 00 00 00 00 00 00 00
@@ -1440,20 +1492,17 @@ RTN
 	29 ( 6 selected )
 	2c ( 7 io )
 
-@cursor_icn     80c0 e0f0 f8e0 1000
-@blank_icn      0000 0000 0000 0000
-@position_icn   0066 4200 0042 6600
-@beat_icn       0000 1038 7c38 1000
-@marker8_icn    0000 2400 0024 0000
-@marker4_icn    0000 0000 0000 1000
+@selection-icns   
+	0066 4200 0042 6600
+	0088 ccee cc88 0000
+
+@cursor-icn     80c0 e0f0 f8e0 1000
+@blank-icn      0000 0000 0000 0000
+@beat-icn       0000 1038 7c38 1000
 
 @save-icn      1054 28c6 2854 1000 
 @make-icn      fe82 8282 848a f400 
 @load-icn      feaa d6aa d4aa f400 
-
-@eye_icns
-	0038 4492 2810 0000 ( open )
-	0000 0082 4438 0000 ( closed )
 
 @tri-pcm
 	8082 8486 888a 8c8e 9092 9496 989a 9c9e
@@ -1493,40 +1542,6 @@ RTN
 
 @page437
 	0000 0000 0000 0000 0000 0000 0000 0000
-	0000 7e81 a581 81bd 9981 817e 0000 0000
-	0000 7eff dbff ffc3 e7ff ff7e 0000 0000
-	0000 0000 6cfe fefe fe7c 3810 0000 0000
-	0000 0000 1038 7cfe 7c38 1000 0000 0000
-	0000 0018 3c3c e7e7 e718 183c 0000 0000
-	0000 0018 3c7e ffff 7e18 183c 0000 0000
-	0000 0000 0000 183c 3c18 0000 0000 0000
-	ffff ffff ffff e7c3 c3e7 ffff ffff ffff
-	0000 0000 003c 6642 4266 3c00 0000 0000
-	ffff ffff ffc3 99bd bd99 c3ff ffff ffff
-	0000 1e0e 1a32 78cc cccc cc78 0000 0000
-	0000 3c66 6666 663c 187e 1818 0000 0000
-	0000 3f33 3f30 3030 3070 f0e0 0000 0000
-	0000 7f63 7f63 6363 6367 e7e6 c000 0000
-	0000 0018 18db 3ce7 3cdb 1818 0000 0000
-	0080 c0e0 f0f8 fef8 f0e0 c080 0000 0000
-	0002 060e 1e3e fe3e 1e0e 0602 0000 0000
-	0000 183c 7e18 1818 7e3c 1800 0000 0000
-	0000 6666 6666 6666 6600 6666 0000 0000
-	0000 7fdb dbdb 7b1b 1b1b 1b1b 0000 0000
-	007c c660 386c c6c6 6c38 0cc6 7c00 0000
-	0000 0000 0000 0000 fefe fefe 0000 0000
-
-	0000 183c 7e18 1818 7e3c 187e 0000 0000
-	0000 183c 7e18 1818 1818 1818 0000 0000
-	0000 1818 1818 1818 187e 3c18 0000 0000
-	0000 0000 0018 0cfe 0c18 0000 0000 0000
-
-	0000 0000 0030 60fe 6030 0000 0000 0000
-	0000 0000 0000 c0c0 c0fe 0000 0000 0000
-	0000 0000 0028 6cfe 6c28 0000 0000 0000 
-	0000 0000 1038 387c 7cfe fe00 0000 0000
-	0000 0000 fefe 7c7c 3838 1000 0000 0000
-	0000 0000 0000 0000 0000 0000 0000 0000
 	0000 183c 3c3c 1818 1800 1818 0000 0000
 	0066 6666 2400 0000 0000 0000 0000 0000
 	0000 006c 6cfe 6c6c 6cfe 6c6c 0000 0000
@@ -1539,7 +1554,8 @@ RTN
 	0000 0000 0066 3cff 3c66 0000 0000 0000
 	0000 0000 0018 187e 1818 0000 0000 0000
 	0000 0000 0000 0000 0018 1818 3000 0000 
-	0000 0000 0000 00fe 0000 0000 0000 0000 &marker
+	0000 0000 0000 00fe 0000 0000 0000 0000 
+&marker
 	0000 0000 0000 0000 0000 1818 0000 0000 
 	0000 0000 0206 0c18 3060 c080 0000 0000
 	0000 386c c6c6 d6d6 c6c6 6c38 0000 0000
@@ -1620,132 +1636,3 @@ RTN
 	0000 0e18 1818 7018 1818 180e 0000 0000
 	0000 1818 1818 0018 1818 1818 0000 0000
 	0000 7018 1818 0e18 1818 1870 0000 0000
-	0000 76dc 0000 0000 0000 0000 0000 0000
-	0000 0000 1038 6cc6 c6c6 fe00 0000 0000
-	0000 3c66 c2c0 c0c0 c266 3c0c 067c 0000
-	0000 cc00 00cc cccc cccc cc76 0000 0000
-	000c 1830 007c c6fe c0c0 c67c 0000 0000
-	0010 386c 0078 0c7c cccc cc76 0000 0000
-	0000 cc00 0078 0c7c cccc cc76 0000 0000
-	0060 3018 0078 0c7c cccc cc76 0000 0000
-	0038 6c38 0078 0c7c cccc cc76 0000 0000
-	0000 0000 3c66 6060 663c 0c06 3c00 0000
-	0010 386c 007c c6fe c0c0 c67c 0000 0000
-	0000 c600 007c c6fe c0c0 c67c 0000 0000
-	0060 3018 007c c6fe c0c0 c67c 0000 0000
-	0000 6600 0038 1818 1818 183c 0000 0000
-	0018 3c66 0038 1818 1818 183c 0000 0000
-	0060 3018 0038 1818 1818 183c 0000 0000
-	00c6 0010 386c c6c6 fec6 c6c6 0000 0000
-	386c 3800 386c c6c6 fec6 c6c6 0000 0000
-	1830 6000 fe66 607c 6060 66fe 0000 0000
-	0000 0000 00cc 7636 7ed8 d86e 0000 0000
-	0000 3e6c cccc fecc cccc ccce 0000 0000
-	0010 386c 007c c6c6 c6c6 c67c 0000 0000
-	0000 c600 007c c6c6 c6c6 c67c 0000 0000
-	0060 3018 007c c6c6 c6c6 c67c 0000 0000
-	0030 78cc 00cc cccc cccc cc76 0000 0000
-	0060 3018 00cc cccc cccc cc76 0000 0000
-	0000 c600 00c6 c6c6 c6c6 c67e 060c 7800
-	00c6 007c c6c6 c6c6 c6c6 c67c 0000 0000
-	00c6 00c6 c6c6 c6c6 c6c6 c67c 0000 0000
-	0018 183c 6660 6060 663c 1818 0000 0000
-	0038 6c64 60f0 6060 6060 e6fc 0000 0000
-	0000 6666 3c18 7e18 7e18 1818 0000 0000
-	00f8 cccc f8c4 ccde cccc ccc6 0000 0000
-	000e 1b18 1818 7e18 1818 1818 d870 0000
-	0018 3060 0078 0c7c cccc cc76 0000 0000
-	000c 1830 0038 1818 1818 183c 0000 0000
-	0018 3060 007c c6c6 c6c6 c67c 0000 0000
-	0018 3060 00cc cccc cccc cc76 0000 0000
-	0000 76dc 00dc 6666 6666 6666 0000 0000
-	76dc 00c6 e6f6 fede cec6 c6c6 0000 0000
-	003c 6c6c 3e00 7e00 0000 0000 0000 0000
-	0038 6c6c 3800 7c00 0000 0000 0000 0000
-	0000 3030 0030 3060 c0c6 c67c 0000 0000
-	0000 0000 0000 fec0 c0c0 c000 0000 0000
-	0000 0000 0000 fe06 0606 0600 0000 0000
-	00c0 c0c2 c6cc 1830 60dc 860c 183e 0000
-	00c0 c0c2 c6cc 1830 66ce 9e3e 0606 0000
-	0000 1818 0018 1818 3c3c 3c18 0000 0000
-	0000 0000 0036 6cd8 6c36 0000 0000 0000
-	0000 0000 00d8 6c36 6cd8 0000 0000 0000
-	1144 1144 1144 1144 1144 1144 1144 1144
-	55aa 55aa 55aa 55aa 55aa 55aa 55aa 55aa
-	dd77 dd77 dd77 dd77 dd77 dd77 dd77 dd77
-	1818 1818 1818 1818 1818 1818 1818 1818
-	1818 1818 1818 18f8 1818 1818 1818 1818
-	1818 1818 18f8 18f8 1818 1818 1818 1818
-	3636 3636 3636 36f6 3636 3636 3636 3636
-	0000 0000 0000 00fe 3636 3636 3636 3636
-	0000 0000 00f8 18f8 1818 1818 1818 1818
-	3636 3636 36f6 06f6 3636 3636 3636 3636
-	3636 3636 3636 3636 3636 3636 3636 3636
-	0000 0000 00fe 06f6 3636 3636 3636 3636
-	3636 3636 36f6 06fe 0000 0000 0000 0000
-	3636 3636 3636 36fe 0000 0000 0000 0000
-	1818 1818 18f8 18f8 0000 0000 0000 0000
-	0000 0000 0000 00f8 1818 1818 1818 1818
-	1818 1818 1818 181f 0000 0000 0000 0000
-	1818 1818 1818 18ff 0000 0000 0000 0000
-	0000 0000 0000 00ff 1818 1818 1818 1818
-	1818 1818 1818 181f 1818 1818 1818 1818
-	0000 0000 0000 00ff 0000 0000 0000 0000
-	1818 1818 1818 18ff 1818 1818 1818 1818
-	1818 1818 181f 181f 1818 1818 1818 1818
-	3636 3636 3636 3637 3636 3636 3636 3636
-	3636 3636 3637 303f 0000 0000 0000 0000
-	0000 0000 003f 3037 3636 3636 3636 3636
-	3636 3636 36f7 00ff 0000 0000 0000 0000
-	0000 0000 00ff 00f7 3636 3636 3636 3636
-	3636 3636 3637 3037 3636 3636 3636 3636
-	0000 0000 00ff 00ff 0000 0000 0000 0000
-	3636 3636 36f7 00f7 3636 3636 3636 3636
-	1818 1818 18ff 00ff 0000 0000 0000 0000
-	3636 3636 3636 36ff 0000 0000 0000 0000
-	0000 0000 00ff 00ff 1818 1818 1818 1818
-	0000 0000 0000 00ff 3636 3636 3636 3636
-	3636 3636 3636 363f 0000 0000 0000 0000
-	1818 1818 181f 181f 0000 0000 0000 0000
-	0000 0000 001f 181f 1818 1818 1818 1818
-	0000 0000 0000 003f 3636 3636 3636 3636
-	3636 3636 3636 36ff 3636 3636 3636 3636
-	1818 1818 18ff 18ff 1818 1818 1818 1818
-	1818 1818 1818 18f8 0000 0000 0000 0000
-	0000 0000 0000 001f 1818 1818 1818 1818
-	ffff ffff ffff ffff ffff ffff ffff ffff
-	0000 0000 0000 00ff ffff ffff ffff ffff
-	f0f0 f0f0 f0f0 f0f0 f0f0 f0f0 f0f0 f0f0
-	0f0f 0f0f 0f0f 0f0f 0f0f 0f0f 0f0f 0f0f
-	ffff ffff ffff ff00 0000 0000 0000 0000
-	0000 0000 0070 d8d8 d8d8 dc76 0000 0000
-	0000 78cc cccc d8cc c6c6 c6cc 0000 0000
-	0000 fec6 c6c0 c0c0 c0c0 c0c0 0000 0000
-	0000 0000 fe6c 6c6c 6c6c 6c6c 0000 0000
-	0000 00fe c660 3018 3060 c6fe 0000 0000
-	0000 0000 007e d8d8 d8d8 d870 0000 0000
-	0000 0000 6666 6666 667c 6060 c000 0000
-	0000 0000 76dc 1818 1818 1818 0000 0000
-	0000 007e 183c 6666 663c 187e 0000 0000
-	0000 0038 6cc6 c6fe c6c6 6c38 0000 0000
-	0000 386c c6c6 c66c 6c6c 6cee 0000 0000
-	0000 1e30 180c 3e66 6666 663c 0000 0000
-	0000 0000 007e dbdb db7e 0000 0000 0000
-	0000 0003 067e dbdb f37e 60c0 0000 0000
-	0000 1c30 6060 7c60 6060 301c 0000 0000
-	0000 007c c6c6 c6c6 c6c6 c6c6 0000 0000
-	0000 0000 fe00 00fe 0000 fe00 0000 0000
-	0000 0000 1818 7e18 1800 00ff 0000 0000
-	0000 0030 180c 060c 1830 007e 0000 0000
-	0000 000c 1830 6030 180c 007e 0000 0000
-	0000 0e1b 1b18 1818 1818 1818 1818 1818
-	1818 1818 1818 1818 d8d8 d870 0000 0000
-	0000 0000 1818 007e 0018 1800 0000 0000
-	0000 0000 0076 dc00 76dc 0000 0000 0000
-	0038 6c6c 3800 0000 0000 0000 0000 0000
-	0000 0000 0000 0018 1800 0000 0000 0000
-	0000 0000 0000 0000 1800 0000 0000 0000
-	000f 0c0c 0c0c 0cec 6c6c 3c1c 0000 0000
-	00d8 6c6c 6c6c 6c00 0000 0000 0000 0000
-	0070 d830 60c8 f800 0000 0000 0000 0000
-	0000 0000 7c7c 7c7c 7c7c 7c00 0000 0000
