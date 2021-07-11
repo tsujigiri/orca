@@ -394,7 +394,6 @@ BRK
 	( clear last cursor )
 	.cursor/x LDZ2 .Screen/x DEO2
 	.cursor/y LDZ2 .Screen/y DEO2
-	;blank-icn .Screen/addr DEO2
 	#30 .Screen/color DEO
 
 	( draw new cursor )
@@ -1497,7 +1496,6 @@ RTN
 	0088 ccee cc88 0000
 
 @cursor-icn     80c0 e0f0 f8e0 1000
-@blank-icn      0000 0000 0000 0000
 @beat-icn       0000 1038 7c38 1000
 
 @save-icn      1054 28c6 2854 1000 
