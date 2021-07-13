@@ -5,7 +5,9 @@ rm -rf bin
 mkdir bin
 
 echo "Assembling.."
-uxnasm orca.tal bin/orca.rom 
+cat src/main.tal src/assets.tal > src/orca.tal
+uxnasm src/orca.tal bin/orca.rom 
+rm src/orca.tal
 
 echo "Installing.."
 if [ -d "$HOME/roms" ] && [ -e ./bin/orca.rom ]
