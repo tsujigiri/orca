@@ -365,12 +365,6 @@ BRK
 
 @on-button-trap ( -> )
 
-	( enter )
-	.Controller/key DEI #0d ! ,&no-edit-enter JCN
-		#00 .state/trap STZ
-		#23 ;draw-filepath JSR2
-		BRK
-		&no-edit-enter
 	( backspace )
 	.Controller/key DEI #08 ! ,&no-edit-backspace JCN
 		.path/length LDZ #00 = ,&edit-end JCN
@@ -380,6 +374,12 @@ BRK
 		#23 ;draw-filepath JSR2
 		BRK
 		&no-edit-backspace
+	( enter/escape )
+	.Controller/key DEI DUP #0d = SWP #2d < #0000 == ,&no-edit-enter JCN
+		#00 .state/trap STZ
+		#23 ;draw-filepath JSR2
+		BRK
+		&no-edit-enter
 	( default )
 	.path/length LDZ #1f = ,&edit-end JCN
 		.Controller/key DEI .path/name .path/length LDZ + STZ
