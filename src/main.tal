@@ -364,28 +364,29 @@ BRK
 BRK
 
 @on-button-trap ( -> )
-
-	( backspace )
-	.Controller/key DEI #08 ! ,&no-edit-backspace JCN
-		.path/length LDZ #00 = ,&edit-end JCN
+	
+	.Controller/key DEI
+	DUP ,&continue JCN
+		POP BRK
+		&continue
+	DUP ( backspace ) #08 ! ,&no-edit-backspace JCN
+		( clamp ) .path/length LDZ #00 = ,&edit-end JCN
 		#20 ;draw-filepath JSR2
-		.path/length LDZ #01 - .path/length STZ
-		#00 .path/name .path/length LDZ + STZ
-		#23 ;draw-filepath JSR2
-		BRK
+		.path/length LDZ #01 - STHk .path/length STZ
+		#00 .path/name STHr + STZ
+		#21 ;draw-filepath JSR2 POP BRK
 		&no-edit-backspace
-	( enter/escape )
-	.Controller/key DEI DUP #0d = SWP #2d < #0000 == ,&no-edit-enter JCN
+	DUP ( special ) #20 > ,&no-edit-enter JCN
 		#00 .state/trap STZ
-		#23 ;draw-filepath JSR2
-		BRK
+		#21 ;draw-filepath JSR2 POP BRK
 		&no-edit-enter
-	( default )
-	.path/length LDZ #1f = ,&edit-end JCN
-		.Controller/key DEI .path/name .path/length LDZ + STZ
-		.path/length LDZ #01 + .path/length STZ
-		&edit-end
-	#00 .path/name .path/length LDZ + STZ
+	( clamp ) .path/length LDZ #1f = ,&edit-end JCN
+	DUP .path/name .path/length LDZ STHk + STZ
+	STHr #01 + STHk .path/length STZ
+	#00 .path/name STHr + STZ
+	#23 ;draw-filepath JSR2
+	&edit-end
+	POP
 
 BRK
 
