@@ -450,7 +450,7 @@ BRK
 		.timer/alive TOGGLE
 		;redraw JSR2 
 		&no-pause 
-	DUP #0e > OVR .grid/width LDZ SWP - #05 > #0101 !! ,&no-rename JCN
+	DUP #0f > OVR .grid/width LDZ SWP - #05 > #0101 !! ,&no-rename JCN
 		.state/trap TOGGLE
 		#00 .state/blink STZ 
 		#23 ;draw-filepath JSR2 
@@ -1057,7 +1057,6 @@ RTN
 	DUP #04 SFT GET-CHAR GET-CHAR-ADDR STHkr ,draw-char JSR
 	.Screen/x DEI2 #0008 ++ .Screen/x DEO2
 	#0f AND GET-CHAR GET-CHAR-ADDR STHr ,draw-char JSR
-	.Screen/x DEI2 #0008 ++ .Screen/x DEO2
 
 RTN
 
@@ -1116,20 +1115,27 @@ RTN
 	( Positions )
 	.grid/x1 LDZ2 .Screen/x DEO2
 	.selection/x1 LDZ #21 ;draw-byte JSR2
+	.grid/x1 LDZ2 #0010 ++ .Screen/x DEO2
 	.selection/y1 LDZ #21 ;draw-byte JSR2
 
+	.grid/x1 LDZ2 #0020 ++ .Screen/x DEO2
 	;selection-icns .selection/insert LDZ TOS #0008 ** ++ .Screen/addr DEO2
 	#22 .selection/x1 LDZ .selection/y1 LDZ .selection/x2 LDZ .selection/y2 LDZ == + .Screen/color DEO
-	.grid/x1 LDZ2 #0030 ++ .Screen/x DEO2
 
 	( Frame )
+	.grid/x1 LDZ2 #0030 ++ .Screen/x DEO2
 	.timer/frame #01 + LDZ #21 ;draw-byte JSR2
+	.grid/x1 LDZ2 #0040 ++ .Screen/x DEO2
 	;beat-icn .Screen/addr DEO2
 	#23 .timer/frame #01 + LDZ MOD8 #00 = - .Screen/color DEO
-	.grid/x1 LDZ2 #0050 ++ .Screen/x DEO2
-
+	
 	( Speed )
+	.grid/x1 LDZ2 #0050 ++ .Screen/x DEO2
 	.timer/speed LDZ #21 ;draw-byte JSR2
+	.grid/x1 LDZ2 #0060 ++ .Screen/x DEO2
+	( t ) #74 GET-CHAR-ADDR #21 ;draw-char JSR2
+	.grid/x1 LDZ2 #0068 ++ .Screen/x DEO2
+	( h ) #68 GET-CHAR-ADDR #21 ;draw-char JSR2
 
 	( File )
 	.grid/x2 LDZ2 STH2k #0018 -- .Screen/x DEO2
@@ -1186,7 +1192,7 @@ RTN
 	
 	STH
 	.toolbar/y1 LDZ2 .Screen/y DEO2
-	.toolbar/x1 LDZ2 #0070 ++ .Screen/x DEO2
+	.toolbar/x1 LDZ2 #0080 ++ .Screen/x DEO2
 	;path/name
 	&loop
 		DUP2 LDA GET-CHAR-ADDR STHkr ;draw-char JSR2
