@@ -23,6 +23,14 @@
 		- Leap move with alt modifier
 		- Hide cursor when moving with arrows )
 
+%DATA-CELLS { #b000 }
+%DATA-LOCKS { #c000 }
+%DATA-TYPES { #d000 }
+%DATA-FILE  { #e000 } ( file transfer )
+%DATA-CLIP  { #f000 } ( copy/paste )
+
+( == )
+
 %+  { ADD } %-   { SUB }  %*  { MUL }  %/  { DIV }
 %<  { LTH } %>   { GTH }  %=  { EQU }  %!  { NEQ }
 %++ { ADD2 } %-- { SUB2 } %** { MUL2 } %// { DIV2 }
@@ -49,12 +57,6 @@
 %OPERATOR-TYPE { #03 } %PORTER-TYPE   { #04 }
 %OUTPUT-TYPE   { #05 } %IO-TYPE       { #07 }
 
-%DATA-CELLS { #b000 }
-%DATA-LOCKS { #c000 }
-%DATA-TYPES { #d000 }
-%DATA-FILE { #e000 } ( file transfer )
-%DATA-CLIP { #f000 } ( copy/paste )
-
 %CHAR-NULL  { #00 } %CHAR-LINE  { #0a }
 %CHAR-HASH  { #23 } %CHAR-BANG  { #2a }
 %CHAR-DOT   { #2e } %CHAR-SLASH { #2f }  
@@ -75,7 +77,7 @@
 %GET-CHAR  { #24 MOD #00 SWP ;b36clc ++ LDA } ( b36 -- char )
 %GET-VALUE { #20 - #00 SWP ;values ++ LDA } ( char -- b36 )
 %GET-NOTE  { DUP GET-VALUE SWP CIUC #24 * + TOS ;lc-notes ++ LDA } ( char -- midi )
-%GET-CHAR-ADDR { #20 - TOS #0010 ** ;page437 ++ }
+%GET-CHAR-ADDR { #20 - TOS #0010 ** ;msx816 ++ }
 
 %GET-CELL  { GET-INDEX DATA-CELLS ++ LDA } ( x y -- char )
 %SET-CELL  { ROT ROT GET-INDEX DATA-CELLS ++ STA } ( x y char -- )
@@ -499,12 +501,12 @@ RTN
 		( check if x,y is grid )
 		POP
 		DUP2 #01 AND #00 = SWP #03 AND #00 = #0101 NEQ2 ,&no-marker4 JCN 
-			POP2 ;page437/marker RTN 
+			POP2 ;msx816/marker RTN 
 			&no-marker4
 		DUP2 GET-TYPE #00 = ,&no-port JCN
-			POP2 ;page437/marker RTN 
+			POP2 ;msx816/marker RTN 
 			&no-port
-		POP2 ;page437 RTN
+		POP2 ;msx816 RTN
 	&no-bar
 	STH POP2 STHr
 	GET-CHAR-ADDR
@@ -1283,56 +1285,6 @@ RTN
 
 RTN
 
-( clip )
-
-@copy-selection ( -- )
-	
-	( stash length ) #0000 STH2
-	.selection/y1 LDZ .selection/y2 LDZ #01 +
-	&ver
-		.selection/x1 LDZ .selection/x2 LDZ #01 +
-		&hor
-			( write char ) GET-ITERATORS GET-CELL [ STH2kr DATA-CLIP ++ ] STA
-			( incr index ) #0001 STH2 ADD2r
-			INCR
-			LTHk ,&hor JCN
-		POP2
-		( write linebreak ) CHAR-LINE [ STH2kr DATA-CLIP ++ ] STA
-		( incr index ) #0001 STH2 ADD2r
-		INCR
-		LTHk ,&ver JCN
-	POP2
-	( close ) #00 [ STH2r DATA-CLIP ++ ] STA
-
-RTN
-
-@paste-selection ( -- )
-	
-	#0000 #1000
-	&loop
-		( get char ) OVR2 DATA-CLIP ++ LDA
-		DUP CHAR-NULL = ,&end JCN
-		DUP CHAR-LINE = ,&linebreak JCN
-			( write  ) STH ,&x LDR [ .selection/x1 LDZ + ] ,&y LDR [ .selection/y1 LDZ + ] STHr SET-CELL
-			( incr x ) ,&x LDR #01 + ,&x STR
-			,&continue JMP
-		&linebreak
-			( undo x ) #00 ,&x STR
-			( incr y ) ,&y LDR #01 + ,&y STR
-			POP
-		&continue
-		( incr ) SWP2 #0001 ++ SWP2
-		LTH2k ,&loop JCN
-	&end
-	POP2 POP2 POP
-	#00 ,&x STR
-	#00 ,&y STR
-	RTN
-	&x $1
-	&y $1
-
-RTN
-
 @fill-selection ( char -- )
 	
 	STH
@@ -1415,6 +1367,58 @@ RTN
 		STHkr .selection/y2 STZ &ok-flipy POPr
 
 RTN
+
+( snarf )
+
+@copy-selection ( -- )
+	
+	( stash length ) #0000 STH2
+	.selection/y1 LDZ .selection/y2 LDZ #01 +
+	&ver
+		.selection/x1 LDZ .selection/x2 LDZ #01 +
+		&hor
+			( write char ) GET-ITERATORS GET-CELL [ STH2kr DATA-CLIP ++ ] STA
+			( incr index ) #0001 STH2 ADD2r
+			INCR
+			LTHk ,&hor JCN
+		POP2
+		( write linebreak ) CHAR-LINE [ STH2kr DATA-CLIP ++ ] STA
+		( incr index ) #0001 STH2 ADD2r
+		INCR
+		LTHk ,&ver JCN
+	POP2
+	( close ) #00 [ STH2r DATA-CLIP ++ ] STA
+
+RTN
+
+@paste-selection ( -- )
+	
+	#0000 #1000
+	&loop
+		( get char ) OVR2 DATA-CLIP ++ LDA
+		DUP CHAR-NULL = ,&end JCN
+		DUP CHAR-LINE = ,&linebreak JCN
+			( write  ) STH ,&x LDR [ .selection/x1 LDZ + ] ,&y LDR [ .selection/y1 LDZ + ] STHr SET-CELL
+			( incr x ) ,&x LDR #01 + ,&x STR
+			,&continue JMP
+		&linebreak
+			( undo x ) #00 ,&x STR
+			( incr y ) ,&y LDR #01 + ,&y STR
+			POP
+		&continue
+		( incr ) SWP2 #0001 ++ SWP2
+		LTH2k ,&loop JCN
+	&end
+	POP2 POP2 POP
+	#00 ,&x STR
+	#00 ,&y STR
+	RTN
+	&x $1
+	&y $1
+
+RTN
+
+( generics )
 
 @within-rect ( x* y* rect -- flag )
 	
