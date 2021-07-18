@@ -77,7 +77,7 @@
 %GET-CHAR  { #24 MOD #00 SWP ;b36clc ++ LDA } ( b36 -- char )
 %GET-VALUE { #20 - #00 SWP ;values ++ LDA } ( char -- b36 )
 %GET-NOTE  { DUP GET-VALUE SWP CIUC #24 * + TOS ;lc-notes ++ LDA } ( char -- midi )
-%GET-CHAR-ADDR { #20 - TOS #0010 ** ;msx816 ++ }
+%GET-CHAR-ADDR { #20 - TOS #0010 ** ;font ++ }
 
 %GET-CELL  { GET-INDEX DATA-CELLS ++ LDA } ( x y -- char )
 %SET-CELL  { ROT ROT GET-INDEX DATA-CELLS ++ STA } ( x y char -- )
@@ -501,12 +501,12 @@ RTN
 		( check if x,y is grid )
 		POP
 		DUP2 #01 AND #00 = SWP #03 AND #00 = #0101 NEQ2 ,&no-marker4 JCN 
-			POP2 ;msx816/marker RTN 
+			POP2 ;font/marker RTN 
 			&no-marker4
 		DUP2 GET-TYPE #00 = ,&no-port JCN
-			POP2 ;msx816/marker RTN 
+			POP2 ;font/marker RTN 
 			&no-port
-		POP2 ;msx816 RTN
+		POP2 ;font RTN
 	&no-bar
 	STH POP2 STHr
 	GET-CHAR-ADDR
