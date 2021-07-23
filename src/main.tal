@@ -217,6 +217,9 @@
 
 	;redraw JSR2
 
+	( theme support )
+	;load-theme JSR2
+
 BRK
 
 @on-frame ( -> )
@@ -1365,6 +1368,25 @@ RTN
 		STHkr .selection/x2 STZ &ok-flipx POPr
 	.selection/y2 LDZ .selection/y1 LDZ STHk > ,&ok-flipy JCN
 		STHkr .selection/y2 STZ &ok-flipy POPr
+
+RTN
+
+( theme )
+
+@theme-txt ".theme $1
+
+@load-theme ( -- )
+
+	;theme-txt .File/name DEO2 
+	#0006 .File/length DEO2 
+	#fffa .File/load DEO2
+
+	.File/success DEI2 #0006 !! ,&ignore JCN
+		#fffa LDA2 .System/r DEO2
+		#fffc LDA2 .System/g DEO2
+		#fffe LDA2 .System/b DEO2
+		;redraw JSR2
+		&ignore
 
 RTN
 
