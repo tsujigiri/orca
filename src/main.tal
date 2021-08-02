@@ -320,12 +320,13 @@ BRK
 			&no-open
 		DUP #72 ! ,&no-name JCN
 			#00 ;draw-filepath JSR2 
-			DUP #52 ! ,&no-rename JCN
+			#52 ! ,&no-rename JCN
 				#00 .path/length STZ
 				#0000 .path/name STZ2
 				&no-rename
 			;on-frame-trap .Screen/vector DEO2
 			;on-button-trap .Controller/vector DEO2
+			BRK
 			&no-name
 		DUP #73 ! ,&no-save JCN
 			;save-file JSR2 
@@ -1020,18 +1021,16 @@ RTN
 
 @init ( -- )
 	
-	#00 .grid/height LDZ
+	.grid/height LDZ #00
 	&ver
-		#00 .grid/width LDZ
+		.grid/width LDZ #00
 		&hor
-			GET-ITERATORS
+			GET-ITER
 			( reset lock ) DUP2 #00 SET-LOCK
 			( reset type ) #00 SET-TYPE
-			INCR
-			LTHk ,&hor JCN
+			#01 + GTHk ,&hor JCN
 		POP2
-		INCR
-		LTHk ,&ver JCN
+		#01 + GTHk ,&ver JCN
 	POP2
 
 RTN
