@@ -17,6 +17,7 @@
 	ctrl+x - cut
 
 	TODO
+		- Snarf buffer support
 		- d-pad input method
 		- Catch ports that overflow out of grid
 		- Insert mode
@@ -200,11 +201,10 @@
 		.timer/seed STZ2
 
 	( blank variables )
-	#00 #24
+	#24 #00
 	&var
-		OVR .variables + CHAR-DOT SWP STZ
-		INCR
-		LTHk ,&var JCN
+		DUP .variables + CHAR-DOT SWP STZ
+		#01 + GTHk ,&var JCN
 	POP2
 
 	;untitled-txt ;new-file JSR2
@@ -1162,15 +1162,14 @@ RTN
 		ROTr ADDr ROTr ROTr ADDr SWPr
 
 	( draw )
-	#08 #00
+	#00 #08
 	&loop
 		.toolbar/x2 LDZ2 #0028 -- .Screen/x DEO2
-		OVR OVRr STHr #04 / < .Screen/pixel DEO
+		DUP OVRr STHr #04 / < .Screen/pixel DEO
 		.toolbar/x2 LDZ2 #0026 -- .Screen/x DEO2
-		OVR STHkr #04 / < .Screen/pixel DEO
+		DUP STHkr #04 / < .Screen/pixel DEO
 		.Screen/y DEI2 #0001 ++ .Screen/y DEO2
-		( incr ) DECR
-		GTHk ,&loop JCN
+		#01 - LTHk ,&loop JCN
 	POP2
 
 	POP2r
@@ -1195,8 +1194,7 @@ RTN
 	&while
 		DUP2 LDA GET-CHAR-ADDR STHkr ;draw-char JSR2
 		.Screen/x DEI2 #0008 ++ .Screen/x DEO2
-		#0001 ++
-		LDAk #00 ! ,&while JCN
+		#0001 ++ LDAk ,&while JCN
 	POP2
 	POPr
 	( clear last ) 
