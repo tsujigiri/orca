@@ -52,7 +52,6 @@
 %LTSk { #80 + SWP #80 + > }
 
 %TOGGLE { DUP LDZ #00 = SWP STZ }
-%GET-ITERATORS { SWP2k POP SWP POP }
 %GET-ITER { OVR2 SWP POP OVR SWP }
 
 %LOCKED-TYPE   { #01 } %PORTEL-TYPE   { #02 }
@@ -1193,11 +1192,11 @@ RTN
 	.toolbar/y1 LDZ2 .Screen/y DEO2
 	.toolbar/x1 LDZ2 #0080 ++ .Screen/x DEO2
 	;path/name
-	&loop
+	&while
 		DUP2 LDA GET-CHAR-ADDR STHkr ;draw-char JSR2
 		.Screen/x DEI2 #0008 ++ .Screen/x DEO2
 		#0001 ++
-		LDAk #00 ! ,&loop JCN
+		LDAk #00 ! ,&while JCN
 	POP2
 	POPr
 	( clear last ) 
@@ -1211,12 +1210,11 @@ RTN
 
 	;clear JSR2
 	STH2
-	#00 #0d
+	#0d #00
 	&loop
-		OVR DUP TOS STH2kr ++ LDA
+		DUP DUP TOS STH2kr ++ LDA
 		SWP .path/name + STZ
-		INCR
-		LTHk ,&loop JCN
+		#01 + GTHk ,&loop JCN
 	( end ) #00 SWP .path/name + STZ 
 	.path/length STZ 
 	POP2r
