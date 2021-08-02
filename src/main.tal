@@ -1038,17 +1038,15 @@ RTN
 @run ( -- )
 	
 	;init JSR2
-	#00 .grid/height LDZ
+	.grid/height LDZ #00
 	&ver
-		#00 .grid/width LDZ
+		.grid/width LDZ #00
 		&hor
-			GET-ITERATORS
+			GET-ITER
 			DUP2 GET-CELL ;run-char JSR2
-			INCR
-			LTHk ,&hor JCN
+			#01 + GTHk ,&hor JCN
 		POP2
-		INCR
-		LTHk ,&ver JCN
+		#01 + GTHk ,&ver JCN
 	POP2
 	;redraw JSR2
 
