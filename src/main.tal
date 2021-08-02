@@ -144,6 +144,7 @@
 	&x $2 &y $2 &last $1
 @variables
 	$36
+@dpad $1
 
 |0100
 
@@ -254,7 +255,13 @@ BRK
 
 @on-button ( -> )
 
-	( arrows )
+	( d-pad handler )
+	.Controller/button DEI ;&last LDA
+	DUP2 #0200 == ;dpad-input/start JCN2
+	DUP2 #0002 == ;dpad-input/end JCN2
+	DUP #0f AND #02 = ;dpad-input/add JCN2
+	POP ;&last STA
+
 	.Controller/button DEI DUP #f0 AND ;&arrows JCN2 POP
 	.Controller/button DEI DUP #0f AND #01 = ;&control JCN2 POP
 
@@ -372,6 +379,7 @@ BRK
 		;edit-selection JSR2 
 		;redraw JSR2 
 	BRK
+	&last $1
 
 BRK
 
@@ -488,6 +496,34 @@ BRK
 	POP
 
 	( release ) #00 .Mouse/state DEO
+
+BRK
+
+( special )
+
+@dpad-input ( -> )
+
+	&start ( button* -> )
+		POP
+		#20 .dpad STZ
+		,&save JMP
+
+	&end ( button* -> )
+		POP
+		.dpad LDZ IS-CHAR-KEY #00 = ,&save JCN
+		.selection LDZ2 .dpad LDZ SET-CELL
+		SET-STATE 
+		;redraw JSR2 
+		,&save JMP
+
+	&add ( button* -> )
+		#02 ! ,&save JCN
+		DUP #04 SFT .dpad LDZ + .dpad STZ
+		,&save JMP
+
+	&save ( -> )
+		;on-button/last STA
+	BRK
 
 BRK
 
