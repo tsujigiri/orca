@@ -1074,21 +1074,19 @@ RTN
 
 @redraw ( -- )
 	
-	#00 .grid/height LDZ
+	.grid/height LDZ #00
 	&ver
-		( pos-y ) OVR #00 SWP #0010 ** [ .grid/y1 LDZ2 ++ ] .Screen/y DEO2
-		#00 .grid/width LDZ
+		( pos-y ) DUP #00 SWP #0010 ** [ .grid/y1 LDZ2 ++ ] .Screen/y DEO2
+		.grid/width LDZ #00
 		&hor
-			( pos-x ) OVR #00 SWP 8** [ .grid/x1 LDZ2 ++ ] .Screen/x DEO2
-			GET-ITERATORS
+			( pos-x ) DUP #00 SWP 8** [ .grid/x1 LDZ2 ++ ] .Screen/x DEO2
+			GET-ITER
 			( sprite ) DUP2 ;get-cell-sprite JSR2
 			( color ) SWP2 ,get-cell-type JSR TOS ;cell-styles ++ LDA
 			;draw-char JSR2
-			INCR
-			LTHk ,&hor JCN
+			#01 + GTHk ,&hor JCN
 		POP2
-		INCR
-		LTHk ,&ver JCN
+		#01 + GTHk ,&ver JCN
 	POP2
 	,draw-toolbar JSR
 
