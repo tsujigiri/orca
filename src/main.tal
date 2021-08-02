@@ -94,7 +94,7 @@
 
 |00 @System     &vector $2 &pad      $6 &r      $2 &g     $2 &b      $2 
 |10 @Console    &vector $2 &read     $1 &pad    $5 &write $1 
-|20 @Screen     &vector $2 &width    $2 &height $2 &pad   $2 &x      $2 &y      $2 &addr  $2 &color  $1 
+|20 @Screen     &vector $2 &width    $2 &height $2 &pad   $2 &x      $2 &y      $2 &addr  $2 &pixel  $1 &sprite $1 
 |30 @Audio0     &vector $2 &position $2 &output $1 &pad   $3 &adsr   $2 &length $2 &addr  $2 &volume $1 &pitch $1 
 |40 @Audio1     &vector $2 &position $2 &output $1 &pad   $3 &adsr   $2 &length $2 &addr  $2 &volume $1 &pitch $1 
 |50 @Audio2     &vector $2 &position $2 &output $1 &pad   $3 &adsr   $2 &length $2 &addr  $2 &volume $1 &pitch $1 
@@ -250,7 +250,7 @@ BRK
 
 	#08 ! ,&no-toggle JCN
 		.state/blink TOGGLE
-		#23 .state/blink LDZ #09 * + ;draw-filepath JSR2
+		#03 .state/blink LDZ #09 * + ;draw-filepath JSR2
 		#00 .state/timer STZ 
 		&no-toggle
 
@@ -326,14 +326,14 @@ BRK
 		DUP #72 ! ,&no-name JCN
 			.state/trap TOGGLE
 			#00 .state/blink STZ 
-			#23 ;draw-filepath JSR2 POP BRK 
+			#03 ;draw-filepath JSR2 POP BRK 
 			&no-name
 		DUP #73 ! ,&no-save JCN
 			;save-file JSR2 
 			;redraw JSR2 POP BRK  
 			&no-save
 		DUP #6e ! ,&no-make JCN
-			#20 ;draw-filepath JSR2 ;untitled-txt ;new-file JSR2 
+			#00 ;draw-filepath JSR2 ;untitled-txt ;new-file JSR2 
 			;redraw JSR2 POP BRK 
 			&no-make
 		DUP #2c ! ,&no-slow JCN
@@ -376,20 +376,20 @@ BRK
 		&continue
 	DUP ( backspace ) #08 ! ,&no-edit-backspace JCN
 		( clamp ) .path/length LDZ #00 = ,&edit-end JCN
-		#20 ;draw-filepath JSR2
+		#00 ;draw-filepath JSR2
 		.path/length LDZ #01 - STHk .path/length STZ
 		#00 .path/name STHr + STZ
-		#21 ;draw-filepath JSR2 POP BRK
+		#01 ;draw-filepath JSR2 POP BRK
 		&no-edit-backspace
 	DUP ( special ) #20 > ,&no-edit-enter JCN
 		#00 .state/trap STZ
-		#21 ;draw-filepath JSR2 POP BRK
+		#01 ;draw-filepath JSR2 POP BRK
 		&no-edit-enter
 	( clamp ) .path/length LDZ #1f = ,&edit-end JCN
 	DUP .path/name .path/length LDZ STHk + STZ
 	STHr #01 + STHk .path/length STZ
 	#00 .path/name STHr + STZ
-	#23 ;draw-filepath JSR2
+	#03 ;draw-filepath JSR2
 	&edit-end
 	POP
 
@@ -400,13 +400,13 @@ BRK
 	( clear last cursor )
 	.cursor/x LDZ2 .Screen/x DEO2
 	.cursor/y LDZ2 .Screen/y DEO2
-	#30 .Screen/color DEO
+	#40 .Screen/sprite DEO
 
 	( draw new cursor )
 	.Mouse/x DEI2 DUP2 .cursor/x STZ2 .Screen/x DEO2
 	.Mouse/y DEI2 DUP2 .cursor/y STZ2 .Screen/y DEO2
 	;cursor-icn .Screen/addr DEO2
-	.Mouse/state DEI #00 ! #02 * [ #31 + .Screen/color DEO ]
+	.Mouse/state DEI #00 ! #02 * [ #41 + .Screen/sprite DEO ]
 
 	( route )
 	.Mouse/y DEI2 .toolbar/y1 LDZ2 -- #0010 // #0000 == 
@@ -458,7 +458,7 @@ BRK
 	DUP #0f > OVR .grid/width LDZ SWP - #05 > #0101 !! ,&no-rename JCN
 		.state/trap TOGGLE
 		#00 .state/blink STZ 
-		#23 ;draw-filepath JSR2 
+		#03 ;draw-filepath JSR2 
 		&no-rename
 	POP
 
@@ -472,7 +472,7 @@ BRK
 		;redraw JSR2 
 		&no-load
 	DUP #03 ! ,&no-name JCN
-		#20 ;draw-filepath JSR2
+		#00 ;draw-filepath JSR2
 		;untitled-txt ;new-file JSR2
 		;redraw JSR2 
 		&no-name
@@ -1068,10 +1068,10 @@ RTN
 @draw-char ( addr* color -- )
 	
 	STH .Screen/addr DEO2
-	STHkr .Screen/color DEO
+	STHkr .Screen/sprite DEO
 	.Screen/addr DEI2 #0008 ++ .Screen/addr DEO2
 	.Screen/y DEI2 STH2k #0008 ++ .Screen/y DEO2
-	ROTr STHr .Screen/color DEO
+	ROTr STHr .Screen/sprite DEO
 	STH2r .Screen/y DEO2
 
 RTN
@@ -1119,39 +1119,39 @@ RTN
 
 	( Positions )
 	.grid/x1 LDZ2 .Screen/x DEO2
-	.selection/x1 LDZ #21 ;draw-byte JSR2
+	.selection/x1 LDZ #01 ;draw-byte JSR2
 	.grid/x1 LDZ2 #0010 ++ .Screen/x DEO2
-	.selection/y1 LDZ #21 ;draw-byte JSR2
+	.selection/y1 LDZ #01 ;draw-byte JSR2
 
 	.grid/x1 LDZ2 #0020 ++ .Screen/x DEO2
 	;selection-icns .selection/insert LDZ TOS #0008 ** ++ .Screen/addr DEO2
-	#22 .selection/x1 LDZ .selection/y1 LDZ .selection/x2 LDZ .selection/y2 LDZ == + .Screen/color DEO
+	#02 .selection/x1 LDZ .selection/y1 LDZ .selection/x2 LDZ .selection/y2 LDZ == + .Screen/sprite DEO
 
 	( Frame )
 	.grid/x1 LDZ2 #0030 ++ .Screen/x DEO2
-	.timer/frame #01 + LDZ #21 ;draw-byte JSR2
+	.timer/frame #01 + LDZ #01 ;draw-byte JSR2
 	.grid/x1 LDZ2 #0040 ++ .Screen/x DEO2
 	;beat-icn .Screen/addr DEO2
-	#23 .timer/frame #01 + LDZ MOD8 #00 = - .Screen/color DEO
+	#03 .timer/frame #01 + LDZ MOD8 #00 = - .Screen/sprite DEO
 	
 	( Speed )
 	.grid/x1 LDZ2 #0050 ++ .Screen/x DEO2
-	.timer/speed LDZ #21 ;draw-byte JSR2
+	.timer/speed LDZ #01 ;draw-byte JSR2
 	.grid/x1 LDZ2 #0060 ++ .Screen/x DEO2
-	( t ) #74 GET-CHAR-ADDR #21 ;draw-char JSR2
+	( t ) #74 GET-CHAR-ADDR #01 ;draw-char JSR2
 	.grid/x1 LDZ2 #0068 ++ .Screen/x DEO2
-	( h ) #68 GET-CHAR-ADDR #21 ;draw-char JSR2
+	( h ) #68 GET-CHAR-ADDR #01 ;draw-char JSR2
 
 	( File )
 	.grid/x2 LDZ2 STH2k #0018 -- .Screen/x DEO2
 	;load-icn .Screen/addr DEO2
-	#21 .Screen/color DEO
+	#01 .Screen/sprite DEO
 	STH2r #0020 -- .Screen/x DEO2
 	;make-icn .Screen/addr DEO2
-	#21 .Screen/color DEO
+	#01 .Screen/sprite DEO
 
 	( filepath )
-	#23 ;draw-filepath JSR2
+	#03 ;draw-filepath JSR2
 
 RTN
 
@@ -1172,9 +1172,9 @@ RTN
 	#08 #00
 	&loop
 		.toolbar/x2 LDZ2 #0028 -- .Screen/x DEO2
-		OVR OVRr STHr #04 / < .Screen/color DEO
+		OVR OVRr STHr #04 / < .Screen/pixel DEO
 		.toolbar/x2 LDZ2 #0026 -- .Screen/x DEO2
-		OVR STHkr #04 / < .Screen/color DEO
+		OVR STHkr #04 / < .Screen/pixel DEO
 		.Screen/y DEI2 #0001 ++ .Screen/y DEO2
 		( incr ) DECR
 		GTHk ,&loop JCN
@@ -1189,7 +1189,7 @@ RTN
 	.toolbar/x2 LDZ2 #0008 -- .Screen/x DEO2
 	.toolbar/y1 LDZ2 .Screen/y DEO2
 	;save-icn .Screen/addr DEO2
-	#21 .state/changed LDZ + .Screen/color DEO
+	#01 .state/changed LDZ + .Screen/sprite DEO
 
 RTN
 
@@ -1207,7 +1207,7 @@ RTN
 	POP2
 	POPr
 	( clear last ) 
-	#20 .Screen/color DEO
+	#00 .Screen/sprite DEO
 
 RTN
 
@@ -1515,14 +1515,14 @@ RTN
 	77 78 79 7a
 
 @cell-styles
-	23 ( 0 normal )
-	23 ( 1 locked )
-	21 ( 2 port-unlocked )
-	24 ( 3 operator )
-	22 ( 4 port-locked )
-	28 ( 5 port-output )
-	29 ( 6 selected )
-	2c ( 7 io )
+	03 ( 0 normal )
+	03 ( 1 locked )
+	01 ( 2 port-unlocked )
+	04 ( 3 operator )
+	02 ( 4 port-locked )
+	08 ( 5 port-output )
+	09 ( 6 selected )
+	0c ( 7 io )
 
 @selection-icns   
 	0066 4200 0042 6600
