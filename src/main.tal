@@ -1284,16 +1284,14 @@ RTN
 @fill-selection ( char -- )
 	
 	STH
-	.selection/y1 LDZ .selection/y2 LDZ #01 +
+	.selection/y2 LDZ #01 + .selection/y1 LDZ
 	&ver
-		.selection/x1 LDZ .selection/x2 LDZ #01 +
+		.selection/x2 LDZ #01 + .selection/x1 LDZ
 		&hor
-			( write char ) GET-ITERATORS STHkr SET-CELL
-			INCR
-			LTHk ,&hor JCN
+			( write char ) GET-ITER STHkr SET-CELL
+			#01 + GTHk ,&hor JCN
 		POP2
-		INCR
-		LTHk ,&ver JCN
+		#01 + GTHk ,&ver JCN
 	POP2
 	POPr
 
@@ -1388,19 +1386,17 @@ RTN
 @copy-selection ( -- )
 	
 	( stash length ) #0000 STH2
-	.selection/y1 LDZ .selection/y2 LDZ #01 +
+	.selection/y2 LDZ #01 + .selection/y1 LDZ
 	&ver
-		.selection/x1 LDZ .selection/x2 LDZ #01 +
+		.selection/x2 LDZ #01 + .selection/x1 LDZ
 		&hor
-			( write char ) GET-ITERATORS GET-CELL [ STH2kr DATA-CLIP ++ ] STA
+			( write char ) GET-ITER GET-CELL [ STH2kr DATA-CLIP ++ ] STA
 			( incr index ) #0001 STH2 ADD2r
-			INCR
-			LTHk ,&hor JCN
+			#01 + GTHk ,&hor JCN
 		POP2
 		( write linebreak ) CHAR-LINE [ STH2kr DATA-CLIP ++ ] STA
 		( incr index ) #0001 STH2 ADD2r
-		INCR
-		LTHk ,&ver JCN
+		#01 + GTHk ,&ver JCN
 	POP2
 	( close ) #00 [ STH2r DATA-CLIP ++ ] STA
 
