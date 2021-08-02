@@ -355,10 +355,18 @@ BRK
 	BRK
 
 	&arrows ( button -> )
-		DUP #f0 AND #10 ! ,&no-up JCN    [ #00ff ROT ,&move JMP ] &no-up
-		DUP #f0 AND #20 ! ,&no-down JCN  [ #0001 ROT ,&move JMP ] &no-down
-		DUP #f0 AND #40 ! ,&no-left JCN  [ #ff00 ROT ,&move JMP ] &no-left
-		DUP #f0 AND #80 ! ,&no-right JCN [ #0100 ROT ,&move JMP ] &no-right
+		DUP #f0 AND #10 ! ,&no-up JCN    
+			#00ff ROT ,&move JMP 
+			&no-up
+		DUP #f0 AND #20 ! ,&no-down JCN  
+			#0001 ROT ,&move JMP 
+			&no-down
+		DUP #f0 AND #40 ! ,&no-left JCN  
+			#ff00 ROT ,&move JMP 
+			&no-left
+		DUP #f0 AND #80 ! ,&no-right JCN 
+			#0100 ROT ,&move JMP 
+			&no-right
 		POP BRK
 		&move 
 		;edit-selection JSR2 
