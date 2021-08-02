@@ -1261,20 +1261,19 @@ RTN
 	
 	( stash length ) #0000 STH2
 	( setup )
-	#00 .grid/height LDZ
+	.grid/height LDZ #00
 	&ver
-		#00 .grid/width LDZ
+		.grid/width LDZ #00
 		&hor
-			( write char ) GET-ITERATORS GET-CELL [ STH2kr DATA-FILE ++ ] STA
+			( write char ) GET-ITER GET-CELL [ STH2kr DATA-FILE ++ ] STA
 			( incr index ) #0001 STH2 ADD2r
-			INCR
-			LTHk ,&hor JCN
+			#01 + GTHk ,&hor JCN
 		POP2
 		( write linebreak ) CHAR-LINE [ STH2kr DATA-FILE ++ ] STA
 		( incr index ) #0001 STH2 ADD2r
-		INCR
-		LTHk ,&ver JCN
+		#01 + GTHk ,&ver JCN
 	POP2
+
 	;path/name .File/name DEO2 
 	STH2r .File/length DEO2 
 	DATA-FILE .File/save DEO2 
