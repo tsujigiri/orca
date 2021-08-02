@@ -17,6 +17,7 @@
 	ctrl+x - cut
 
 	TODO
+		- d-pad input method
 		- Catch ports that overflow out of grid
 		- Insert mode
 		- Display on-screen guide
@@ -111,7 +112,6 @@
 
 @state
 	&timer $1
-	&trap $1
 	&blink $1
 	&changed $1
 @timer
@@ -223,8 +223,6 @@
 BRK
 
 @on-frame ( -> )
-	
-	.state/trap LDZ ;on-frame-trap JCN2
 
 	( paused ) .timer/alive LDZ #01 JCN [ BRK ]
 
@@ -243,8 +241,6 @@ BRK
 BRK
 
 @on-frame-trap ( -> )
-	
-	.state/trap LDZ #00 ! #01 JCN [ RTN ]
 
 	( incr ) .state/timer LDZ #01 + DUP .state/timer STZ 
 
@@ -257,8 +253,6 @@ BRK
 BRK
 
 @on-button ( -> )
-	
-	.Controller/key DEI #00 ! .state/trap LDZ #0101 == ;on-button-trap JCN2
 
 	( arrows )
 	.Controller/button DEI DUP #f0 AND ;&arrows JCN2 POP
@@ -324,9 +318,13 @@ BRK
 			;redraw JSR2 POP BRK 
 			&no-open
 		DUP #72 ! ,&no-name JCN
-			.state/trap TOGGLE
-			#00 .state/blink STZ 
-			#03 ;draw-filepath JSR2 POP BRK 
+			#00 ;draw-filepath JSR2 
+		#52 ! ,&no-rename JCN
+			#00 .path/length STZ
+			#0000 .path/name STZ2
+			&no-rename
+			;on-frame-trap .Screen/vector DEO2
+			;on-button-trap .Controller/vector DEO2
 			&no-name
 		DUP #73 ! ,&no-save JCN
 			;save-file JSR2 
@@ -369,7 +367,7 @@ BRK
 BRK
 
 @on-button-trap ( -> )
-	
+
 	.Controller/key DEI
 	DUP ,&continue JCN
 		POP BRK
@@ -382,14 +380,16 @@ BRK
 		#01 ;draw-filepath JSR2 POP BRK
 		&no-edit-backspace
 	DUP ( special ) #20 > ,&no-edit-enter JCN
-		#00 .state/trap STZ
+		;on-frame .Screen/vector DEO2
+		;on-button .Controller/vector DEO2
+		#00 .state/blink STZ 
 		#01 ;draw-filepath JSR2 POP BRK
 		&no-edit-enter
 	( clamp ) .path/length LDZ #1f = ,&edit-end JCN
 	DUP .path/name .path/length LDZ STHk + STZ
 	STHr #01 + STHk .path/length STZ
 	#00 .path/name STHr + STZ
-	#03 ;draw-filepath JSR2
+	#01 ;draw-filepath JSR2
 	&edit-end
 	POP
 
@@ -456,9 +456,9 @@ BRK
 		;redraw JSR2 
 		&no-pause 
 	DUP #0f > OVR .grid/width LDZ SWP - #05 > #0101 !! ,&no-rename JCN
-		.state/trap TOGGLE
-		#00 .state/blink STZ 
-		#03 ;draw-filepath JSR2 
+		#00 ;draw-filepath JSR2 
+		;on-frame-trap .Screen/vector DEO2
+		;on-button-trap .Controller/vector DEO2
 		&no-rename
 	POP
 
