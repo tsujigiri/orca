@@ -19,6 +19,7 @@
 	ctrl+escape - toggle play/pause 
 
 	TODO
+		- z is looping over the limit
 		- Snarf buffer support
 		- Catch ports that overflow out of grid
 		- Insert mode
@@ -462,7 +463,7 @@ BRK
 
 @on-mouse-toolbar ( -> )
 	
-	( skip ) .Mouse/state DEI #00 ! BRK?
+	( skip ) .Mouse/state DEI BRK?
 
 	( left-side )
 	.Mouse/x DEI2 .grid/x1 LDZ2 -- 8// TOB 
@@ -484,7 +485,7 @@ BRK
 
 	( right-side )
 	.grid/x2 LDZ2 .Mouse/x DEI2 -- 8// TOB 
-	DUP #00 ! ,&no-save JCN
+	DUP ,&no-save JCN
 		;save-file JSR2 
 		&no-save
 	DUP #02 ! ,&no-load JCN
@@ -538,8 +539,8 @@ BRK
 
 	DUP2 #01 + GET-CELL CHAR-BANG = ,&bang JCN
 	DUP2 #01 - GET-CELL CHAR-BANG = ,&bang JCN
-	DUP2 SWP #01 + SWP  GET-CELL CHAR-BANG = ,&bang JCN
-	DUP2 SWP #01 - SWP  GET-CELL CHAR-BANG = ,&bang JCN
+	DUP2 SWP #01 + SWP GET-CELL CHAR-BANG = ,&bang JCN
+	DUP2 SWP #01 - SWP GET-CELL CHAR-BANG = ,&bang JCN
 	POP2 #00 RTN
 	&bang
 		POP2 #01 
@@ -958,14 +959,13 @@ RTN
 	
 	POP
 	STH
-	#01 + .grid/width LDZ
+	.grid/width LDZ SWP #01 +
 	&loop
-		OVR STHkr 
+		DUP STHkr 
 		( lock )  DUP2 #01 SET-LOCK 
 		( close ) DUP2 GET-CELL CHAR-HASH = ,&end JCN
 		( type )  LOCKED-TYPE SET-TYPE
-		SWP #01 + SWP
-		LTHk ,&loop JCN
+		#01 + GTHk ,&loop JCN
 	POP2 POPr
 	RTN
 	&end

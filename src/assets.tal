@@ -94,6 +94,8 @@
 	0204 0404 0404 0408 0804 0404 0404 0402
 	1010 1010 1010 1010 1010 1010 1010 1010
 	4020 2020 2020 2010 1020 2020 2020 2040
+	ffff ffff ffff ffff ffff ffff ffff ffff
+	ffff ffff ffff ffff ffff ffff ffff ffff
 
 @sin-pcm
 	8083 8689 8c8f 9295 989b 9ea1 a4a7 aaad
