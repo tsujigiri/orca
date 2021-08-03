@@ -289,7 +289,7 @@ BRK
 		;redraw JSR2 POP BRK 
 		&no-escape
 	DUP IS-CHAR-KEY #00 = ,&no-key JCN
-		.selection/x1 LDZ .selection/y1 LDZ .Controller/key DEI SET-CELL
+		.selection LDZ2 .Controller/key DEI SET-CELL
 		.selection/insert LDZ #00 = ,&no-key-insert JCN
 			#01 #00 #00 ;edit-selection JSR2 
 			&no-key-insert
@@ -507,23 +507,24 @@ BRK
 		POP
 		#20 .dpad STZ
 		,&save JMP
-
 	&end ( button* -> )
 		POP
-		.dpad LDZ IS-CHAR-KEY #00 = ,&save JCN
+		.dpad LDZ #7f > ,&save JCN
+		.dpad LDZ #20 = ,&erase JCN
 		.selection LDZ2 .dpad LDZ SET-CELL
 		SET-STATE 
-		#20 .dpad STZ
-		;redraw JSR2 
+		#00 .dpad STZ
 		,&save JMP
-
 	&add ( button* -> )
 		#02 ! ,&save JCN
-		DUP #04 SFT .dpad LDZ + #80 MOD .dpad STZ
+		DUP #04 SFT .dpad LDZ + #7f AND .dpad STZ
 		,&save JMP
-
+	&erase ( -> )
+		.selection LDZ2 CHAR-DOT SET-CELL SET-STATE 
+		#00 .dpad STZ
 	&save ( -> )
 		;on-button/last STA
+		;redraw JSR2 
 	BRK
 
 BRK
@@ -1181,9 +1182,9 @@ RTN
 	( h ) #68 GET-CHAR-ADDR #01 ;draw-char JSR2
 
 	( d-pad )
-	.dpad LDZ DUP #21 < ,&no-dpad JCN
+	.dpad LDZ DUP #20 < ,&no-dpad JCN
 		.grid/x1 LDZ2 #0050 ++ STH2k .Screen/x DEO2
-		DUP #09 ;draw-byte JSR2
+		DUP #07 ;draw-byte JSR2
 		STH2kr #0010 ++ .Screen/x DEO2
 		;font #00 ;draw-char JSR2
 		STH2r #0018 ++ .Screen/x DEO2
