@@ -572,9 +572,9 @@ RTN
 @op-a ( x y char -- )
 
 	POP
-	( get case ) DUP2 SWP #01 + SWP GET-CASE
-	( get a ) DUP2 SWP #01 - SWP GET-PORT-LEFT STH
-	( get b ) DUP2 SWP #01 + SWP GET-PORT-RIGHT STH
+	( get case ) DUP2 [ SWP #01 + SWP ] GET-CASE
+	( get a ) DUP2 [ SWP #01 - SWP ] GET-PORT-LEFT STH
+	( get b ) DUP2 [ SWP #01 + SWP ] GET-PORT-RIGHT STH
 	( incr y ) #01 +
 	( get result ) ADDr STHr 
 	GET-CHAR SET-CASE SET-PORT-OUTPUT 
@@ -584,9 +584,9 @@ RTN
 @op-b ( x y char -- )
 	
 	POP
-	( get case ) DUP2 SWP #01 + SWP GET-CASE
-	( get a ) DUP2 SWP #01 - SWP GET-PORT-LEFT STH
-	( get b ) DUP2 SWP #01 + SWP GET-PORT-RIGHT STH
+	( get case ) DUP2 [ SWP #01 + SWP ] GET-CASE
+	( get a ) DUP2 [ SWP #01 - SWP ] GET-PORT-LEFT STH
+	( get b ) DUP2 [ SWP #01 + SWP ] GET-PORT-RIGHT STH
 	( incr y ) #01 +
 	( get result ) SUBr STHr
 	( bounce ) DUP #80 < #04 JCN [ #24 SWP - ]
@@ -597,9 +597,9 @@ RTN
 @op-c ( x y char -- )
 	
 	POP
-	( get case ) DUP2 SWP #01 + SWP GET-CASE
-	( get rate ) DUP2 SWP #01 - SWP GET-PORT-LEFT 1MIN STH
-	( get mod ) DUP2 SWP #01 + SWP GET-PORT-RIGHT 1MIN STH
+	( get case ) DUP2 [ SWP #01 + SWP ] GET-CASE
+	( get rate ) DUP2 [ SWP #01 - SWP ] GET-PORT-LEFT 1MIN STH
+	( get mod ) DUP2 [ SWP #01 + SWP ] GET-PORT-RIGHT 1MIN STH
 	( incr y ) #01 +
 	( get result ) SWPr .timer/frame LDZ2 STHr TOS // STHr TOS MOD2 TOB
 	GET-CHAR SET-CASE SET-PORT-OUTPUT
@@ -609,8 +609,8 @@ RTN
 @op-d ( x y char -- )
 
 	POP
-	( get rate ) DUP2 SWP #01 - SWP GET-PORT-LEFT 1MIN STH
-	( get mod ) DUP2 SWP #01 + SWP GET-PORT-RIGHT 1MIN STH
+	( get rate ) DUP2 [ SWP #01 - SWP ] GET-PORT-LEFT 1MIN STH
+	( get mod ) DUP2 [ SWP #01 + SWP ] GET-PORT-RIGHT 1MIN STH
 	( incr y ) #01 +
 	( get result ) .timer/frame LDZ2 MULr STHr TOS MOD2 #0000 ==
 	( bang if equal ) #fc * CHAR-DOT + 
@@ -622,10 +622,10 @@ RTN
 
 	STH
 	( hit edge ) OVR .grid/width LDZ #01 - = ;&collide JCN2
-	( hit cell ) DUP2 SWP #01 + SWP GET-CELL CHAR-DOT ! ,&collide JCN
+	( hit cell ) DUP2 [ SWP #01 + SWP ] GET-CELL CHAR-DOT ! ,&collide JCN
 	DUP2 #00 SET-TYPE
 	DUP2 CHAR-DOT SET-CELL
-	SWP #01 + SWP DUP2 STHr SET-CELL
+	[ SWP #01 + SWP ] DUP2 STHr SET-CELL
 	#01 SET-LOCK
 	RTN
 	&collide CHAR-BANG SET-CELL POPr
@@ -635,8 +635,8 @@ RTN
 @op-f ( x y char -- )
 
 	POP
-	( get a ) DUP2 SWP #01 - SWP GET-PORT-LEFT STH
-	( get b ) DUP2 SWP #01 + SWP GET-PORT-RIGHT STH
+	( get a ) DUP2 [ SWP #01 - SWP ] GET-PORT-LEFT STH
+	( get b ) DUP2 [ SWP #01 + SWP ] GET-PORT-RIGHT STH
 	( incr y ) #01 +
 	( get result ) EQUr STHr
 	( bang if equal ) #fc * CHAR-DOT + 
@@ -645,11 +645,11 @@ RTN
 RTN
 
 @op-g ( x y char -- )
-	
+
 	POP
-	( get x ) DUP2 SWP #03 - SWP GET-PORT-LEFT STH
-	( get y ) DUP2 SWP #02 - SWP GET-PORT-LEFT STH
-	( get len ) DUP2 SWP #01 - SWP GET-PORT-LEFT 1MIN
+	( get x ) DUP2 [ SWP #03 - SWP ] GET-PORT-LEFT STH
+	( get y ) DUP2 [ SWP #02 - SWP ] GET-PORT-LEFT STH
+	( get len ) DUP2 [ SWP #01 - SWP ] GET-PORT-LEFT 1MIN
 	#00 SWP
 	&loop
 		( x+i+1,y ) OVR STH OVR2 STHr ROT + #01 + SWP
@@ -676,9 +676,9 @@ RTN
 @op-i ( x y char -- )
 
 	POP
-	( get case ) DUP2 SWP #01 + SWP GET-CASE
-	( get mod ) DUP2 SWP #01 + SWP GET-PORT-RIGHT 1MIN STH
-	( get rate ) DUP2 SWP #01 - SWP GET-PORT-LEFT STH
+	( get case ) DUP2 [ SWP #01 + SWP ] GET-CASE
+	( get mod ) DUP2 [ SWP #01 + SWP ] GET-PORT-RIGHT 1MIN STH
+	( get rate ) DUP2 [ SWP #01 - SWP ] GET-PORT-LEFT STH
 	( incr y ) #01 +
 	( get val ) DUP2 GET-CELL GET-VALUE STH
 	( get result ) ADDr STH2r SWP MOD 
@@ -688,7 +688,6 @@ RTN
 
 @op-j ( x y char -- )
 
-	
 	POP ( TODO: Wiring )
 	( get value ) DUP2 #01 - GET-PORT-RIGHT-RAW STH
 	( incr y ) #01 + 
@@ -699,7 +698,7 @@ RTN
 @op-k ( x y char -- )
 
 	POP
-	( get len ) DUP2 SWP #01 - SWP GET-PORT-LEFT 1MIN
+	( get len ) DUP2 [ SWP #01 - SWP ] GET-PORT-LEFT 1MIN
 	#00 SWP 
 	&loop
 		( x+i+1,y ) OVR STH OVR2 STHr ROT + #01 + SWP
@@ -721,9 +720,9 @@ RTN
 @op-l ( x y char -- )
 
 	POP
-	( get case ) DUP2 SWP #01 + SWP GET-CASE
-	( get left ) DUP2 SWP #01 - SWP GET-PORT-LEFT STH
-	( get right ) DUP2 SWP #01 + SWP GET-PORT-RIGHT STH
+	( get case ) DUP2 [ SWP #01 + SWP ] GET-CASE
+	( get left ) DUP2 [ SWP #01 - SWP ] GET-PORT-LEFT STH
+	( get right ) DUP2 [ SWP #01 + SWP ] GET-PORT-RIGHT STH
 	( incr y ) #01 +
 	( min ) STH2r LTHk SWP? POP 
 	GET-CHAR SET-CASE SET-PORT-OUTPUT
@@ -733,9 +732,9 @@ RTN
 @op-m ( x y char -- )
 
 	POP
-	( get case ) DUP2 SWP #01 + SWP GET-CASE
-	( get left ) DUP2 SWP #01 - SWP GET-PORT-LEFT STH
-	( get right ) DUP2 SWP #01 + SWP GET-PORT-RIGHT STH
+	( get case ) DUP2 [ SWP #01 + SWP ] GET-CASE
+	( get left ) DUP2 [ SWP #01 - SWP ] GET-PORT-LEFT STH
+	( get right ) DUP2 [ SWP #01 + SWP ] GET-PORT-RIGHT STH
 	( incr y ) #01 +
 	( get result ) MULr STHr 
 	GET-CHAR SET-CASE SET-PORT-OUTPUT
@@ -759,9 +758,9 @@ RTN
 @op-o ( x y char -- )
 
 	POP
-	( get x ) DUP2 SWP #02 - SWP GET-PORT-LEFT STH
-	( get y ) DUP2 SWP #01 - SWP GET-PORT-LEFT STH
-	( get value ) DUP2 SWP #01 + SWP STH2r ++ GET-PORT-RIGHT-RAW STH
+	( get x ) DUP2 [ SWP #02 - SWP ] GET-PORT-LEFT STH
+	( get y ) DUP2 [ SWP #01 - SWP ] GET-PORT-LEFT STH
+	( get value ) DUP2 [ SWP #01 + SWP ] STH2r ++ GET-PORT-RIGHT-RAW STH
 	( incr y ) #01 +
 	STHr SET-PORT-OUTPUT
 	
@@ -770,9 +769,9 @@ RTN
 @op-p ( x y char -- )
 
 	POP
-	( get key ) DUP2 SWP #02 - SWP GET-PORT-LEFT STH
-	( get len ) DUP2 SWP #01 - SWP GET-PORT-LEFT 1MIN STH
-	( get input ) DUP2 SWP #01 + SWP GET-PORT-RIGHT-RAW STH
+	( get key ) DUP2 [ SWP #02 - SWP ] GET-PORT-LEFT STH
+	( get len ) DUP2 [ SWP #01 - SWP ] GET-PORT-LEFT 1MIN STH
+	( get input ) DUP2 [ SWP #01 + SWP ] GET-PORT-RIGHT-RAW STH
 	#00 OVRr STHr
 	&loop
 		( x+i+1,y ) OVR STH OVR2 STHr ROT + SWP #01 +
@@ -791,9 +790,9 @@ RTN
 @op-q ( x y char -- )
 
 	POP
-	( get x ) DUP2 SWP #03 - SWP GET-PORT-LEFT STH
-	( get y ) DUP2 SWP #02 - SWP GET-PORT-LEFT STH
-	( get len ) DUP2 SWP #01 - SWP GET-PORT-LEFT 1MIN
+	( get x ) DUP2 [ SWP #03 - SWP ] GET-PORT-LEFT STH
+	( get y ) DUP2 [ SWP #02 - SWP ] GET-PORT-LEFT STH
+	( get len ) DUP2 [ SWP #01 - SWP ] GET-PORT-LEFT 1MIN
 	#00 SWP
 	&loop
 		( x+i+1,y ) OVR STH OVR2 STHr ROT + #01 + SWP
@@ -812,9 +811,9 @@ RTN
 @op-r ( x y char -- )
 
 	POP 
-	( get case ) DUP2 SWP #01 + SWP GET-CASE
-	( get min ) DUP2 SWP #01 - SWP GET-PORT-LEFT STH
-	( get max ) DUP2 SWP #01 + SWP GET-PORT-RIGHT 1MIN STH
+	( get case ) DUP2 [ SWP #01 + SWP ] GET-CASE
+	( get min ) DUP2 [ SWP #01 - SWP ] GET-PORT-LEFT STH
+	( get max ) DUP2 [ SWP #01 + SWP ] GET-PORT-RIGHT 1MIN STH
 	( unstash min,max ) STH2r 
 	( real max ) LTHk SWP?
 	( no equal ) NEQk #04 JCN [ #01 - SWP ] 
@@ -843,8 +842,8 @@ RTN
 @op-t ( x y char -- )
 
 	POP
-	( get key ) DUP2 SWP #02 - SWP GET-PORT-LEFT STH
-	( get len ) DUP2 SWP #01 - SWP GET-PORT-LEFT 1MIN STH
+	( get key ) DUP2 [ SWP #02 - SWP ] GET-PORT-LEFT STH
+	( get len ) DUP2 [ SWP #01 - SWP ] GET-PORT-LEFT 1MIN STH
 	#00 STHkr
 	&loop
 		( x+i+1,y ) OVR STH OVR2 STHr ROT + #01 + SWP
@@ -863,8 +862,8 @@ RTN
 @op-u ( x y char -- )
 
 	POP
-	( get step ) DUP2 SWP #01 - SWP GET-PORT-LEFT STH
-	( get max ) DUP2 SWP #01 + SWP GET-PORT-RIGHT 1MIN STH
+	( get step ) DUP2 [ SWP #01 - SWP ] GET-PORT-LEFT STH
+	( get max ) DUP2 [ SWP #01 + SWP ] GET-PORT-RIGHT 1MIN STH
 	( incr y ) #01 +
 	( frame + max - 1 ) .timer/frame LDZ2 STHkr TOS ++ #0001 --
 	( * step ) OVRr STHr TOS **
@@ -879,8 +878,8 @@ RTN
 @op-v ( x y char -- )
 
 	POP
-	( get write ) DUP2 SWP #01 - SWP GET-PORT-LEFT STH
-	( get read ) DUP2 SWP #01 + SWP GET-PORT-RIGHT-RAW STH
+	( get write ) DUP2 [ SWP #01 - SWP ] GET-PORT-LEFT STH
+	( get read ) DUP2 [ SWP #01 + SWP ] GET-PORT-RIGHT-RAW STH
 	OVRr STHr ,&write JCN
 	( incr y ) #01 +
 	( load ) STHr GET-VALUE .variables + LDZ SET-PORT-OUTPUT
@@ -895,7 +894,7 @@ RTN
 
 	STH
 	( hit edge ) OVR #00 = ;&collide JCN2
-	( hit cell ) DUP2 SWP #01 - SWP GET-CELL CHAR-DOT ! ,&collide JCN
+	( hit cell ) DUP2 [ SWP #01 - SWP ] GET-CELL CHAR-DOT ! ,&collide JCN
 	DUP2 #00 SET-TYPE
 	DUP2 CHAR-DOT SET-CELL
 	SWP #01 - SWP DUP2 STHr SET-CELL
@@ -908,9 +907,9 @@ RTN
 @op-x ( x y char -- )
 
 	POP
-	( get value ) DUP2 SWP #01 + SWP GET-PORT-RIGHT-RAW STH 
-	( get x ) DUP2 SWP #02 - SWP GET-PORT-LEFT STH
-	( get y ) DUP2 SWP #01 - SWP GET-PORT-LEFT STH
+	( get value ) DUP2 [ SWP #01 + SWP ] GET-PORT-RIGHT-RAW STH 
+	( get x ) DUP2 [ SWP #02 - SWP ] GET-PORT-LEFT STH
+	( get y ) DUP2 [ SWP #01 - SWP ] GET-PORT-LEFT STH
 	( incr y ) STH2r #01 + ++ STHr
 	SET-PORT-OUTPUT
 	
@@ -919,7 +918,7 @@ RTN
 @op-y ( x y char -- )
 
 	POP ( TODO: Wiring )
-	( get value ) DUP2 SWP #01 - SWP GET-PORT-RIGHT-RAW STH
+	( get value ) DUP2 [ SWP #01 - SWP ] GET-PORT-RIGHT-RAW STH
 	( incr y ) SWP #01 + SWP
 	STHr SET-PORT-OUTPUT
 	
@@ -928,9 +927,9 @@ RTN
 @op-z ( x y char -- )
 
 	POP
-	( get case ) DUP2 SWP #01 + SWP GET-CASE
-	( get rate ) DUP2 SWP #01 - SWP GET-PORT-LEFT 1MIN STH
-	( get target ) DUP2 SWP #01 + SWP GET-PORT-RIGHT STH
+	( get case ) DUP2 [ SWP #01 + SWP ] GET-CASE
+	( get rate ) DUP2 [ SWP #01 - SWP ] GET-PORT-LEFT 1MIN STH
+	( get target ) DUP2 [ SWP #01 + SWP ] GET-PORT-RIGHT STH
 	( incr y ) #01 +
 	( get val ) DUP2 GET-CELL GET-VALUE STH
 	EQUkr STHr ,&end JCN 
