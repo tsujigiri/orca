@@ -311,7 +311,7 @@ BRK
 			.grid/height LDZ .selection/y2 STZ
 			;redraw JSR2 POP BRK 
 			&no-expand
-		DUP [ LIT 'a ] ! ,&no-copy JCN
+		DUP [ LIT 'c ] ! ,&no-copy JCN
 			;copy-selection JSR2 
 			;redraw JSR2 POP BRK 
 			&no-copy
@@ -426,7 +426,7 @@ BRK
 	.Mouse/x DEI2 DUP2 .cursor/x STZ2 .Screen/x DEO2
 	.Mouse/y DEI2 DUP2 .cursor/y STZ2 .Screen/y DEO2
 	;cursor-icn .Screen/addr DEO2
-	.Mouse/state DEI #00 ! #02 * [ #41 + .Screen/sprite DEO ]
+	#41 [ .Mouse/state DEI #00 ! #02 * ] + .Screen/sprite DEO 
 
 	( route )
 	.Mouse/y DEI2 .toolbar/y1 LDZ2 -- #0010 // #0000 == 
@@ -434,7 +434,7 @@ BRK
 	.Mouse/x DEI2 .Mouse/y DEI2 .grid ;within-rect JSR2
 		;on-mouse-grid JCN2
 
-	( release-record ) #00 DUP .Mouse/state DEO .cursor/last STZ
+	( release-record ) #0000 .Mouse/state DEO .cursor/last STZ
 	
 BRK
 
