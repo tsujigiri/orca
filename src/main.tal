@@ -519,7 +519,7 @@ BRK
 
 	&add ( button* -> )
 		#02 ! ,&save JCN
-		DUP #04 SFT .dpad LDZ + .dpad STZ
+		DUP #04 SFT .dpad LDZ + #80 MOD .dpad STZ
 		,&save JMP
 
 	&save ( -> )
