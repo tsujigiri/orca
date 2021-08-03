@@ -1,6 +1,6 @@
 ( Orca
 	
-	space - toggle play/paste
+	space - toggle play/pause
 	backspace/delete - erase
 	escape - deselect
 	arrow - move
@@ -15,15 +15,14 @@
 	ctrl+c - copy
 	ctrl+v - paste
 	ctrl+x - cut
+	alt - dpad controls
+	ctrl+escape - toggle play/pause 
 
 	TODO
 		- Snarf buffer support
-		- d-pad input method
 		- Catch ports that overflow out of grid
 		- Insert mode
-		- Display on-screen guide
-		- Leap move with alt modifier
-		- Hide cursor when moving with arrows )
+		- Display on-screen guide )
 
 %DATA-CELLS { #b000 }
 %DATA-LOCKS { #c000 }
@@ -262,8 +261,13 @@ BRK
 	DUP #0f AND #02 = ;dpad-input/add JCN2
 	POP ;&last STA
 
-	.Controller/button DEI DUP #f0 AND ;&arrows JCN2 POP
-	.Controller/button DEI DUP #0f AND #01 = ;&control JCN2 POP
+	.Controller/button DEI 
+	DUP #f0 AND ;&arrows JCN2 
+	DUP #0f AND #01 = ;&control JCN2 
+	DUP #09 ! ,&no-ctrl-escape JCN
+		.timer/alive TOGGLE
+		&no-ctrl-escape
+	POP
 
 	( default )
 	.Controller/key DEI
