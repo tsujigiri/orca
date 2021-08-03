@@ -37,19 +37,20 @@
 %++ { ADD2 } %-- { SUB2 } %** { MUL2 } %// { DIV2 }
 %<< { LTH2 } %>> { GTH2 } %== { EQU2 } %!! { NEQ2 }
 
-%8** { #30 SFT2 }       %8// { #03 SFT2 }
-%TOB  { SWP POP }       %TOS  { #00 SWP }
-%INCR { SWP #01 + SWP } %DECR { SWP #01 - SWP }
-
 %DEBUG  { ;print-hex JSR2 #0a .Console/write DEO }
 %DEBUG2 { SWP ;print-hex JSR2 ;print-hex JSR2 #0a .Console/write DEO }
 
+%8** { #30 SFT2 }    %8// { #03 SFT2 }
+%TOB  { SWP POP }    %TOS  { #00 SWP }
+%MOD  { DUP2 / * - } %MOD2 { OVR2 OVR2 // ** -- } 
+
 %RTN  { JMP2r }
-%MOD  { DUP2 / * - } 
-%MOD2 { OVR2 OVR2 // ** -- } 
-%MOD8 { #07 AND }
-%MIN1 { DUP #00 = + }
+%BRK? { #01 JCN BRK } %RTN? { #01 JCN RTN }
+%SWP? { #01 JCN SWP } %SWPr? { #01 JCN SWPr }
+
 %LTSk { #80 + SWP #80 + > }
+
+%1MIN { DUP #00 = + }
 
 %TOGGLE { DUP LDZ #00 = SWP STZ }
 %GET-ITER { OVR2 SWP POP OVR SWP }
@@ -170,11 +171,11 @@
 
 	( set grid size )
 	.Screen/width DEI2 
-		DUP2 8// SWP POP #03 - .grid/width STZ
+		DUP2 8// TOB #03 - .grid/width STZ
 		DUP2 #0002 // .grid/width LDZ #02 / #01 + TOS 8** -- #0004 ++ .grid/x1 STZ2
 		#0002 // .grid/width LDZ #02 / TOS 8** ++ #0002 ++ .grid/x2 STZ2
 	.Screen/height DEI2 
-		DUP2 #0010 // SWP POP #03 - .grid/height STZ
+		DUP2 #0010 // TOB #03 - .grid/height STZ
 		DUP2 #0002 // .grid/height LDZ #02 / #01 + TOS #0010 ** -- #0004 -- .grid/y1 STZ2
 		#0002 // .grid/height LDZ #02 / TOS #0010 ** ++ #0008 -- .grid/y2 STZ2
 
@@ -195,9 +196,9 @@
 	.toolbar/y1 LDZ2 #0008 ++ .toolbar/y2 STZ2
 
 	( random seed )
-	.DateTime/second DEI .DateTime/minute DEI DUP2
-		.DateTime/hour DEI .DateTime/day DEI ++ ++
-		#1317 **
+	.DateTime/minute DEI2 SWP DUP2
+		.DateTime/day DEI2 ++ ++
+		#7131 **
 		.timer/seed STZ2
 
 	( blank variables )
@@ -215,8 +216,6 @@
 	#08 .timer/speed STZ
 	#01 .timer/alive STZ
 
-	;redraw JSR2
-
 	( theme support )
 	;load-theme JSR2
 
@@ -224,13 +223,13 @@ BRK
 
 @on-frame ( -> )
 
-	( paused ) .timer/alive LDZ #01 JCN [ BRK ]
+	( paused ) .timer/alive LDZ BRK?
 
 	;draw-meter JSR2
 
-	.timer/beat LDZ #01 + DUP .timer/beat STZ
-
-	( skip ) .timer/speed LDZ = #01 JCN [ BRK ]
+	.timer/beat LDZ #01 + 
+		DUP .timer/beat STZ 
+		.timer/speed LDZ = BRK?
 
 	.timer/frame LDZ2 #0001 ++ .timer/frame STZ2
 
@@ -259,9 +258,9 @@ BRK
 	DUP2 #0200 == ;dpad-input/start JCN2
 	DUP2 #0002 == ;dpad-input/end JCN2
 	DUP #0f AND #02 = ;dpad-input/add JCN2
-	POP ;&last STA
-
-	.Controller/button DEI 
+	POP ( pop last )
+	DUP ;&last STA
+	( normal routing )
 	DUP #f0 AND ;&arrows JCN2 
 	DUP #0f AND #01 = ;&control JCN2 
 	DUP #09 ! ,&no-ctrl-escape JCN
@@ -305,30 +304,30 @@ BRK
 	&control ( button -- )
 		POP 
 		.Controller/key DEI
-		DUP #61 ! ,&no-expand JCN
+		DUP [ LIT 'a ] ! ,&no-expand JCN
 			#00 .selection/x1 STZ
 			#00 .selection/y1 STZ
 			.grid/width LDZ .selection/x2 STZ
 			.grid/height LDZ .selection/y2 STZ
 			;redraw JSR2 POP BRK 
 			&no-expand
-		DUP #63 ! ,&no-copy JCN
+		DUP [ LIT 'a ] ! ,&no-copy JCN
 			;copy-selection JSR2 
 			;redraw JSR2 POP BRK 
 			&no-copy
-		DUP #76 ! ,&no-paste JCN
+		DUP [ LIT 'v ] ! ,&no-paste JCN
 			;paste-selection JSR2 RESET-SELECTION
 			;redraw JSR2 POP BRK 
 			&no-paste
-		DUP #78 ! ,&no-cut JCN
+		DUP [ LIT 'x ] ! ,&no-cut JCN
 			;copy-selection JSR2 CHAR-DOT ;fill-selection JSR2 RESET-SELECTION
 			;redraw JSR2 POP BRK 
 			&no-cut
-		DUP #6f ! ,&no-open JCN
+		DUP [ LIT 'o ] ! ,&no-open JCN
 			;load-file JSR2
 			;redraw JSR2 POP BRK 
 			&no-open
-		DUP #72 ! ,&no-name JCN
+		DUP [ LIT 'r ] ! ,&no-name JCN
 			#00 ;draw-filepath JSR2 
 			#52 ! ,&no-rename JCN
 				#00 .path/length STZ
@@ -338,14 +337,18 @@ BRK
 			;on-button-trap .Controller/vector DEO2
 			BRK
 			&no-name
-		DUP #73 ! ,&no-save JCN
+		DUP [ LIT 's ] ! ,&no-save JCN
 			;save-file JSR2 
 			;redraw JSR2 POP BRK  
 			&no-save
-		DUP #6e ! ,&no-make JCN
+		DUP [ LIT 'n ] ! ,&no-new JCN
 			#00 ;draw-filepath JSR2 ;untitled-txt ;new-file JSR2 
 			;redraw JSR2 POP BRK 
-			&no-make
+			&no-new
+		DUP [ LIT 'i ] ! ,&no-insert JCN
+			.selection/insert TOGGLE
+			;redraw JSR2 POP BRK
+			&no-insert
 		DUP #2c ! ,&no-slow JCN
 			( clamp ) .timer/speed LDZ #03 < ,&no-slow JCN
 			.timer/speed LDZ #01 - .timer/speed STZ
@@ -358,10 +361,6 @@ BRK
 			#00 .timer/beat STZ
 			;redraw JSR2 POP BRK
 			&no-fast
-		DUP #69 ! ,&no-insert JCN
-			.selection/insert TOGGLE
-			;redraw JSR2 POP BRK
-			&no-insert
 		POP 
 	BRK
 
@@ -463,7 +462,7 @@ BRK
 
 @on-mouse-toolbar ( -> )
 	
-	( skip ) .Mouse/state DEI #00 ! #01 JCN [ BRK ]
+	( skip ) .Mouse/state DEI #00 ! BRK?
 
 	( left-side )
 	.Mouse/x DEI2 .grid/x1 LDZ2 -- 8// TOB 
@@ -539,8 +538,8 @@ BRK
 
 	DUP2 #01 + GET-CELL CHAR-BANG = ,&bang JCN
 	DUP2 #01 - GET-CELL CHAR-BANG = ,&bang JCN
-	DUP2 INCR  GET-CELL CHAR-BANG = ,&bang JCN
-	DUP2 DECR  GET-CELL CHAR-BANG = ,&bang JCN
+	DUP2 SWP #01 + SWP  GET-CELL CHAR-BANG = ,&bang JCN
+	DUP2 SWP #01 - SWP  GET-CELL CHAR-BANG = ,&bang JCN
 	POP2 #00 RTN
 	&bang
 		POP2 #01 
@@ -572,9 +571,9 @@ RTN
 @op-a ( x y char -- )
 
 	POP
-	( get case ) DUP2 INCR GET-CASE
-	( get a ) DUP2 DECR GET-PORT-LEFT STH
-	( get b ) DUP2 INCR GET-PORT-RIGHT STH
+	( get case ) DUP2 SWP #01 + SWP GET-CASE
+	( get a ) DUP2 SWP #01 - SWP GET-PORT-LEFT STH
+	( get b ) DUP2 SWP #01 + SWP GET-PORT-RIGHT STH
 	( incr y ) #01 +
 	( get result ) ADDr STHr 
 	GET-CHAR SET-CASE SET-PORT-OUTPUT 
@@ -584,9 +583,9 @@ RTN
 @op-b ( x y char -- )
 	
 	POP
-	( get case ) DUP2 INCR GET-CASE
-	( get a ) DUP2 DECR GET-PORT-LEFT STH
-	( get b ) DUP2 INCR GET-PORT-RIGHT STH
+	( get case ) DUP2 SWP #01 + SWP GET-CASE
+	( get a ) DUP2 SWP #01 - SWP GET-PORT-LEFT STH
+	( get b ) DUP2 SWP #01 + SWP GET-PORT-RIGHT STH
 	( incr y ) #01 +
 	( get result ) SUBr STHr
 	( bounce ) DUP #80 < #04 JCN [ #24 SWP - ]
@@ -597,9 +596,9 @@ RTN
 @op-c ( x y char -- )
 	
 	POP
-	( get case ) DUP2 INCR GET-CASE
-	( get rate ) DUP2 DECR GET-PORT-LEFT MIN1 STH
-	( get mod ) DUP2 INCR GET-PORT-RIGHT MIN1 STH
+	( get case ) DUP2 SWP #01 + SWP GET-CASE
+	( get rate ) DUP2 SWP #01 - SWP GET-PORT-LEFT 1MIN STH
+	( get mod ) DUP2 SWP #01 + SWP GET-PORT-RIGHT 1MIN STH
 	( incr y ) #01 +
 	( get result ) SWPr .timer/frame LDZ2 STHr TOS // STHr TOS MOD2 TOB
 	GET-CHAR SET-CASE SET-PORT-OUTPUT
@@ -609,8 +608,8 @@ RTN
 @op-d ( x y char -- )
 
 	POP
-	( get rate ) DUP2 DECR GET-PORT-LEFT MIN1 STH
-	( get mod ) DUP2 INCR GET-PORT-RIGHT MIN1 STH
+	( get rate ) DUP2 SWP #01 - SWP GET-PORT-LEFT 1MIN STH
+	( get mod ) DUP2 SWP #01 + SWP GET-PORT-RIGHT 1MIN STH
 	( incr y ) #01 +
 	( get result ) .timer/frame LDZ2 MULr STHr TOS MOD2 #0000 ==
 	( bang if equal ) #fc * CHAR-DOT + 
@@ -622,10 +621,10 @@ RTN
 
 	STH
 	( hit edge ) OVR .grid/width LDZ #01 - = ;&collide JCN2
-	( hit cell ) DUP2 INCR GET-CELL CHAR-DOT ! ,&collide JCN
+	( hit cell ) DUP2 SWP #01 + SWP GET-CELL CHAR-DOT ! ,&collide JCN
 	DUP2 #00 SET-TYPE
 	DUP2 CHAR-DOT SET-CELL
-	INCR DUP2 STHr SET-CELL
+	SWP #01 + SWP DUP2 STHr SET-CELL
 	#01 SET-LOCK
 	RTN
 	&collide CHAR-BANG SET-CELL POPr
@@ -635,8 +634,8 @@ RTN
 @op-f ( x y char -- )
 
 	POP
-	( get a ) DUP2 DECR GET-PORT-LEFT STH
-	( get b ) DUP2 INCR GET-PORT-RIGHT STH
+	( get a ) DUP2 SWP #01 - SWP GET-PORT-LEFT STH
+	( get b ) DUP2 SWP #01 + SWP GET-PORT-RIGHT STH
 	( incr y ) #01 +
 	( get result ) EQUr STHr
 	( bang if equal ) #fc * CHAR-DOT + 
@@ -649,7 +648,7 @@ RTN
 	POP
 	( get x ) DUP2 SWP #03 - SWP GET-PORT-LEFT STH
 	( get y ) DUP2 SWP #02 - SWP GET-PORT-LEFT STH
-	( get len ) DUP2 SWP #01 - SWP GET-PORT-LEFT MIN1
+	( get len ) DUP2 SWP #01 - SWP GET-PORT-LEFT 1MIN
 	#00 SWP
 	&loop
 		( x+i+1,y ) OVR STH OVR2 STHr ROT + #01 + SWP
@@ -657,7 +656,7 @@ RTN
 		( unstash x,y ) ROTr STHkr ROTr STHkr ROTr
 		( x0+x1-1,y0+y1+1 ) ROT + STH + #01 - STHr #01 +
 		STHr SET-PORT-OUTPUT
-		INCR
+		SWP #01 + SWP
 		LTHk ;&loop JCN2
 	POP2
 	( clean ) POP2 POP2r
@@ -676,9 +675,9 @@ RTN
 @op-i ( x y char -- )
 
 	POP
-	( get case ) DUP2 INCR GET-CASE
-	( get mod ) DUP2 INCR GET-PORT-RIGHT MIN1 STH
-	( get rate ) DUP2 DECR GET-PORT-LEFT STH
+	( get case ) DUP2 SWP #01 + SWP GET-CASE
+	( get mod ) DUP2 SWP #01 + SWP GET-PORT-RIGHT 1MIN STH
+	( get rate ) DUP2 SWP #01 - SWP GET-PORT-LEFT STH
 	( incr y ) #01 +
 	( get val ) DUP2 GET-CELL GET-VALUE STH
 	( get result ) ADDr STH2r SWP MOD 
@@ -699,7 +698,7 @@ RTN
 @op-k ( x y char -- )
 
 	POP
-	( get len ) DUP2 DECR GET-PORT-LEFT MIN1
+	( get len ) DUP2 SWP #01 - SWP GET-PORT-LEFT 1MIN
 	#00 SWP 
 	&loop
 		( x+i+1,y ) OVR STH OVR2 STHr ROT + #01 + SWP
@@ -711,7 +710,7 @@ RTN
 			STHr
 			&skip
 		POP POP2
-		INCR
+		SWP #01 + SWP
 		LTHk ;&loop JCN2
 	POP2
 	POP2
@@ -721,11 +720,11 @@ RTN
 @op-l ( x y char -- )
 
 	POP
-	( get case ) DUP2 INCR GET-CASE
-	( get left ) DUP2 DECR GET-PORT-LEFT STH
-	( get right ) DUP2 INCR GET-PORT-RIGHT STH
+	( get case ) DUP2 SWP #01 + SWP GET-CASE
+	( get left ) DUP2 SWP #01 - SWP GET-PORT-LEFT STH
+	( get right ) DUP2 SWP #01 + SWP GET-PORT-RIGHT STH
 	( incr y ) #01 +
-	( min ) STH2r LTHk #01 JCN SWP POP 
+	( min ) STH2r LTHk SWP? POP 
 	GET-CHAR SET-CASE SET-PORT-OUTPUT
 	
 RTN
@@ -733,9 +732,9 @@ RTN
 @op-m ( x y char -- )
 
 	POP
-	( get case ) DUP2 INCR GET-CASE
-	( get left ) DUP2 DECR GET-PORT-LEFT STH
-	( get right ) DUP2 INCR GET-PORT-RIGHT STH
+	( get case ) DUP2 SWP #01 + SWP GET-CASE
+	( get left ) DUP2 SWP #01 - SWP GET-PORT-LEFT STH
+	( get right ) DUP2 SWP #01 + SWP GET-PORT-RIGHT STH
 	( incr y ) #01 +
 	( get result ) MULr STHr 
 	GET-CHAR SET-CASE SET-PORT-OUTPUT
@@ -761,7 +760,7 @@ RTN
 	POP
 	( get x ) DUP2 SWP #02 - SWP GET-PORT-LEFT STH
 	( get y ) DUP2 SWP #01 - SWP GET-PORT-LEFT STH
-	( get value ) DUP2 INCR STH2r ++ GET-PORT-RIGHT-RAW STH
+	( get value ) DUP2 SWP #01 + SWP STH2r ++ GET-PORT-RIGHT-RAW STH
 	( incr y ) #01 +
 	STHr SET-PORT-OUTPUT
 	
@@ -771,14 +770,14 @@ RTN
 
 	POP
 	( get key ) DUP2 SWP #02 - SWP GET-PORT-LEFT STH
-	( get len ) DUP2 SWP #01 - SWP GET-PORT-LEFT MIN1 STH
-	( get input ) DUP2 INCR GET-PORT-RIGHT-RAW STH
+	( get len ) DUP2 SWP #01 - SWP GET-PORT-LEFT 1MIN STH
+	( get input ) DUP2 SWP #01 + SWP GET-PORT-RIGHT-RAW STH
 	#00 OVRr STHr
 	&loop
 		( x+i+1,y ) OVR STH OVR2 STHr ROT + SWP #01 +
 		( lock ) DUP2 #01 SET-LOCK
 		( type ) LOCKED-TYPE SET-TYPE
-		INCR
+		SWP #01 + SWP
 		LTHk ,&loop JCN
 	POP2
 	( write )
@@ -793,7 +792,7 @@ RTN
 	POP
 	( get x ) DUP2 SWP #03 - SWP GET-PORT-LEFT STH
 	( get y ) DUP2 SWP #02 - SWP GET-PORT-LEFT STH
-	( get len ) DUP2 SWP #01 - SWP GET-PORT-LEFT MIN1
+	( get len ) DUP2 SWP #01 - SWP GET-PORT-LEFT 1MIN
 	#00 SWP
 	&loop
 		( x+i+1,y ) OVR STH OVR2 STHr ROT + #01 + SWP
@@ -802,7 +801,7 @@ RTN
 		( x-i-len ) DUP2 SWP - STH 
 		( x,y ) OVR2 SWP STHr - #01 + SWP #01 +
 		STHr SET-PORT-OUTPUT
-		INCR
+		SWP #01 + SWP
 		LTHk ;&loop JCN2
 	POP2
 	( clean ) POP2 POP2r
@@ -812,11 +811,11 @@ RTN
 @op-r ( x y char -- )
 
 	POP 
-	( get case ) DUP2 INCR GET-CASE
-	( get min ) DUP2 DECR GET-PORT-LEFT STH
-	( get max ) DUP2 INCR GET-PORT-RIGHT MIN1 STH
+	( get case ) DUP2 SWP #01 + SWP GET-CASE
+	( get min ) DUP2 SWP #01 - SWP GET-PORT-LEFT STH
+	( get max ) DUP2 SWP #01 + SWP GET-PORT-RIGHT 1MIN STH
 	( unstash min,max ) STH2r 
-	( real max ) LTHk #01 JCN SWP
+	( real max ) LTHk SWP?
 	( no equal ) NEQk #04 JCN [ #01 - SWP ] 
 	( stash min,max ) STH2
 	( incr y ) #01 +
@@ -844,17 +843,17 @@ RTN
 
 	POP
 	( get key ) DUP2 SWP #02 - SWP GET-PORT-LEFT STH
-	( get len ) DUP2 SWP #01 - SWP GET-PORT-LEFT MIN1 STH
+	( get len ) DUP2 SWP #01 - SWP GET-PORT-LEFT 1MIN STH
 	#00 STHkr
 	&loop
 		( x+i+1,y ) OVR STH OVR2 STHr ROT + #01 + SWP
 		( lock ) DUP2 #01 SET-LOCK 
 		( type ) LOCKED-TYPE SET-TYPE
-		INCR
+		SWP #01 + SWP
 		LTHk ,&loop JCN
 	POP2
 	( read )
-	( x-offset ) DUP2 INCR STH2r MOD ROT + SWP 
+	( x-offset ) DUP2 SWP #01 + SWP STH2r MOD ROT + SWP 
 	( x,y ) GET-PORT-RIGHT-RAW STH #01 +
 	STHr SET-PORT-OUTPUT
 
@@ -863,8 +862,8 @@ RTN
 @op-u ( x y char -- )
 
 	POP
-	( get step ) DUP2 DECR GET-PORT-LEFT STH
-	( get max ) DUP2 INCR GET-PORT-RIGHT MIN1 STH
+	( get step ) DUP2 SWP #01 - SWP GET-PORT-LEFT STH
+	( get max ) DUP2 SWP #01 + SWP GET-PORT-RIGHT 1MIN STH
 	( incr y ) #01 +
 	( frame + max - 1 ) .timer/frame LDZ2 STHkr TOS ++ #0001 --
 	( * step ) OVRr STHr TOS **
@@ -879,8 +878,8 @@ RTN
 @op-v ( x y char -- )
 
 	POP
-	( get write ) DUP2 DECR GET-PORT-LEFT STH
-	( get read ) DUP2 INCR GET-PORT-RIGHT-RAW STH
+	( get write ) DUP2 SWP #01 - SWP GET-PORT-LEFT STH
+	( get read ) DUP2 SWP #01 + SWP GET-PORT-RIGHT-RAW STH
 	OVRr STHr ,&write JCN
 	( incr y ) #01 +
 	( load ) STHr GET-VALUE .variables + LDZ SET-PORT-OUTPUT
@@ -895,10 +894,10 @@ RTN
 
 	STH
 	( hit edge ) OVR #00 = ;&collide JCN2
-	( hit cell ) DUP2 DECR GET-CELL CHAR-DOT ! ,&collide JCN
+	( hit cell ) DUP2 SWP #01 - SWP GET-CELL CHAR-DOT ! ,&collide JCN
 	DUP2 #00 SET-TYPE
 	DUP2 CHAR-DOT SET-CELL
-	DECR DUP2 STHr SET-CELL
+	SWP #01 - SWP DUP2 STHr SET-CELL
 	#01 SET-LOCK
 	RTN
 	&collide CHAR-BANG SET-CELL POPr
@@ -908,7 +907,7 @@ RTN
 @op-x ( x y char -- )
 
 	POP
-	( get value ) DUP2 INCR GET-PORT-RIGHT-RAW STH 
+	( get value ) DUP2 SWP #01 + SWP GET-PORT-RIGHT-RAW STH 
 	( get x ) DUP2 SWP #02 - SWP GET-PORT-LEFT STH
 	( get y ) DUP2 SWP #01 - SWP GET-PORT-LEFT STH
 	( incr y ) STH2r #01 + ++ STHr
@@ -919,8 +918,8 @@ RTN
 @op-y ( x y char -- )
 
 	POP ( TODO: Wiring )
-	( get value ) DUP2 DECR GET-PORT-RIGHT-RAW STH
-	( incr y ) INCR
+	( get value ) DUP2 SWP #01 - SWP GET-PORT-RIGHT-RAW STH
+	( incr y ) SWP #01 + SWP
 	STHr SET-PORT-OUTPUT
 	
 RTN
@@ -928,20 +927,20 @@ RTN
 @op-z ( x y char -- )
 
 	POP
-	( get case ) DUP2 INCR GET-CASE
-	( get rate ) DUP2 DECR GET-PORT-LEFT MIN1 STH
-	( get target ) DUP2 INCR GET-PORT-RIGHT STH
+	( get case ) DUP2 SWP #01 + SWP GET-CASE
+	( get rate ) DUP2 SWP #01 - SWP GET-PORT-LEFT 1MIN STH
+	( get target ) DUP2 SWP #01 + SWP GET-PORT-RIGHT STH
 	( incr y ) #01 +
 	( get val ) DUP2 GET-CELL GET-VALUE STH
 	EQUkr STHr ,&end JCN 
 	LTHkr STHr #00 ! ,&no-below JCN 
 		( incr ) STHr OVRr STH SWPr ADDr
-		( clamp ) GTHkr STHr #01 JCN SWPr
+		( clamp ) GTHkr STHr SWPr?
 		,&end JMP
 		&no-below
 	GTHkr STHr #00 ! ,&no-above JCN 
 		( decr ) STHr OVRr STH SWPr SUBr
-		( clamp ) STH2kr LTSk #01 JCN SWPr
+		( clamp ) STH2kr LTSk SWPr?
 		&no-above
 	&end
 	STHr GET-CHAR SET-CASE SET-PORT-OUTPUT POP2r
@@ -965,7 +964,7 @@ RTN
 		( lock )  DUP2 #01 SET-LOCK 
 		( close ) DUP2 GET-CELL CHAR-HASH = ,&end JCN
 		( type )  LOCKED-TYPE SET-TYPE
-		INCR
+		SWP #01 + SWP
 		LTHk ,&loop JCN
 	POP2 POPr
 	RTN
@@ -1156,7 +1155,7 @@ RTN
 @draw-toolbar ( -- )
 		
 	( skip on samll screens )
-	.toolbar/y1 LDZ2 .Screen/height DEI2 << #01 JCN [ RTN ]
+	.toolbar/y1 LDZ2 .Screen/height DEI2 << RTN?
 
 	.toolbar/y1 LDZ2 .Screen/y DEO2
 
@@ -1175,7 +1174,7 @@ RTN
 	.timer/frame #01 + LDZ #01 ;draw-byte JSR2
 	.grid/x1 LDZ2 #0040 ++ .Screen/x DEO2
 	;beat-icn .Screen/addr DEO2
-	#03 .timer/frame #01 + LDZ MOD8 #00 = - .Screen/sprite DEO
+	#03 .timer/frame #01 + LDZ #07 AND #00 = - .Screen/sprite DEO
 	
 	( Speed )
 	.grid/x1 LDZ2 #0050 ++ .Screen/x DEO2
@@ -1421,22 +1420,20 @@ RTN
 
 ( theme )
 
-@theme-txt ".theme $1
-
 @load-theme ( -- )
 
-	;theme-txt .File/name DEO2 
+	;&path .File/name DEO2 
 	#0006 .File/length DEO2 
 	#fffa .File/load DEO2
-
 	.File/success DEI2 #0006 !! ,&ignore JCN
 		#fffa LDA2 .System/r DEO2
 		#fffc LDA2 .System/g DEO2
 		#fffe LDA2 .System/b DEO2
-		;redraw JSR2
 		&ignore
+	;redraw JSR2
 
 RTN
+	&path ".theme $1
 
 ( snarf )
 
