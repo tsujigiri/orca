@@ -1356,6 +1356,14 @@ RTN
 
 RTN
 
+@get-selection-size ( -- )
+
+	.selection/x2 LDZ .selection/x1 LDZ - #01 + STH
+	.selection/y2 LDZ .selection/y1 LDZ - #01 + TOS 
+	STHr TOS **
+
+RTN
+
 @cut-selection ( -- )
 
 	;copy-snarf JSR2 
@@ -1444,23 +1452,23 @@ RTN
 
 @copy-snarf ( -- )
 
-	( open ) DATA-CLIP ,&i STR2
+	( open ) DATA-CLIP STH2
 	.selection/y2 LDZ #01 + .selection/y1 LDZ
 	&ver
 		.selection/x2 LDZ #01 + .selection/x1 LDZ
 		&hor
-			( write char ) GET-ITER GET-CELL [ ,&i LDR2 STH2k ] STA
-			( incr index ) #0001 STH2r ++ ,&i STR2
+			( write char ) GET-ITER GET-CELL STH2kr STA
+			( incr index ) LIT2r 0001 ADD2r
 			#01 + GTHk ,&hor JCN
 		POP2
-		( write linebreak ) CHAR-LINE [ ,&i LDR2 STH2k ] STA
-		( incr index ) #0001 STH2r ++ ,&i STR2
+		( write linebreak ) CHAR-LINE STH2kr STA
+		( incr index ) LIT2r 0001 ADD2r
 		#01 + GTHk ,&ver JCN
 	POP2
-	( close ) #00 ,&i LDR2 STA
+	( close ) #00 STH2kr STA
 
 	;snarf-txt .File/name DEO2 
-	,&i LDR2 DATA-CLIP -- .File/length DEO2 
+	STH2r DATA-CLIP -- .File/length DEO2 
 	DATA-CLIP .File/save DEO2
 
 RTN
