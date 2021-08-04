@@ -309,6 +309,7 @@ BRK
 			#00 .selection/y1 STZ
 			.grid/width LDZ .selection/x2 STZ
 			.grid/height LDZ .selection/y2 STZ
+			;clamp-selection JSR2
 			;redraw JSR2 POP BRK 
 			&no-expand
 		DUP [ LIT 'c ] ! ,&no-copy JCN
