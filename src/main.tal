@@ -19,7 +19,6 @@
 	ctrl+escape - toggle play/pause 
 
 	TODO
-		- z is looping over the limit
 		- Snarf buffer support
 		- Catch ports that overflow out of grid
 		- Insert mode
@@ -942,9 +941,7 @@ RTN
 		( clamp ) LTHkr STHr SWPr?
 		&no-above
 	&end
-	STHr GET-CHAR 
-	POP2r 
-	SAVE-CASE SET-PORT-OUTPUT
+	STHr GET-CHAR POP2r SAVE-CASE SET-PORT-OUTPUT
 	
 RTN
 
