@@ -48,8 +48,6 @@
 %BRK? { #01 JCN BRK } %RTN? { #01 JCN RTN }
 %SWP? { #01 JCN SWP } %SWPr? { #01 JCN SWPr }
 
-%LTSk { #80 + SWP #80 + > }
-
 %1MIN { DUP #00 = + }
 
 %TOGGLE { DUP LDZ #00 = SWP STZ }
@@ -69,7 +67,7 @@
 
 %SET-STATE   { #01 .state/changed STZ ;draw-state JSR2 }
 %RESET-STATE { #00 .state/changed STZ ;draw-state JSR2 }
-%RESET-SELECTION { .selection/x1 LDZ .selection/x2 STZ .selection/y1 LDZ .selection/y2 STZ }
+%RESET-SELECTION { .selection/x1 LDZ2 .selection/x2 STZ2 }
 %RESET-INSERT { #00 .selection/insert STZ }
 
 %GET-INDEX { #00 SWP #00 .grid/width LDZ ** ROT #00 SWP ++ } ( x y -- index )
@@ -317,7 +315,7 @@ BRK
 			;redraw JSR2 POP BRK 
 			&no-copy
 		DUP [ LIT 'v ] ! ,&no-paste JCN
-			;paste-selection JSR2 RESET-SELECTION
+			;paste-snarf JSR2 RESET-SELECTION
 			;redraw JSR2 POP BRK 
 			&no-paste
 		DUP [ LIT 'x ] ! ,&no-cut JCN
@@ -515,13 +513,14 @@ BRK
 	&start ( button* -> )
 		POP
 		#20 .dpad STZ
-		,&save JMP
+		;&save JMP2
 	&end ( button* -> )
 		POP
 		.dpad LDZ #7f > ,&save JCN
 		.dpad LDZ #20 = ,&erase JCN
 		.selection LDZ2 .dpad LDZ SET-CELL
-		SET-STATE 
+		SET-STATE
+		RESET-SELECTION
 		#00 .dpad STZ
 		,&save JMP
 	&add ( button* -> )
@@ -529,7 +528,7 @@ BRK
 		DUP #04 SFT .dpad LDZ + #7f AND .dpad STZ
 		,&save JMP
 	&erase ( -> )
-		.selection LDZ2 CHAR-DOT SET-CELL SET-STATE 
+		.selection LDZ2 CHAR-DOT SET-CELL SET-STATE
 		#00 .dpad STZ
 	&save ( -> )
 		;on-button/last STA
@@ -1396,7 +1395,7 @@ RTN
 	;clamp-selection JSR2 
 
 	,&drag LDR #00 = ,&no-drag-end JCN 
-		;paste-selection JSR2 &no-drag-end
+		;paste-snarf JSR2 &no-drag-end
 
 	RTN
 
@@ -1465,32 +1464,27 @@ RTN
 	DATA-CLIP .File/save DEO2
 
 RTN
-	&i $2
 
-@paste-selection ( -- )
-	
-	#0000 #1000
+@paste-snarf ( -- )
+
+	;snarf-txt .File/name DEO2
+	#1000 .File/length DEO2
+	DATA-CLIP .File/load DEO2
+
+	( stash x,y ) .selection LDZ2 STH2
+	.File/success DEI2 #0000
 	&loop
-		( get char ) OVR2 DATA-CLIP ++ LDA
-		DUP CHAR-NULL = ,&end JCN
-		DUP CHAR-LINE = ,&linebreak JCN
-			( write  ) STH ,&x LDR [ .selection/x1 LDZ + ] ,&y LDR [ .selection/y1 LDZ + ] STHr SET-CELL
-			( incr x ) ,&x LDR #01 + ,&x STR
-			,&continue JMP
-		&linebreak
-			( undo x ) #00 ,&x STR
-			( incr y ) ,&y LDR #01 + ,&y STR
-			POP
-		&continue
-		( incr ) SWP2 #0001 ++ SWP2
-		LTH2k ,&loop JCN
-	&end
-	POP2 POP2 POP
-	#00 ,&x STR
-	#00 ,&y STR
-	RTN
-	&x $1
-	&y $1
+		( get char ) DUP2 DATA-CLIP ++ LDA
+		DUP #0a ! ,&continue JCN
+			( move-y ) STH2r SWP POP .selection LDZ SWP #01 + STH2
+			POP ,&resume JMP
+			&continue
+		( save ) STH2kr ROT SET-CELL
+		( move-x ) STH2r SWP #01 + SWP STH2
+		&resume
+		#0001 ++ GTH2k ,&loop JCN
+	POP2 POP2
+	( destroy x,y ) POP2r
 
 RTN
 
