@@ -261,7 +261,7 @@ BRK
 	DUP ;&last STA
 	( normal routing )
 	DUP #f0 AND ;&arrows JCN2 
-	DUP #0f AND #01 = ;&control JCN2 
+	DUP #01 AND ;&control JCN2 
 	DUP #09 ! ,&no-ctrl-escape JCN
 		.timer/alive TOGGLE
 		&no-ctrl-escape
@@ -328,14 +328,19 @@ BRK
 			&no-open
 		DUP [ LIT 'r ] ! ,&no-name JCN
 			#00 ;draw-filepath JSR2 
-			#52 ! ,&no-rename JCN
-				#00 .path/length STZ
-				#0000 .path/name STZ2
-				&no-rename
 			;on-frame-trap .Screen/vector DEO2
 			;on-button-trap .Controller/vector DEO2
-			BRK
+			POP BRK
 			&no-name
+		DUP [ LIT 'R ] ! ,&no-rename JCN
+			#00 ;draw-filepath JSR2 
+			#00 .Controller/key DEO
+			#00 .path/length STZ
+			#0000 .path/name STZ2
+			;on-frame-trap .Screen/vector DEO2
+			;on-button-trap .Controller/vector DEO2
+			POP BRK
+			&no-rename
 		DUP [ LIT 's ] ! ,&no-save JCN
 			;save-file JSR2 
 			;redraw JSR2 POP BRK  
