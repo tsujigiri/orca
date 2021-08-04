@@ -130,6 +130,7 @@
 	&y2 $2
 	&width $1 
 	&height $1
+	&length $1
 @toolbar
 	&x1 $2
 	&y1 $2
@@ -311,7 +312,7 @@ BRK
 			;redraw JSR2 POP BRK 
 			&no-expand
 		DUP [ LIT 'c ] ! ,&no-copy JCN
-			;copy-selection JSR2 
+			;copy-snarf JSR2 
 			;redraw JSR2 POP BRK 
 			&no-copy
 		DUP [ LIT 'v ] ! ,&no-paste JCN
@@ -319,7 +320,7 @@ BRK
 			;redraw JSR2 POP BRK 
 			&no-paste
 		DUP [ LIT 'x ] ! ,&no-cut JCN
-			;copy-selection JSR2 CHAR-DOT ;fill-selection JSR2 RESET-SELECTION
+			;copy-snarf JSR2 CHAR-DOT ;fill-selection JSR2 RESET-SELECTION
 			;redraw JSR2 POP BRK 
 			&no-cut
 		DUP [ LIT 'o ] ! ,&no-open JCN
@@ -1355,9 +1356,17 @@ RTN
 
 RTN
 
+@get-selection-size ( -- )
+
+	.selection/x2 LDZ .selection/x1 LDZ - #01 + STH
+	.selection/y2 LDZ .selection/y1 LDZ - #01 + TOS 
+	STHr TOS **
+
+RTN
+
 @cut-selection ( -- )
 
-	;copy-selection JSR2 
+	;copy-snarf JSR2 
 	CHAR-DOT ;fill-selection JSR2
 
 RTN
@@ -1439,24 +1448,31 @@ RTN
 
 ( snarf )
 
-@copy-selection ( -- )
-	
-	( stash length ) #0000 STH2
+@snarf-txt ".snarf $1
+
+@copy-snarf ( -- )
+
+	( open ) DATA-CLIP ,&i STR2
 	.selection/y2 LDZ #01 + .selection/y1 LDZ
 	&ver
 		.selection/x2 LDZ #01 + .selection/x1 LDZ
 		&hor
-			( write char ) GET-ITER GET-CELL [ STH2kr DATA-CLIP ++ ] STA
-			( incr index ) #0001 STH2 ADD2r
+			( write char ) GET-ITER GET-CELL [ ,&i LDR2 STH2k ] STA
+			( incr index ) #0001 STH2r ++ ,&i STR2
 			#01 + GTHk ,&hor JCN
 		POP2
-		( write linebreak ) CHAR-LINE [ STH2kr DATA-CLIP ++ ] STA
-		( incr index ) #0001 STH2 ADD2r
+		( write linebreak ) CHAR-LINE [ ,&i LDR2 STH2k ] STA
+		( incr index ) #0001 STH2r ++ ,&i STR2
 		#01 + GTHk ,&ver JCN
 	POP2
-	( close ) #00 [ STH2r DATA-CLIP ++ ] STA
+	( close ) #00 ,&i LDR2 STA
+
+	;snarf-txt .File/name DEO2 
+	,&i LDR2 DATA-CLIP -- .File/length DEO2 
+	DATA-CLIP .File/save DEO2
 
 RTN
+	&i $2
 
 @paste-selection ( -- )
 	
