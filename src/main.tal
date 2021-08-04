@@ -1356,14 +1356,6 @@ RTN
 
 RTN
 
-@get-selection-size ( -- )
-
-	.selection/x2 LDZ .selection/x1 LDZ - #01 + STH
-	.selection/y2 LDZ .selection/y1 LDZ - #01 + TOS 
-	STHr TOS **
-
-RTN
-
 @cut-selection ( -- )
 
 	;copy-snarf JSR2 
