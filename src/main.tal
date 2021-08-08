@@ -290,7 +290,7 @@ BRK
 	DUP #1b ! ,&no-escape JCN
 		RESET-SELECTION 
 		RESET-INSERT
-		;redraw JSR2 POP BRK 
+		;load-theme JSR2 POP BRK 
 		&no-escape
 	DUP IS-CHAR-KEY #00 = ,&no-key JCN
 		.selection LDZ2 .Controller/key DEI SET-CELL
@@ -1421,9 +1421,11 @@ RTN
 
 ( theme )
 
+@theme-txt ".theme $1
+
 @load-theme ( -- )
 
-	;&path .File/name DEO2 
+	;theme-txt .File/name DEO2 
 	#0006 .File/length DEO2 
 	#fffa .File/load DEO2
 	.File/success DEI2 #0006 !! ,&ignore JCN
@@ -1434,7 +1436,6 @@ RTN
 	;redraw JSR2
 
 RTN
-	&path ".theme $1
 
 ( snarf )
 
