@@ -40,7 +40,10 @@
 %DEBUG  { ;print-hex JSR2 #0a .Console/write DEO }
 %DEBUG2 { SWP ;print-hex JSR2 ;print-hex JSR2 #0a .Console/write DEO }
 
-%8** { #30 SFT2 }    %8// { #03 SFT2 }
+%10** { #40 SFT2 }   %10// { #04 SFT2 }
+%8**  { #30 SFT2 }   %8// { #03 SFT2 }
+%4**  { #20 SFT2 }   %4// { #02 SFT2 }
+%2**  { #10 SFT2 }   %2// { #01 SFT2 }
 %TOB  { SWP POP }    %TOS  { #00 SWP }
 %MOD  { DUP2 / * - } %MOD2 { OVR2 OVR2 // ** -- } 
 
@@ -74,7 +77,7 @@
 %GET-CHAR  { #24 MOD #00 SWP ;b36clc ++ LDA } ( b36 -- char )
 %GET-VALUE { #20 - #00 SWP ;values ++ LDA } ( char -- b36 )
 %GET-NOTE  { DUP GET-VALUE SWP CIUC #24 * + TOS ;lc-notes ++ LDA } ( char -- midi )
-%GET-CHAR-ADDR { #20 - TOS #0010 ** ;font ++ }
+%GET-CHAR-ADDR { #20 - TOS 10** ;font ++ }
 
 %GET-CELL  { GET-INDEX DATA-CELLS ++ LDA } ( x y -- char )
 %SET-CELL  { ROT ROT GET-INDEX DATA-CELLS ++ STA } ( x y char -- )
@@ -170,12 +173,12 @@
 	( set grid size )
 	.Screen/width DEI2 
 		DUP2 8// TOB #03 - .grid/width STZ
-		DUP2 #0002 // .grid/width LDZ #02 / #01 + TOS 8** -- #0004 ++ .grid/x1 STZ2
-		#0002 // .grid/width LDZ #02 / TOS 8** ++ #0002 ++ .grid/x2 STZ2
+		DUP2 2// .grid/width LDZ #02 / #01 + TOS 8** -- #0004 ++ .grid/x1 STZ2
+		2// .grid/width LDZ #02 / TOS 8** ++ #0002 ++ .grid/x2 STZ2
 	.Screen/height DEI2 
-		DUP2 #0010 // TOB #03 - .grid/height STZ
-		DUP2 #0002 // .grid/height LDZ #02 / #01 + TOS #0010 ** -- #0004 -- .grid/y1 STZ2
-		#0002 // .grid/height LDZ #02 / TOS #0010 ** ++ #0008 -- .grid/y2 STZ2
+		DUP2 10// TOB #03 - .grid/height STZ
+		DUP2 2// .grid/height LDZ #02 / #01 + TOS 10** -- #0004 -- .grid/y1 STZ2
+		2// .grid/height LDZ #02 / TOS 10** ++ #0008 -- .grid/y2 STZ2
 
 	( adjust for small sizes )
 	.Screen/width DEI2 #0100 >> ,&hor-skip JCN
@@ -433,7 +436,7 @@ BRK
 	#41 [ .Mouse/state DEI #00 ! #02 * ] + .Screen/sprite DEO 
 
 	( route )
-	.Mouse/y DEI2 .toolbar/y1 LDZ2 -- #0010 // #0000 == 
+	.Mouse/y DEI2 .toolbar/y1 LDZ2 -- 10// #0000 == 
 		;on-mouse-toolbar JCN2
 	.Mouse/x DEI2 .Mouse/y DEI2 .grid ;within-rect JSR2
 		;on-mouse-grid JCN2
@@ -449,14 +452,14 @@ BRK
 		DUP2 #0100 !! ,&no-down JCN
 			.Mouse/x DEI2 .grid/x1 LDZ2 -- 8// TOB 
 				DUP .selection/x1 STZ .selection/x2 STZ
-			.Mouse/y DEI2 .grid/y1 LDZ2 -- #0010 // TOB 
+			.Mouse/y DEI2 .grid/y1 LDZ2 -- 10// TOB 
 				DUP .selection/y1 STZ .selection/y2 STZ
 			;clamp-selection JSR2 ;redraw JSR2
 			,&end JMP 
 			&no-down
 		( release )
 		.Mouse/x DEI2 .grid/x1 LDZ2 -- 8// TOB .selection/x2 STZ
-		.Mouse/y DEI2 .grid/y1 LDZ2 -- #0010 // TOB .selection/y2 STZ
+		.Mouse/y DEI2 .grid/y1 LDZ2 -- 10// TOB .selection/y2 STZ
 		;clamp-selection JSR2 ;redraw JSR2
 	&end
 	POP2
@@ -654,15 +657,14 @@ RTN
 	( get x ) DUP2 [ SWP #03 - SWP ] GET-PORT-LEFT STH
 	( get y ) DUP2 [ SWP #02 - SWP ] GET-PORT-LEFT STH
 	( get len ) DUP2 [ SWP #01 - SWP ] GET-PORT-LEFT 1MIN
-	#00 SWP
+	#00 
 	&loop
-		( x+i+1,y ) OVR STH OVR2 STHr ROT + #01 + SWP
+		( x+i+1,y ) DUP STH OVR2 STHr ROT + #01 + SWP
 		DUP2 GET-PORT-RIGHT-RAW STH
 		( unstash x,y ) ROTr STHkr ROTr STHkr ROTr
 		( x0+x1-1,y0+y1+1 ) ROT + STH + #01 - STHr #01 +
 		STHr SET-PORT-OUTPUT
-		SWP #01 + SWP
-		LTHk ;&loop JCN2
+		#01 + GTHk ;&loop JCN2
 	POP2
 	( clean ) POP2 POP2r
 
@@ -703,9 +705,9 @@ RTN
 
 	POP
 	( get len ) DUP2 [ SWP #01 - SWP ] GET-PORT-LEFT 1MIN
-	#00 SWP 
+	#00 
 	&loop
-		( x+i+1,y ) OVR STH OVR2 STHr ROT + #01 + SWP
+		( x+i+1,y ) DUP STH OVR2 STHr ROT + #01 + SWP
 		( get variable ) DUP2 GET-PORT-RIGHT 
 		DUP #00 = ,&skip JCN
 			.variables + LDZ STH
@@ -714,8 +716,7 @@ RTN
 			STHr
 			&skip
 		POP POP2
-		SWP #01 + SWP
-		LTHk ;&loop JCN2
+		#01 + GTHk ;&loop JCN2
 	POP2
 	POP2
 	
@@ -776,13 +777,12 @@ RTN
 	( get key ) DUP2 [ SWP #02 - SWP ] GET-PORT-LEFT STH
 	( get len ) DUP2 [ SWP #01 - SWP ] GET-PORT-LEFT 1MIN STH
 	( get input ) DUP2 [ SWP #01 + SWP ] GET-PORT-RIGHT-RAW STH
-	#00 OVRr STHr
+	OVRr STHr #00
 	&loop
-		( x+i+1,y ) OVR STH OVR2 STHr ROT + SWP #01 +
+		( x+i+1,y ) DUP STH OVR2 STHr ROT + SWP #01 +
 		( lock ) DUP2 #01 SET-LOCK
 		( type ) LOCKED-TYPE SET-TYPE
-		SWP #01 + SWP
-		LTHk ,&loop JCN
+		#01 + GTHk ,&loop JCN
 	POP2
 	( write )
 	( x-offset ) ROTr ROTr STH2r MOD
@@ -797,16 +797,16 @@ RTN
 	( get x ) DUP2 [ SWP #03 - SWP ] GET-PORT-LEFT STH
 	( get y ) DUP2 [ SWP #02 - SWP ] GET-PORT-LEFT STH
 	( get len ) DUP2 [ SWP #01 - SWP ] GET-PORT-LEFT 1MIN
-	#00 SWP
+	#00
 	&loop
-		( x+i+1,y ) OVR STH OVR2 STHr ROT + #01 + SWP
+		( x+i+1,y ) DUP STH OVR2 STHr ROT + #01 + SWP
 		( x+x0,y+y0 ) STHkr + SWP OVRr STHr + SWP
 		GET-PORT-RIGHT-RAW STH
-		( x-i-len ) DUP2 SWP - STH 
+		( x-i-len ) DUP2  - STH 
 		( x,y ) OVR2 SWP STHr - #01 + SWP #01 +
 		STHr SET-PORT-OUTPUT
-		SWP #01 + SWP
-		LTHk ;&loop JCN2
+		 #01 + 
+		GTHk ;&loop JCN2
 	POP2
 	( clean ) POP2 POP2r
 	
@@ -847,14 +847,13 @@ RTN
 
 	POP
 	( get key ) DUP2 [ SWP #02 - SWP ] GET-PORT-LEFT STH
-	( get len ) DUP2 [ SWP #01 - SWP ] GET-PORT-LEFT 1MIN STH
-	#00 STHkr
+	( get len ) DUP2 [ SWP #01 - SWP ] GET-PORT-LEFT 1MIN STHk
+	#00
 	&loop
-		( x+i+1,y ) OVR STH OVR2 STHr ROT + #01 + SWP
+		( x+i+1,y ) DUP STH OVR2 STHr ROT + #01 + SWP
 		( lock ) DUP2 #01 SET-LOCK 
 		( type ) LOCKED-TYPE SET-TYPE
-		SWP #01 + SWP
-		LTHk ,&loop JCN
+		#01 + GTHk ,&loop JCN
 	POP2
 	( read )
 	( x-offset ) DUP2 SWP #01 + SWP STH2r MOD ROT + SWP 
@@ -1127,7 +1126,7 @@ RTN
 	
 	.grid/height LDZ #00
 	&ver
-		( pos-y ) DUP #00 SWP #0010 ** [ .grid/y1 LDZ2 ++ ] .Screen/y DEO2
+		( pos-y ) DUP #00 SWP 10** [ .grid/y1 LDZ2 ++ ] .Screen/y DEO2
 		.grid/width LDZ #00
 		&hor
 			( pos-x ) DUP #00 SWP 8** [ .grid/x1 LDZ2 ++ ] .Screen/x DEO2
@@ -1169,7 +1168,7 @@ RTN
 	.selection/y1 LDZ #01 ;draw-byte JSR2
 
 	.grid/x1 LDZ2 #0020 ++ .Screen/x DEO2
-	;selection-icns .selection/insert LDZ TOS #0008 ** ++ .Screen/addr DEO2
+	;selection-icns .selection/insert LDZ TOS 8** ++ .Screen/addr DEO2
 	#02 .selection/x1 LDZ .selection/y1 LDZ .selection/x2 LDZ .selection/y2 LDZ == + .Screen/sprite DEO
 
 	( Frame )
@@ -1255,7 +1254,7 @@ RTN
 	.toolbar/x1 LDZ2 #0080 ++ .Screen/x DEO2
 	;path/name
 	&while
-		DUP2 LDA GET-CHAR-ADDR STHkr ;draw-char JSR2
+		LDAk GET-CHAR-ADDR STHkr ;draw-char JSR2
 		.Screen/x DEI2 #0008 ++ .Screen/x DEO2
 		#0001 ++ LDAk ,&while JCN
 	POP2
@@ -1290,9 +1289,9 @@ RTN
 	DATA-FILE .File/load DEO2 
 	( setup )
 	( TODO: Stop at #00 instead of fixed length )
-	#0000 #1000
+	#1000 #0000
 	&loop
-		( get char ) OVR2 DATA-FILE ++ LDA
+		( get char ) DUP2 DATA-FILE ++ LDA
 		DUP CHAR-NULL = ,&end JCN
 		DUP CHAR-LINE = ,&linebreak JCN
 			( write  ) STH ,&x LDR ,&y LDR STHr SET-CELL
@@ -1303,8 +1302,7 @@ RTN
 			( incr y ) ,&y LDR #01 + ,&y STR
 			POP
 		&continue
-		( incr ) SWP2 #0001 ++ SWP2
-		LTH2k ,&loop JCN
+		#0001 ++ GTH2k ,&loop JCN
 	&end
 	POP2 POP2 POP
 	#00 ,&x STR
