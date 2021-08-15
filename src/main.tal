@@ -44,7 +44,7 @@
 %8**  { #30 SFT2 }     %8// { #03 SFT2 }
 %4**  { #20 SFT2 }     %4// { #02 SFT2 }
 %2**  { #10 SFT2 }     %2// { #01 SFT2 }
-%TOB  { SWP POP }      %TOS  { #00 SWP }
+%TOS  { #00 SWP }
 %MOD  { DIVk MUL SUB } %MOD2 { DIV2k MUL2 SUB2 }
 
 %RTN  { JMP2r }
@@ -54,7 +54,7 @@
 %1MIN { DUP #00 = + }
 
 %TOGGLE { DUP LDZ #00 = SWP STZ }
-%GET-ITER { OVR2 SWP POP OVR SWP }
+%GET-ITER { OVR2 NIP OVR SWP }
 
 %LOCKED-TYPE   { #01 } %PORTEL-TYPE   { #02 }
 %OPERATOR-TYPE { #03 } %PORTER-TYPE   { #04 }
@@ -172,22 +172,22 @@
 
 	( set grid size )
 	.Screen/width DEI2 
-		DUP2 8// TOB #03 - .grid/width STZ
+		DUP2 8// NIP #03 - .grid/width STZ
 		DUP2 2// .grid/width LDZ #02 / #01 + TOS 8** -- #0004 ++ .grid/x1 STZ2
 		2// .grid/width LDZ #02 / TOS 8** ++ #0002 ++ .grid/x2 STZ2
 	.Screen/height DEI2 
-		DUP2 10// TOB #03 - .grid/height STZ
+		DUP2 10// NIP #03 - .grid/height STZ
 		DUP2 2// .grid/height LDZ #02 / #01 + TOS 10** -- #0004 -- .grid/y1 STZ2
 		2// .grid/height LDZ #02 / TOS 10** ++ #0008 -- .grid/y2 STZ2
 
 	( adjust for small sizes )
 	.Screen/width DEI2 #0100 >> ,&hor-skip JCN
 		#0000 .grid/x1 STZ2
-		.Screen/width DEI2 DUP2 .grid/x2 STZ2 8// TOB .grid/width STZ
+		.Screen/width DEI2 DUP2 .grid/x2 STZ2 8// NIP .grid/width STZ
 		&hor-skip
 	.Screen/height DEI2 #0080 >> ,&ver-skip JCN
 		#0000 .grid/y1 STZ2
-		.Screen/height DEI2 DUP2 .grid/y2 STZ2 8// TOB .grid/height STZ
+		.Screen/height DEI2 DUP2 .grid/y2 STZ2 8// NIP .grid/height STZ
 		&ver-skip
 
 	( set toolbar size )
@@ -450,16 +450,16 @@ BRK
 	.Mouse/state DEI DUP .cursor/last LDZ 
 		DUP2 #0000 == ,&end JCN
 		DUP2 #0100 !! ,&no-down JCN
-			.Mouse/x DEI2 .grid/x1 LDZ2 -- 8// TOB 
+			.Mouse/x DEI2 .grid/x1 LDZ2 -- 8// NIP 
 				DUP .selection/x1 STZ .selection/x2 STZ
-			.Mouse/y DEI2 .grid/y1 LDZ2 -- 10// TOB 
+			.Mouse/y DEI2 .grid/y1 LDZ2 -- 10// NIP 
 				DUP .selection/y1 STZ .selection/y2 STZ
 			;clamp-selection JSR2 ;redraw JSR2
 			,&end JMP 
 			&no-down
 		( release )
-		.Mouse/x DEI2 .grid/x1 LDZ2 -- 8// TOB .selection/x2 STZ
-		.Mouse/y DEI2 .grid/y1 LDZ2 -- 10// TOB .selection/y2 STZ
+		.Mouse/x DEI2 .grid/x1 LDZ2 -- 8// NIP .selection/x2 STZ
+		.Mouse/y DEI2 .grid/y1 LDZ2 -- 10// NIP .selection/y2 STZ
 		;clamp-selection JSR2 ;redraw JSR2
 	&end
 	POP2
@@ -472,7 +472,7 @@ BRK
 	( skip ) .Mouse/state DEI BRK?
 
 	( left-side )
-	.Mouse/x DEI2 .grid/x1 LDZ2 -- 8// TOB 
+	.Mouse/x DEI2 .grid/x1 LDZ2 -- 8// NIP 
 
 	DUP #04 ! ,&no-insert JCN
 		.selection/insert TOGGLE
@@ -490,7 +490,7 @@ BRK
 	POP
 
 	( right-side )
-	.grid/x2 LDZ2 .Mouse/x DEI2 -- 8// TOB 
+	.grid/x2 LDZ2 .Mouse/x DEI2 -- 8// NIP 
 	DUP ,&no-save JCN
 		;save-file JSR2 
 		&no-save
@@ -608,7 +608,7 @@ RTN
 	( get rate ) DUP2 [ SWP #01 - SWP ] GET-PORT-LEFT 1MIN STH
 	( get mod ) DUP2 [ SWP #01 + SWP ] GET-PORT-RIGHT 1MIN STH
 	( incr y ) #01 +
-	( get result ) SWPr .timer/frame LDZ2 STHr TOS // STHr TOS MOD2 TOB
+	( get result ) SWPr .timer/frame LDZ2 STHr TOS // STHr TOS MOD2 NIP
 	GET-CHAR SAVE-CASE SET-PORT-OUTPUT
 
 RTN
@@ -1475,7 +1475,7 @@ RTN
 	&loop
 		( get char ) DUP2 DATA-CLIP ++ LDA
 		DUP #0a ! ,&continue JCN
-			( move-y ) STH2r SWP POP .selection LDZ SWP #01 + STH2
+			( move-y ) STH2r NIP .selection LDZ SWP #01 + STH2
 			POP ,&resume JMP
 			&continue
 		( save ) STH2kr ROT SET-CELL
