@@ -32,9 +32,6 @@
 
 ( == )
 
-%INC { #01 + }  %INC2 { #0001 ++ }
-%INCk { DUP INC } %INC2k { DUP2 INC2 }
-
 %+  { ADD } %-   { SUB }  %*  { MUL } 
 %<  { LTH } %>   { GTH }  %=  { EQU }  %!  { NEQ }
 %++ { ADD2 } %-- { SUB2 } %** { MUL2 } %// { DIV2 }
