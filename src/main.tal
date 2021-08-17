@@ -32,7 +32,7 @@
 
 ( == )
 
-%+  { ADD } %-   { SUB }  %*  { MUL }  %/  { DIV }
+%+  { ADD } %-   { SUB }  %*  { MUL } 
 %<  { LTH } %>   { GTH }  %=  { EQU }  %!  { NEQ }
 %++ { ADD2 } %-- { SUB2 } %** { MUL2 } %// { DIV2 }
 %<< { LTH2 } %>> { GTH2 } %== { EQU2 } %!! { NEQ2 }
@@ -40,10 +40,16 @@
 %DEBUG  { ;print-hex JSR2 #0a .Console/write DEO }
 %DEBUG2 { SWP ;print-hex JSR2 ;print-hex JSR2 #0a .Console/write DEO }
 
-%10** { #40 SFT2 }     %10// { #04 SFT2 }
+%2* { #10 SFT } %2/ { #01 SFT }
+%4/ { #02 SFT }
+%8* { #30 SFT }
+%10* { #40 SFT }
+%20* { #50 SFT }
+
+%2// { #01 SFT2 }
 %8**  { #30 SFT2 }     %8// { #03 SFT2 }
-%4**  { #20 SFT2 }     %4// { #02 SFT2 }
-%2**  { #10 SFT2 }     %2// { #01 SFT2 }
+%10** { #40 SFT2 }     %10// { #04 SFT2 }
+
 %TOS  { #00 SWP }
 %MOD  { DIVk MUL SUB } %MOD2 { DIV2k MUL2 SUB2 }
 
@@ -90,7 +96,7 @@
 %GET-PORT-RIGHT-RAW { DUP2 PORTER-TYPE SET-TYPE DUP2 #01 SET-LOCK GET-CELL } ( x y -- char )
 %SET-PORT-OUTPUT { STH DUP2 OUTPUT-TYPE SET-TYPE DUP2 #01 SET-LOCK STHr SET-CELL } ( x y char -- )
 %LOAD-CASE { GET-CELL CIUC STH } ( x y -- uc )
-%SAVE-CASE { DUP #60 > STHr #20 * * - } ( char uc -- char )
+%SAVE-CASE { DUP #60 > STHr 20* * - } ( char uc -- char )
 
 ( devices )
 
@@ -173,12 +179,12 @@
 	( set grid size )
 	.Screen/width DEI2 
 		DUP2 8// NIP #03 - .grid/width STZ
-		DUP2 2// .grid/width LDZ #02 / #01 + TOS 8** -- #0004 ++ .grid/x1 STZ2
-		2// .grid/width LDZ #02 / TOS 8** ++ #0002 ++ .grid/x2 STZ2
+		DUP2 2// .grid/width LDZ 2/ #01 + TOS 8** -- #0004 ++ .grid/x1 STZ2
+		2// .grid/width LDZ 2/ TOS 8** ++ #0002 ++ .grid/x2 STZ2
 	.Screen/height DEI2 
 		DUP2 10// NIP #03 - .grid/height STZ
-		DUP2 2// .grid/height LDZ #02 / #01 + TOS 10** -- #0004 -- .grid/y1 STZ2
-		2// .grid/height LDZ #02 / TOS 10** ++ #0008 -- .grid/y2 STZ2
+		DUP2 2// .grid/height LDZ 2/ #01 + TOS 10** -- #0004 -- .grid/y1 STZ2
+		2// .grid/height LDZ 2/ TOS 10** ++ #0008 -- .grid/y2 STZ2
 
 	( adjust for small sizes )
 	.Screen/width DEI2 #0100 >> ,&hor-skip JCN
@@ -246,10 +252,10 @@ BRK
 
 	#08 ! ,&no-toggle JCN
 		.state/blink TOGGLE
-		#03 .state/blink LDZ #09 * + ;draw-filepath JSR2
+		#01 .state/blink LDZ 8* + ;draw-filepath JSR2
 		#00 .state/timer STZ 
 		&no-toggle
-
+	
 BRK
 
 @on-button ( -> )
@@ -433,7 +439,7 @@ BRK
 	.Mouse/x DEI2 DUP2 .cursor/x STZ2 .Screen/x DEO2
 	.Mouse/y DEI2 DUP2 .cursor/y STZ2 .Screen/y DEO2
 	;cursor-icn .Screen/addr DEO2
-	#41 [ .Mouse/state DEI #00 ! #02 * ] + .Screen/sprite DEO 
+	#41 [ .Mouse/state DEI #00 ! 2* ] + .Screen/sprite DEO 
 
 	( route )
 	.Mouse/y DEI2 .toolbar/y1 LDZ2 -- 10// #0000 == 
@@ -983,7 +989,7 @@ RTN
 	( get note ) DUP2 [ SWP #03 + SWP ] GET-PORT-RIGHT-RAW 
 		( req note ) DUP CHAR-DOT ! ,&is-active JCN [ POP POP2 POP2r RTN ] &is-active GET-NOTE STH ADDr
 	( req bang ) DUP2 ;get-bang JSR2 ,&is-bang [ JCN POP2 POP2r RTN ] &is-bang
-	STHr .Audio0/pitch STHr #10 * + DEO
+	STHr .Audio0/pitch STHr 10* + DEO
 	IO-TYPE SET-TYPE
 
 RTN
@@ -1040,7 +1046,7 @@ RTN
 	DUP #40 < ,&no-uc JCN
 	DUP #5a > ,&no-uc JCN
 		STH DUP2 OPERATOR-TYPE SET-TYPE &run STHr 
-		DUP GET-VALUE #0a - #02 * TOS ;operations ++ LDA2 JMP2
+		DUP GET-VALUE #0a - 2* TOS ;operations ++ LDA2 JMP2
 		&no-uc
 
 	( special )
@@ -1227,9 +1233,9 @@ RTN
 	#00 #08
 	&loop
 		.toolbar/x2 LDZ2 #0028 -- .Screen/x DEO2
-		DUP OVRr STHr #04 / < .Screen/pixel DEO
+		DUP OVRr STHr 4/ < .Screen/pixel DEO
 		.toolbar/x2 LDZ2 #0026 -- .Screen/x DEO2
-		DUP STHkr #04 / < .Screen/pixel DEO
+		DUP STHkr 4/ < .Screen/pixel DEO
 		.Screen/y DEI2 #0001 ++ .Screen/y DEO2
 		#01 - LTHk ,&loop JCN
 	POP2
@@ -1366,7 +1372,7 @@ RTN
 	( set modifiers )
 	DUP 
 		#01 AND #00 ! ;&drag STA
-		#04 AND #00 ! #02 * ;&scale STA
+		#04 AND #00 ! 2* ;&scale STA
 	STH2
 
 	;&drag LDA #00 = ,&no-drag-start JCN 
