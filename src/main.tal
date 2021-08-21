@@ -54,12 +54,12 @@
 %MOD  { DIVk MUL SUB } %MOD2 { DIV2k MUL2 SUB2 }
 
 %RTN  { JMP2r }
-%BRK? { #01 JCN BRK } %RTN? { #01 JCN RTN }
+%BRK? { #01 JCN BRK } %RTN?  { #01 JCN RTN }
 %SWP? { #01 JCN SWP } %SWPr? { #01 JCN SWPr }
 
 %1MIN { DUP #00 = + }
 
-%TOGGLE { DUP LDZ #00 = SWP STZ }
+%TOGGLE { LDZk #00 = SWP STZ }
 %GET-ITER { OVR2 NIP OVR SWP }
 
 %LOCKED-TYPE   { #01 } %PORTEL-TYPE   { #02 }
@@ -156,9 +156,9 @@
 |0100
 
 	( theme ) 
-	#0f35 .System/r DEO2 
-	#0fc5 .System/g DEO2 
-	#0f95 .System/b DEO2
+	#0f38 .System/r DEO2 
+	#0fc8 .System/g DEO2 
+	#0f98 .System/b DEO2
 
 	( synths )
 	#dd .Audio0/volume DEO  #0118 .Audio0/adsr DEO2 #0100 .Audio0/length DEO2
@@ -665,7 +665,7 @@ RTN
 	( get len ) DUP2 [ SWP #01 - SWP ] GET-PORT-LEFT 1MIN
 	#00 
 	&loop
-		( x+i+1,y ) DUP STH OVR2 STHr ROT + INC SWP
+		( x+i+1,y ) STHk OVR2 STHr ROT + INC SWP
 		DUP2 GET-PORT-RIGHT-RAW STH
 		( unstash x,y ) ROTr STHkr ROTr STHkr ROTr
 		( x0+x1-1,y0+y1+1 ) ROT + STH + #01 - STHr INC
@@ -713,7 +713,7 @@ RTN
 	( get len ) DUP2 [ SWP #01 - SWP ] GET-PORT-LEFT 1MIN
 	#00 
 	&loop
-		( x+i+1,y ) DUP STH OVR2 STHr ROT + INC SWP
+		( x+i+1,y ) STHk OVR2 STHr ROT + INC SWP
 		( get variable ) DUP2 GET-PORT-RIGHT 
 		DUP #00 = ,&skip JCN
 			.variables + LDZ STH
@@ -785,7 +785,7 @@ RTN
 	( get input ) DUP2 [ SWP INC SWP ] GET-PORT-RIGHT-RAW STH
 	OVRr STHr #00
 	&loop
-		( x+i+1,y ) DUP STH OVR2 STHr ROT + SWP INC
+		( x+i+1,y ) STHk OVR2 STHr ROT + SWP INC
 		( lock ) DUP2 #01 SET-LOCK
 		( type ) LOCKED-TYPE SET-TYPE
 		INC GTHk ,&loop JCN
@@ -805,7 +805,7 @@ RTN
 	( get len ) DUP2 [ SWP #01 - SWP ] GET-PORT-LEFT 1MIN
 	#00
 	&loop
-		( x+i+1,y ) DUP STH OVR2 STHr ROT + INC SWP
+		( x+i+1,y ) STHk OVR2 STHr ROT + INC SWP
 		( x+x0,y+y0 ) STHkr + SWP OVRr STHr + SWP
 		GET-PORT-RIGHT-RAW STH
 		( x-i-len ) DUP2  - STH 
@@ -856,7 +856,7 @@ RTN
 	( get len ) DUP2 [ SWP #01 - SWP ] GET-PORT-LEFT 1MIN STHk
 	#00
 	&loop
-		( x+i+1,y ) DUP STH OVR2 STHr ROT + INC SWP
+		( x+i+1,y ) STHk OVR2 STHr ROT + INC SWP
 		( lock ) DUP2 #01 SET-LOCK 
 		( type ) LOCKED-TYPE SET-TYPE
 		INC GTHk ,&loop JCN
@@ -1195,11 +1195,11 @@ RTN
 	( d-pad )
 	.dpad LDZ DUP #20 < ,&no-dpad JCN
 		.grid/x1 LDZ2 #0050 ++ STH2k .Screen/x DEO2
-		DUP #07 ;draw-byte JSR2
+		DUP #04 ;draw-byte JSR2
 		STH2kr #0010 ++ .Screen/x DEO2
 		;font #00 ;draw-char JSR2
 		STH2r #0018 ++ .Screen/x DEO2
-		.dpad LDZ GET-CHAR-ADDR #02 ;draw-char JSR2
+		.dpad LDZ GET-CHAR-ADDR #01 ;draw-char JSR2
 		&no-dpad
 	POP
 
