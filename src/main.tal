@@ -137,7 +137,6 @@
 	&y2 $2
 	&width $1 
 	&height $1
-	&length $1
 @toolbar
 	&x1 $2
 	&y1 $2
@@ -1588,3 +1587,4 @@ RTN
 @make-icn      fe82 8282 848a f400 
 @load-icn      feaa d6aa d4aa f400 
 
+include src/assets.tal

@@ -1,13 +1,11 @@
-#!/bin/bash
+#!/bin/sh -e
 
 echo "Cleaning.."
 rm -rf bin
 mkdir bin
 
 echo "Assembling.."
-cat src/main.tal src/assets.tal > src/orca.tal
-uxnasm src/orca.tal bin/orca.rom 
-rm src/orca.tal
+uxnasm src/main.tal bin/orca.rom 
 
 echo "Installing.."
 if [ -d "$HOME/roms" ] && [ -e ./bin/orca.rom ]
