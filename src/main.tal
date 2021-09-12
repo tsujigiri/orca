@@ -638,6 +638,14 @@ RTN
 
 RTN
 
+@set-port-raw ( value addr* -- )
+
+	( set lock ) DUP2 #01 ROT ROT DATA-LOCKS ++ STA
+	( set type ) DUP2 #00 ROT ROT DATA-TYPES ++ STA 
+	( set data ) DATA-CELLS ++ STA
+
+RTN
+
 ( operators )
 
 @op-a ( x y char -- )
@@ -699,16 +707,17 @@ RTN
 
 @op-e ( x y char -- )
 
-	STH
-	( hit edge ) OVR .grid/width LDZ #01 - = ;&collide JCN2
-	( hit cell ) DUP2 [ SWP INC SWP ] GET-CELL CHAR-DOT ! ,&collide JCN
-	DUP2 #00 SET-TYPE
-	DUP2 CHAR-DOT SET-CELL
-	[ SWP INC SWP ] DUP2 STHr SET-CELL
-	#01 SET-LOCK
+	STH 
+	OVR STH GET-INDEX STHr
+	( hit edge ) .grid/width LDZ #01 - = ,&collide JCN
+	( hit cell ) INC2k DATA-CELLS ++ LDA CHAR-DOT ! ,&collide JCN
+	( write new ) STH2k ROTr STHr STH2r INC2 ;set-port-raw JSR2
+	( erase old ) STH2 CHAR-DOT STH2r ;set-port-raw JSR2
 	RTN
-	&collide CHAR-BANG SET-CELL POPr
-	
+	&collide
+		POPr
+		STH2 CHAR-BANG STH2r ;set-port-output JSR2
+
 RTN
 
 @op-f ( x y char -- )
@@ -825,15 +834,16 @@ RTN
 
 @op-n ( x y char -- )
 	
-	STH
-	( hit edge ) DUP #00 = ;&collide JCN2
-	( hit cell ) DUP2 #01 - GET-CELL CHAR-DOT ! ,&collide JCN
-	DUP2 #00 SET-TYPE
-	DUP2 CHAR-DOT SET-CELL
-	#01 - DUP2 STHr SET-CELL
-	#01 SET-LOCK
+	STH 
+	STHk GET-INDEX STHr
+	( hit edge ) #00 = ,&collide JCN
+	( hit cell ) DUP2 #00 .grid/width LDZ -- DATA-CELLS ++ LDA CHAR-DOT ! ,&collide JCN
+	( write new ) STH2k ROTr STHr STH2r #00 .grid/width LDZ -- ;set-port-raw JSR2
+	( erase old ) STH2 CHAR-DOT STH2r ;set-port-raw JSR2
 	RTN
-	&collide CHAR-BANG SET-CELL POPr
+	&collide
+		POPr
+		STH2 CHAR-BANG STH2r ;set-port-output JSR2
 	
 RTN
 
@@ -908,15 +918,16 @@ RTN
 
 @op-s ( x y char -- )
 	
-	STH
-	( hit edge ) DUP .grid/height LDZ #01 - = ;&collide JCN2
-	( hit cell ) DUP2 INC GET-CELL CHAR-DOT ! ,&collide JCN
-	DUP2 #00 SET-TYPE
-	DUP2 CHAR-DOT SET-CELL
-	INC DUP2 STHr SET-CELL
-	#01 SET-LOCK
+	STH 
+	STHk GET-INDEX STHr
+	( hit edge ) .grid/height LDZ #01 - = ,&collide JCN
+	( hit cell ) DUP2 #00 .grid/width LDZ ++ DATA-CELLS ++ LDA CHAR-DOT ! ,&collide JCN
+	( write new ) STH2k ROTr STHr STH2r #00 .grid/width LDZ ++ ;set-port-raw JSR2
+	( erase old ) STH2 CHAR-DOT STH2r ;set-port-raw JSR2
 	RTN
-	&collide CHAR-BANG SET-CELL POPr
+	&collide
+		POPr
+		STH2 CHAR-BANG STH2r ;set-port-output JSR2
 	
 RTN
 
@@ -972,15 +983,16 @@ RTN
 
 @op-w ( x y char -- )
 
-	STH
-	( hit edge ) OVR #00 = ;&collide JCN2
-	( hit cell ) DUP2 [ SWP #01 - SWP ] GET-CELL CHAR-DOT ! ,&collide JCN
-	DUP2 #00 SET-TYPE
-	DUP2 CHAR-DOT SET-CELL
-	SWP #01 - SWP DUP2 STHr SET-CELL
-	#01 SET-LOCK
+	STH 
+	OVR STH GET-INDEX STHr
+	( hit edge ) #00 = ,&collide JCN
+	( hit cell ) DUP2 #0001 -- DATA-CELLS ++ LDA CHAR-DOT ! ,&collide JCN
+	( write new ) STH2k ROTr STHr STH2r #0001 -- ;set-port-raw JSR2
+	( erase old ) STH2 CHAR-DOT STH2r ;set-port-raw JSR2
 	RTN
-	&collide CHAR-BANG SET-CELL POPr
+	&collide
+		POPr
+		STH2 CHAR-BANG STH2r ;set-port-output JSR2
 	
 RTN
 
