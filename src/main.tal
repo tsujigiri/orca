@@ -592,6 +592,13 @@ RTN
 
 RTN
 
+@get-port-raw ( addr* -- value )
+
+	( set type ) DUP2 PORTEL-TYPE ROT ROT DATA-TYPES ++ STA 
+	( get data ) DATA-CELLS ++ LDA
+
+RTN
+
 @get-port-left ( addr* -- value )
 
 	( set type ) DUP2 PORTEL-TYPE ROT ROT DATA-TYPES ++ STA 
@@ -621,22 +628,14 @@ RTN
 
 	POP
 	GET-INDEX STH2k
-
-	( get a )
-	DEC2 ;get-port-left JSR2
-
-	( get b )
-	STH2kr INC2
+	( get a ) DEC2 ;get-port-left JSR2
+	( get b ) STH2kr INC2
 	( set lock ) DUP2 #01 ROT ROT DATA-LOCKS ++ STA
 	( set type ) DUP2 PORTER-TYPE ROT ROT DATA-TYPES ++ STA 
 	( get data ) DATA-CELLS ++ LDA GET-CASE GET-VALUE
-
-	( a b + )
-	+ 
-	GET-CHAR SET-CASE
-
-	( output )
-	STH2r #00 .grid/width LDZ ++ ;set-port-output JSR2
+	( a b + ) + 
+	( apply case ) GET-CHAR SET-CASE
+	( output ) STH2r #00 .grid/width LDZ ++ ;set-port-output JSR2
 
 RTN
 
@@ -644,22 +643,14 @@ RTN
 	
 	POP
 	GET-INDEX STH2k
-
-	( get a )
-	DEC2 ;get-port-left JSR2
-
-	( get b )
-	STH2kr INC2
+	( get a ) DEC2 ;get-port-left JSR2
+	( get b ) STH2kr INC2
 	( set lock ) DUP2 #01 ROT ROT DATA-LOCKS ++ STA
 	( set type ) DUP2 PORTER-TYPE ROT ROT DATA-TYPES ++ STA 
 	( get data ) DATA-CELLS ++ LDA GET-CASE GET-VALUE
-
-	( a b - )
-	- DUP #80 < ,&bounce JCN #24 SWP - &bounce 
-	GET-CHAR SET-CASE
-
-	( output )
-	STH2r #00 .grid/width LDZ ++ ;set-port-output JSR2
+	( a b - ) - DUP #80 < ,&bounce JCN #24 SWP - &bounce 
+	( apply case ) GET-CHAR SET-CASE
+	( output ) STH2r #00 .grid/width LDZ ++ ;set-port-output JSR2
 
 RTN
 
@@ -667,22 +658,14 @@ RTN
 	
 	POP
 	GET-INDEX STH2k
-
-	( get rate )
-	DEC2 ;get-port-left JSR2 1MIN
-
-	( get mod )
-	STH2kr INC2
+	( get rate ) DEC2 ;get-port-left JSR2 1MIN
+	( get mod ) STH2kr INC2
 	( set lock ) DUP2 #01 ROT ROT DATA-LOCKS ++ STA
 	( set type ) DUP2 PORTER-TYPE ROT ROT DATA-TYPES ++ STA 
 	( get data ) DATA-CELLS ++ LDA GET-CASE GET-VALUE 1MIN
-
-	( timer rate / mod % )
-	TOS ROT TOS .timer/frame LDZ2 SWP2 // SWP2 MOD2 NIP 
-	GET-CHAR SET-CASE
-
-	( output )
-	STH2r #00 .grid/width LDZ ++ ;set-port-output JSR2
+	( timer rate / mod % ) TOS ROT TOS .timer/frame LDZ2 SWP2 // SWP2 MOD2 NIP 
+	( apply case ) GET-CHAR SET-CASE
+	( output ) STH2r #00 .grid/width LDZ ++ ;set-port-output JSR2
 
 RTN
 
@@ -690,18 +673,11 @@ RTN
 
 	POP
 	GET-INDEX STH2k
-
-	( get rate )
-	DEC2 ;get-port-left JSR2 1MIN
-
-	( get mod )
-	STH2kr INC2 ;get-port-right JSR2 1MIN
-
-	( rate mod * 0 = )
-	* TOS .timer/frame LDZ2 SWP2 MOD2 #0000 == [ #fc * CHAR-DOT + ]
-
-	( output )
-	STH2r #00 .grid/width LDZ ++ ;set-port-output JSR2
+	( get rate ) DEC2 ;get-port-left JSR2 1MIN
+	( get mod ) STH2kr INC2 ;get-port-right JSR2 1MIN
+	( rate mod * 0 = ) * TOS .timer/frame LDZ2 SWP2 MOD2 #0000 == 
+	( bang on equal ) #fc * CHAR-DOT + 
+	( output ) STH2r #00 .grid/width LDZ ++ ;set-port-output JSR2
 	
 RTN
 
@@ -723,18 +699,10 @@ RTN
 
 	POP
 	GET-INDEX STH2k
-
-	( get rate )
-	DEC2 ;get-port-left JSR2
-
-	( get mod )
-	STH2kr INC2 ;get-port-right JSR2
-
-	( bang on equal )
-	= [ #fc * CHAR-DOT +  ]
-
-	( output )
-	STH2r #00 .grid/width LDZ ++ ;set-port-output JSR2
+	( get rate ) DEC2 ;get-port-left JSR2
+	( get mod ) STH2kr INC2 ;get-port-right JSR2
+	( bang on equal ) = [ #fc * CHAR-DOT +  ]
+	( output ) STH2r #00 .grid/width LDZ ++ ;set-port-output JSR2
 	
 RTN
 
@@ -782,9 +750,9 @@ RTN
 @op-j ( x y char -- )
 
 	POP ( TODO: Wiring )
-	( get value ) DUP2 #01 - GET-PORT-RIGHT-RAW STH
-	( incr y ) INC 
-	STHr SET-PORT-OUTPUT
+	GET-INDEX STH2k
+	( get above ) #00 .grid/width LDZ -- ;get-port-raw JSR2
+	( set below ) STH2r #00 .grid/width LDZ ++ ;set-port-output JSR2
 
 RTN
 
@@ -813,22 +781,14 @@ RTN
 
 	POP
 	GET-INDEX STH2k
-
-	( get rate )
-	DEC2 ;get-port-left JSR2
-
-	( get mod )
-	STH2kr INC2
+	( get rate ) DEC2 ;get-port-left JSR2
+	( get mod ) STH2kr INC2
 	( set lock ) DUP2 #01 ROT ROT DATA-LOCKS ++ STA
 	( set type ) DUP2 PORTER-TYPE ROT ROT DATA-TYPES ++ STA 
 	( get data ) DATA-CELLS ++ LDA GET-CASE GET-VALUE
-
-	( timer rate / mod % )
 	( min ) LTHk SWP? POP 
-	GET-CHAR SET-CASE
-
-	( output )
-	STH2r #00 .grid/width LDZ ++ ;set-port-output JSR2
+	( apply case ) GET-CHAR SET-CASE
+	( output ) STH2r #00 .grid/width LDZ ++ ;set-port-output JSR2
 	
 RTN
 
@@ -836,22 +796,14 @@ RTN
 
 	POP
 	GET-INDEX STH2k
-
-	( get rate )
-	DEC2 ;get-port-left JSR2
-
-	( get mod )
-	STH2kr INC2
+	( get rate ) DEC2 ;get-port-left JSR2
+	( get mod ) STH2kr INC2
 	( set lock ) DUP2 #01 ROT ROT DATA-LOCKS ++ STA
 	( set type ) DUP2 PORTER-TYPE ROT ROT DATA-TYPES ++ STA 
 	( get data ) DATA-CELLS ++ LDA GET-CASE GET-VALUE
-
-	( timer rate / mod % )
-	( min ) *
-	GET-CHAR SET-CASE
-
-	( output )
-	STH2r #00 .grid/width LDZ ++ ;set-port-output JSR2
+	( mul ) *
+	( apply case ) GET-CHAR SET-CASE
+	( output ) STH2r #00 .grid/width LDZ ++ ;set-port-output JSR2
 	
 RTN
 
@@ -1030,10 +982,10 @@ RTN
 @op-y ( x y char -- )
 
 	POP ( TODO: Wiring )
-	( get value ) DUP2 [ SWP #01 - SWP ] GET-PORT-RIGHT-RAW STH
-	( incr y ) SWP INC SWP
-	STHr SET-PORT-OUTPUT
-	
+	GET-INDEX STH2k
+	( get left ) DEC2 ;get-port-raw JSR2
+	( set right ) STH2r INC2 ;set-port-output JSR2
+
 RTN
 
 @op-z ( x y char -- )
@@ -1118,8 +1070,8 @@ RTN
 	POP 
 	DUP2 
 		;get-bang JSR2 STH
-		GET-INDEX STH2
-	( get a ) STH2kr INC2 ;get-port-right JSR2
+		GET-INDEX STH2k
+	( get a ) INC2 ;get-port-right JSR2
 	( get b ) STH2kr INC2 INC2 ;get-port-right JSR2
 	( req bang ) ROTr STHr ,&is-bang JCN [ POP2 POP2r RTN ] &is-bang
 	( set type ) STH2r IO-TYPE ROT ROT DATA-TYPES ++ STA 
@@ -1132,8 +1084,8 @@ RTN
 	POP 
 	DUP2 
 		;get-bang JSR2 STH
-		GET-INDEX STH2
-	( get a ) STH2kr INC2 ;get-port-right JSR2
+		GET-INDEX STH2k
+	( get a ) INC2 ;get-port-right JSR2
 	( get b ) STH2kr INC2 INC2 ;get-port-right JSR2
 	( req bang ) ROTr STHr ,&is-bang JCN [ POP2 POP2r RTN ] &is-bang
 	( set type ) STH2r IO-TYPE ROT ROT DATA-TYPES ++ STA 
