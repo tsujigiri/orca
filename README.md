@@ -60,6 +60,15 @@ To display the list of operators inside of Orca, use `CmdOrCtrl+G`.
 - `;` **note**(octave note): Sends a single note.
 - `/` **byte**(hb lb): Sends a single byte.
 
+#### Advanced
+
+Orca listens to stdin events and inputs the byte values as keyboard inputs. The cursor can also be moved with special bytes:
+
+- `#11` **up**
+- `#12` **down**
+- `#13` **left**
+- `#14` **right**
+
 ## Controls
 
 - `arrow` move

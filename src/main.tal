@@ -236,11 +236,23 @@ BRK
 
 @on-console ( -> )
 
-	.Console/read DEI IS-CHAR-KEY ,&continue JCN
-		BRK
-		&continue
-
-	.selection LDZ2 .Console/read DEI SET-CELL 
+	.Console/read DEI
+	DUP #11 ! ,&no-up JCN
+		#00ff #00 ;edit-selection JSR2
+		&no-up
+	DUP #12 ! ,&no-down JCN
+		#0001 #00 ;edit-selection JSR2
+		&no-down
+	DUP #13 ! ,&no-left JCN
+		#ff00 #00 ;edit-selection JSR2
+		&no-left
+	DUP #14 ! ,&no-right JCN
+		#0001 #00 ;edit-selection JSR2
+		&no-right
+	DUP IS-CHAR-KEY #00 = ,&no-key JCN
+		STHk .selection LDZ2 STHr SET-CELL 
+		&no-key
+	POP
 
 BRK
 
