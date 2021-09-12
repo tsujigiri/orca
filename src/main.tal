@@ -1167,31 +1167,26 @@ RTN
 
 @clear ( -- )
 
-	.grid/height LDZ #00
-	&ver
-		.grid/width LDZ #00
-		&hor
-			GET-ITER CHAR-DOT SET-CELL
-			INC GTHk ,&hor JCN
-		POP2
-		INC GTHk ,&ver JCN
-	POP2
+	#00 .grid/height LDZ #00 .grid/width LDZ ** #0000
+	&loop
+		STH2k 
+		CHAR-DOT DATA-CELLS STH2kr ++ STA
+		#00 DATA-LOCKS STH2kr ++ STA
+		#00 DATA-TYPES STH2r ++ STA
+		INC2 GTH2k ,&loop JCN
+	POP2 POP2
 
 RTN
 
 @init ( -- )
 	
-	.grid/height LDZ #00
-	&ver
-		.grid/width LDZ #00
-		&hor
-			GET-ITER
-			( reset lock ) DUP2 #00 SET-LOCK
-			( reset type ) #00 SET-TYPE
-			INC GTHk ,&hor JCN
-		POP2
-		INC GTHk ,&ver JCN
-	POP2
+	#00 .grid/height LDZ #00 .grid/width LDZ ** #0000
+	&loop
+		STH2k 
+		#00 DATA-LOCKS STH2kr ++ STA
+		#00 DATA-TYPES STH2r ++ STA
+		INC2 GTH2k ,&loop JCN
+	POP2 POP2
 
 RTN
 
