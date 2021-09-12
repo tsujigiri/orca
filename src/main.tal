@@ -236,6 +236,10 @@ BRK
 
 @on-console ( -> )
 
+	.Console/read DEI IS-CHAR-KEY ,&continue JCN
+		BRK
+		&continue
+
 	.selection LDZ2 .Console/read DEI SET-CELL 
 
 BRK
