@@ -72,6 +72,7 @@
 %CHAR-HASH  { #23 } %CHAR-BANG  { #2a }
 %CHAR-DOT   { #2e } %CHAR-SLASH { #2f }  
 %CHAR-COLON { #3a } %CHAR-EQUAL { #3d }
+%CHAR-SEMI  { #3b }
 
 %IS-CHAR-KEY { STHk #20 > STHr #7b < #0101 == }
 %CIUC { STHk #40 > STHr #5b < #0101 == } ( char -- flag )
@@ -1112,23 +1113,43 @@ RTN
 
 RTN
 
-@op-byte ( x y char -- )
+@op-note ( x y char -- )
 
 	POP 
-
-	DUP2 GET-INDEX STH2
-	;get-bang JSR2 STH ROTr ROTr
-
+	DUP2 
+		;get-bang JSR2 STH
+		GET-INDEX STH2
+		
 	( get a )
 	STH2kr INC2 ;get-port-right JSR2
 	( get b )
-	STH2r INC2 INC2 ;get-port-right JSR2
+	STH2kr INC2 INC2 ;get-port-right JSR2
+	( req bang )
+	ROTr STHr ,&is-bang JCN [ POP2 POP2r RTN ] &is-bang
 
-	STHr ,&is-bang JCN 
-		POP2 RTN 
-		&is-bang
+	( set type ) STH2r IO-TYPE ROT ROT DATA-TYPES ++ STA 
 
 	SWP #0c * + .Console/write DEO
+
+RTN
+
+@op-byte ( x y char -- )
+
+	POP 
+	DUP2 
+		;get-bang JSR2 STH
+		GET-INDEX STH2
+		
+	( get a )
+	STH2kr INC2 ;get-port-right JSR2
+	( get b )
+	STH2kr INC2 INC2 ;get-port-right JSR2
+	( req bang )
+	ROTr STHr ,&is-bang JCN [ POP2 POP2r RTN ] &is-bang
+
+	( set type ) STH2r IO-TYPE ROT ROT DATA-TYPES ++ STA 
+
+	#0f AND SWP #0f AND #40 SFT + .Console/write DEO
 
 RTN
 
@@ -1162,6 +1183,7 @@ RTN
 	( special )
 	DUP CHAR-BANG = ;op-bang JCN2
 	DUP CHAR-HASH = ;op-comment JCN2
+	DUP CHAR-SEMI = ;op-note JCN2
 	DUP CHAR-EQUAL = ;op-synth JCN2
 	DUP CHAR-COLON = ;op-midi JCN2
 	DUP CHAR-SLASH = ;op-byte JCN2
