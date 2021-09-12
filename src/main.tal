@@ -1119,17 +1119,11 @@ RTN
 	DUP2 
 		;get-bang JSR2 STH
 		GET-INDEX STH2
-		
-	( get a )
-	STH2kr INC2 ;get-port-right JSR2
-	( get b )
-	STH2kr INC2 INC2 ;get-port-right JSR2
-	( req bang )
-	ROTr STHr ,&is-bang JCN [ POP2 POP2r RTN ] &is-bang
-
+	( get a ) STH2kr INC2 ;get-port-right JSR2
+	( get b ) STH2kr INC2 INC2 ;get-port-right JSR2
+	( req bang ) ROTr STHr ,&is-bang JCN [ POP2 POP2r RTN ] &is-bang
 	( set type ) STH2r IO-TYPE ROT ROT DATA-TYPES ++ STA 
-
-	SWP #0c * + .Console/write DEO
+	( send note ) SWP #0c * + .Console/write DEO
 
 RTN
 
@@ -1139,17 +1133,11 @@ RTN
 	DUP2 
 		;get-bang JSR2 STH
 		GET-INDEX STH2
-		
-	( get a )
-	STH2kr INC2 ;get-port-right JSR2
-	( get b )
-	STH2kr INC2 INC2 ;get-port-right JSR2
-	( req bang )
-	ROTr STHr ,&is-bang JCN [ POP2 POP2r RTN ] &is-bang
-
+	( get a ) STH2kr INC2 ;get-port-right JSR2
+	( get b ) STH2kr INC2 INC2 ;get-port-right JSR2
+	( req bang ) ROTr STHr ,&is-bang JCN [ POP2 POP2r RTN ] &is-bang
 	( set type ) STH2r IO-TYPE ROT ROT DATA-TYPES ++ STA 
-
-	#0f AND SWP #0f AND #40 SFT + .Console/write DEO
+	( write byte ) #0f AND SWP #0f AND #40 SFT + .Console/write DEO
 
 RTN
 
