@@ -52,6 +52,7 @@
 
 %TOS  { #00 SWP }
 %MOD  { DIVk MUL SUB } %MOD2 { DIV2k MUL2 SUB2 }
+%4MOD { #03 AND }
 
 %RTN  { JMP2r }
 %BRK? { #01 JCN BRK } %RTN?  { #01 JCN RTN }
@@ -1076,7 +1077,7 @@ RTN
 	( get note ) DUP2 [ SWP #03 + SWP ] GET-PORT-RIGHT-RAW 
 		( req note ) DUP CHAR-DOT ! ,&is-active JCN [ POP POP2 POP2r RTN ] &is-active GET-NOTE STH ADDr
 	( req bang ) DUP2 ;get-bang JSR2 ,&is-bang [ JCN POP2 POP2r RTN ] &is-bang
-	STHr .Audio0/pitch STHr 10* + DEO
+	STHr .Audio0/pitch STHr 4MOD 10* + DEO
 	IO-TYPE SET-TYPE
 
 RTN
