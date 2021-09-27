@@ -2,7 +2,7 @@
 
 [Orca](https://wiki.xxiivv.com/orca) is an esoteric programming language, written in [Uxntal](https://wiki.xxiivv.com/site/uxntal.html).
 
-In Orca, every letter of the alphabet is an operation, where lowercase letters operate on bang, uppercase letters operate each frame. This repository also contain a C implementation.
+In Orca, every letter of the alphabet is an operation, where lowercase letters operate on bang, uppercase letters operate each frame. 
 
 ## Build
 
