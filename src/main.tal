@@ -1457,9 +1457,9 @@ RTN
 
 	( File )
 	.grid/x2 LDZ2 STH2k #0018 -- .Screen/x DEO2
-	;font/make #01 ;draw-char JSR2
-	STH2r #0020 -- .Screen/x DEO2
 	;font/load #01 ;draw-char JSR2
+	STH2r #0020 -- .Screen/x DEO2
+	;font/make #01 ;draw-char JSR2
 
 	( filepath )
 	#03 ;draw-filepath JSR2
