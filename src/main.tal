@@ -267,8 +267,7 @@ BRK
 		DUP .timer/beat STZ 
 		.timer/speed LDZ = BRK?
 
-	.timer/frame LDZ2 INC2 
-		.timer/frame STZ2
+	( incr frame ) .timer/frame LDZ2 INC2 .timer/frame STZ2
 
 	;run JSR2
 
@@ -456,11 +455,11 @@ BRK
 	.Mouse/state DEI BRK?
 
 	;untrap JSR2
-	
+
 BRK
 
 @on-mouse ( -> )
-	
+
 	( clear last cursor )
 	.cursor/x LDZ2 .Screen/x DEO2
 	.cursor/y LDZ2 .Screen/y DEO2
@@ -1381,95 +1380,6 @@ RTN
 
 RTN
 
-@redraw ( -- )
-	
-	.grid/height LDZ #00
-	&ver
-		( pos-y ) DUP #00 SWP 10** [ .grid/y1 LDZ2 ++ ] .Screen/y DEO2
-		.grid/width LDZ #00
-		&hor
-			( pos-x ) DUP #00 SWP 8** [ .grid/x1 LDZ2 ++ ] .Screen/x DEO2
-			GET-ITER
-			( sprite ) DUP2 ;get-cell-sprite JSR2
-			( color ) SWP2 ,get-cell-type JSR TOS ;cell-styles ++ LDA
-			;draw-char JSR2
-			INC GTHk ,&hor JCN
-		POP2
-		INC GTHk ,&ver JCN
-	POP2
-	,draw-toolbar JSR
-	;draw-meter JSR2
-
-RTN
-
-@get-cell-type ( x y -- type )
-	
-	OVR .selection/x1 LDZ < ,&end JCN
-	OVR .selection/x2 LDZ > ,&end JCN
-	DUP .selection/y1 LDZ < ,&end JCN
-	DUP .selection/y2 LDZ > ,&end JCN
-		POP2 #06 RTN 
-	&end
-	GET-TYPE
-
-RTN
-
-@draw-toolbar ( -- )
-		
-	( skip on samll screens )
-	.toolbar/y1 LDZ2 .Screen/height DEI2 << RTN?
-
-	.toolbar/y1 LDZ2 .Screen/y DEO2
-
-	( Positions )
-	.grid/x1 LDZ2 .Screen/x DEO2
-	.selection/x1 LDZ #01 ;draw-byte JSR2
-	.grid/x1 LDZ2 #0010 ++ .Screen/x DEO2
-	.selection/y1 LDZ #01 ;draw-byte JSR2
-
-	.grid/x1 LDZ2 #0020 ++ .Screen/x DEO2
-	;selection-icns .selection/insert LDZ TOS 8** ++ .Screen/addr DEO2
-	#02 .selection/x1 LDZ .selection/y1 LDZ .selection/x2 LDZ .selection/y2 LDZ == + .Screen/sprite DEO
-
-	( Frame )
-	.grid/x1 LDZ2 #0030 ++ .Screen/x DEO2
-	.timer/frame INC LDZ #01 ;draw-byte JSR2
-	.grid/x1 LDZ2 #0040 ++ .Screen/x DEO2
-	;beat-icn .Screen/addr DEO2
-	#03 .timer/frame INC LDZ #07 AND #00 = - .Screen/sprite DEO
-	
-	( Speed )
-	.grid/x1 LDZ2 #0050 ++ .Screen/x DEO2
-	.timer/speed LDZ #01 ;draw-byte JSR2
-	.grid/x1 LDZ2 #0060 ++ .Screen/x DEO2
-	( t ) #74 GET-CHAR-ADDR #01 ;draw-char JSR2
-	.grid/x1 LDZ2 #0068 ++ .Screen/x DEO2
-	( h ) #68 GET-CHAR-ADDR #01 ;draw-char JSR2
-
-	( d-pad )
-	.dpad LDZ DUP #20 < ,&no-dpad JCN
-		.grid/x1 LDZ2 #0050 ++ STH2k .Screen/x DEO2
-		DUP #04 ;draw-byte JSR2
-		STH2kr #0010 ++ .Screen/x DEO2
-		;font #00 ;draw-char JSR2
-		STH2r #0018 ++ .Screen/x DEO2
-		.dpad LDZ GET-CHAR-ADDR #01 ;draw-char JSR2
-		&no-dpad
-	POP
-
-	( File )
-	.grid/x2 LDZ2 STH2k #0018 -- .Screen/x DEO2
-	;load-icn .Screen/addr DEO2
-	#01 .Screen/sprite DEO
-	STH2r #0020 -- .Screen/x DEO2
-	;make-icn .Screen/addr DEO2
-	#01 .Screen/sprite DEO
-
-	( filepath )
-	#03 ;draw-filepath JSR2
-
-RTN
-
 @draw-meter ( -- )
 	
 	.toolbar/y1 LDZ2 #0001 -- .Screen/y DEO2
@@ -1498,12 +1408,69 @@ RTN
 
 RTN
 
+@draw-toolbar ( -- )
+
+	( skip on small screens )
+	.toolbar/y1 LDZ2 .Screen/height DEI2 << RTN?
+
+	.toolbar/y1 LDZ2 .Screen/y DEO2
+
+	( Positions )
+	.grid/x1 LDZ2 .Screen/x DEO2
+	.selection/x1 LDZ #01 ;draw-byte JSR2
+	.grid/x1 LDZ2 #0010 ++ .Screen/x DEO2
+	.selection/y1 LDZ #01 ;draw-byte JSR2
+
+	.grid/x1 LDZ2 #0020 ++ .Screen/x DEO2
+	;font/selector .selection/insert LDZ TOS 10** ++
+		#02 .selection/x1 LDZ2 .selection/x2 LDZ2 == + 
+		;draw-char JSR2
+
+	( Frame )
+	.grid/x1 LDZ2 #0030 ++ .Screen/x DEO2
+	.timer/frame INC LDZ #01 ;draw-byte JSR2
+
+	.grid/x1 LDZ2 #0040 ++ .Screen/x DEO2
+	;font/beat
+		#03 .timer/frame INC LDZ #07 AND #00 = -
+		;draw-char JSR2
+
+	( d-pad )
+	.dpad LDZ DUP #20 < ,&no-dpad JCN
+		.grid/x1 LDZ2 #0050 ++ STH2k .Screen/x DEO2
+		DUP #04 ;draw-byte JSR2
+		STH2kr #0010 ++ .Screen/x DEO2
+		;font #00 ;draw-char JSR2
+		STH2r #0018 ++ .Screen/x DEO2
+		.dpad LDZ GET-CHAR-ADDR #01 ;draw-char JSR2
+		,&continue JMP
+		&no-dpad
+	( Speed )
+	.grid/x1 LDZ2 #0050 ++ .Screen/x DEO2
+	.timer/speed LDZ #01 ;draw-byte JSR2
+	.grid/x1 LDZ2 #0060 ++ .Screen/x DEO2
+	( t ) #74 GET-CHAR-ADDR #03 ;draw-char JSR2
+	.grid/x1 LDZ2 #0068 ++ .Screen/x DEO2
+	( h ) #68 GET-CHAR-ADDR #03 ;draw-char JSR2
+	&continue 
+	POP
+
+	( File )
+	.grid/x2 LDZ2 STH2k #0018 -- .Screen/x DEO2
+	;font/make #01 ;draw-char JSR2
+	STH2r #0020 -- .Screen/x DEO2
+	;font/load #01 ;draw-char JSR2
+
+	( filepath )
+	#03 ;draw-filepath JSR2
+
+RTN
+
 @draw-state ( -- )
 	
 	.toolbar/x2 LDZ2 #0008 -- .Screen/x DEO2
 	.toolbar/y1 LDZ2 .Screen/y DEO2
-	;save-icn .Screen/addr DEO2
-	#01 .state/changed LDZ + .Screen/sprite DEO
+	;font/save #01 .state/changed LDZ + ;draw-char JSR2
 
 RTN
 
@@ -1521,6 +1488,39 @@ RTN
 	POPr
 	( clear last ) 
 	#00 .Screen/sprite DEO
+
+RTN
+
+@redraw ( -- )
+	
+	.grid/height LDZ #00
+	&ver
+		( pos-y ) DUP #00 SWP 10** [ .grid/y1 LDZ2 ++ ] .Screen/y DEO2
+		.grid/width LDZ #00
+		&hor
+			( pos-x ) DUP #00 SWP 8** [ .grid/x1 LDZ2 ++ ] .Screen/x DEO2
+			GET-ITER
+			( sprite ) DUP2 ;get-cell-sprite JSR2
+			( color ) SWP2 ,get-cell-type JSR TOS ;cell-styles ++ LDA
+			;draw-char JSR2
+			INC GTHk ,&hor JCN
+		POP2
+		INC GTHk ,&ver JCN
+	POP2
+	;draw-toolbar JSR2
+	;draw-meter JSR2
+
+RTN
+
+@get-cell-type ( x y -- type )
+	
+	OVR .selection/x1 LDZ < ,&end JCN
+	OVR .selection/x2 LDZ > ,&end JCN
+	DUP .selection/y1 LDZ < ,&end JCN
+	DUP .selection/y2 LDZ > ,&end JCN
+		POP2 #06 RTN 
+	&end
+	GET-TYPE
 
 RTN
 
