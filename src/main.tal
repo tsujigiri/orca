@@ -75,8 +75,8 @@
 %CHAR-COLON { #3a } %CHAR-EQUAL { #3d }
 %CHAR-SEMI  { #3b }
 
-%IS-CHAR-KEY { STHk #20 > STHr #7b < #0101 == }
-%CIUC { STHk #40 > STHr #5b < #0101 == } ( char -- flag )
+%IS-CHAR-KEY { STHk #20 > STHr #7b < AND }
+%CIUC { STHk #40 > STHr #5b < AND } ( char -- flag )
 
 %SET-STATE   { #01 .state/changed STZ ;draw-state JSR2 }
 %RESET-STATE { #00 .state/changed STZ ;draw-state JSR2 }
@@ -314,7 +314,7 @@ BRK
 			&no-space-insert
 		;redraw JSR2 POP BRK 
 		&no-space
-	DUP #08 ! OVR #7f ! #0101 == ,&no-backspace JCN
+	DUP #08 ! OVR #7f ! AND ,&no-backspace JCN
 		CHAR-DOT ;fill-selection JSR2 
 		.selection/insert LDZ #00 = ,&no-backspace-insert JCN
 			#ff #00 #00 ;edit-selection JSR2 
@@ -631,7 +631,7 @@ RTN
 
 	( y )
 	STHkr #00 = ,&no-ver JCN
-		( clamp ) STHkr #ff = .selection/y1 [ ,&scale LDR + ] LDZ #00 = #0101 == ,&no-ver JCN
+		( clamp ) STHkr #ff = .selection/y1 [ ,&scale LDR + ] LDZ #00 = AND ,&no-ver JCN
 		.selection/y1 [ ,&scale LDR + ] LDZ STHkr + 
 			.selection/y1 [ ,&scale LDR + ] STZ
 		,&scale LDR ,&no-ver JCN
@@ -640,7 +640,7 @@ RTN
 
 	( x )
 	STHkr #00 = ,&no-hor JCN
-		( clamp ) STHkr #ff = .selection/x1 [ ,&scale LDR + ] LDZ #00 = #0101 == ,&no-hor JCN
+		( clamp ) STHkr #ff = .selection/x1 [ ,&scale LDR + ] LDZ #00 = AND ,&no-hor JCN
 		.selection/x1 [ ,&scale LDR + ] LDZ STHkr + 
 			.selection/x1 [ ,&scale LDR + ] STZ
 		,&scale LDR ,&no-hor JCN
