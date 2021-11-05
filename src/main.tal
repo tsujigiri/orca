@@ -19,9 +19,7 @@
 	ctrl+escape - toggle play/pause 
 
 	TODO
-		- Snarf buffer support
 		- Catch ports that overflow out of grid
-		- Insert mode
 		- Display on-screen guide )
 
 %DATA-CELLS { #b000 }
@@ -29,8 +27,6 @@
 %DATA-TYPES { #d000 }
 %DATA-FILE  { #e000 } ( file transfer )
 %DATA-CLIP  { #f000 } ( copy/paste )
-
-( == )
 
 %+  { ADD } %-   { SUB }  %*  { MUL } 
 %<  { LTH } %>   { GTH }  %=  { EQU }  %!  { NEQ }
@@ -51,15 +47,18 @@
 %10** { #40 SFT2 }     %10// { #04 SFT2 }
 
 %TOS  { #00 SWP }
-%MOD  { DIVk MUL SUB } %MOD2 { DIV2k MUL2 SUB2 }
-%4MOD { #03 AND }
 
-%RTN  { JMP2r }
-%BRK? { #01 JCN BRK } %RTN?  { #01 JCN RTN }
-%SWP? { #01 JCN SWP } %SWPr? { #01 JCN SWPr }
+%4MOD { #03 AND }
+%8MOD { #07 AND }
+%MOD  { DIVk MUL SUB } %MOD2 { DIV2k MUL2 SUB2 }
+
+%BRK? { #01 JCN BRK } 
+%RTN  { JMP2r } 
+%RTN? { #01 JCN RTN }
+%SWP? { #01 JCN SWP } 
+%SWPr? { #01 JCN SWPr }
 
 %DEC2 { #0001 -- }
-
 %1MIN { DUP #00 = + }
 
 %TOGGLE { LDZk #00 = SWP STZ }
@@ -126,36 +125,25 @@
 |0000
 
 @state
-	&timer $1
-	&blink $1
-	&changed $1
+	&timer $1 &blink $1 &changed $1
 @timer
-	&beat $1 
-	&alive $1 
-	&speed $1
-	&frame $2 
-	&seed $2
+	&beat $1 &alive $1 &speed $1 &frame $2 &seed $2
 @path 
-	&length $1
-	&name $20
+	&length $1 &name $20
 @grid
-	&x1 $2
-	&y1 $2
-	&x2 $2
-	&y2 $2
-	&width $1 
-	&height $1
+	&x1 $2 &y1 $2
+	&x2 $2 &y2 $2
+	&width $1 &height $1
 @toolbar
-	&x1 $2
-	&y1 $2
-	&x2 $2
-	&y2 $2
+	&x1 $2 &y1 $2
+	&x2 $2 &y2 $2
 @selection 
 	&x1 $1 &y1 $1 
 	&x2 $1 &y2 $1 
 	&insert $1
 @cursor
-	&x $2 &y $2 &last $1
+	&x $2 &y $2 
+	&last $1
 @variables
 	$36
 @dpad $1 &last $1
@@ -290,13 +278,13 @@ BRK
 
 @on-frame-trap ( -> )
 
-	( incr ) .state/timer LDZ INC DUP .state/timer STZ 
-
-	#08 ! ,&no-toggle JCN
-		.state/blink TOGGLE
-		#01 .state/blink LDZ 8* + ;draw-filepath JSR2
-		#00 .state/timer STZ 
-		&no-toggle
+	.state/timer LDZ INC 
+	DUP 8MOD ,&no-blink JCN
+		.state/blink LDZ #00 =
+			DUP 8* INC ;draw-filepath JSR2
+			.state/blink STZ
+		&no-blink
+	.state/timer STZ 
 	
 BRK
 
