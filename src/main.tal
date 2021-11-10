@@ -55,7 +55,6 @@
 %BRK? { #01 JCN BRK } 
 %RTN  { JMP2r } 
 %RTN? { #01 JCN RTN }
-%SWP? { #01 JCN SWP } 
 %SWPr? { #01 JCN SWPr }
 
 %DEC2 { #0001 -- }
@@ -593,9 +592,9 @@ RTN
 
 @clamp-position ( x y -- x y )
 
-	.grid/height LDZ LTHk SWP? POP
+	.grid/height LDZ LTHk JMP SWP POP
 	SWP
-	.grid/width LDZ LTHk SWP? POP
+	.grid/width LDZ LTHk JMP SWP POP
 	SWP
 
 RTN
@@ -677,7 +676,7 @@ RTN
 @set-speed ( speed -- )
 
 	( clamp )
-	#1f AND [ #04 GTHk SWP? POP ] .timer/speed STZ
+	#1f AND [ #04 GTHk JMP SWP POP ] .timer/speed STZ
 	( reset timer )
 	#00 .timer/beat STZ
 
@@ -1048,7 +1047,7 @@ RTN
 		( set lock ) DUP2 #01 ROT ROT DATA-LOCKS ++ STA
 		( set type ) DUP2 PORTER-TYPE ROT ROT DATA-TYPES ++ STA 
 		( get data ) DATA-CELLS ++ LDA GET-CASE GET-VALUE
-	( min ) LTHk SWP? POP 
+	( min ) LTHk JMP SWP POP
 	( apply case ) GET-CHAR SET-CASE
 	( output ) STH2r #00 .grid/width LDZ ++ ;set-port-output JSR2
 	
@@ -1143,7 +1142,7 @@ RTN
 	( get min ) DUP2 [ SWP #01 - SWP ] GET-PORT-LEFT STH
 	( get max ) DUP2 [ SWP INC SWP ] GET-PORT-RIGHT 1MIN STH
 	( unstash min,max ) STH2r 
-	( real max ) LTHk SWP?
+	( real max ) LTHk JMP SWP
 	( no equal ) NEQk #04 JCN [ #01 - SWP ] 
 	( stash min,max ) STH2
 	( incr y ) INC
