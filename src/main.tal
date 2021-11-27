@@ -1760,4 +1760,4 @@ RTN
 
 @cursor-icn     80c0 e0f0 f8e0 1000
 
-include src/assets.tal
+~src/assets.tal
