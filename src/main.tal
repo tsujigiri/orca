@@ -677,21 +677,13 @@ RTN
 
 RTN
 
-@clear-attr ( -- )
-
-	#00 .grid/height LDZ #00 .grid/width LDZ ** #0000
-	&loop
-		STH2k
-		#00 DATA-LOCKS STH2kr ++ STA
-		#00 DATA-TYPES STH2r ++ STA
-		INC2 GTH2k ,&loop JCN
-	POP2 POP2
-
-RTN
-
 @run ( -- )
 
-	;clear-attr JSR2
+	( clear lock/types )
+	#00 .grid/height LDZ #00 .grid/width LDZ ** STH2
+		DATA-LOCKS STH2kr ;mclr JSR2
+		DATA-TYPES STH2r ;mclr JSR2
+	( do )
 	.grid/height LDZ #00
 	&ver
 		.grid/width LDZ #00
@@ -1447,7 +1439,6 @@ RTN
 	( clear variables )
 	;variables #0024 ;mclr JSR2
 	;clear-grid JSR2
-	;clear-attr JSR2
 	( rename to untitled.txt )
 	;path/name #0020 ;mclr JSR2
 	;untitled-txt ;path/name #000d ;mcpy JSR2
