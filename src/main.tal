@@ -42,7 +42,7 @@
 
 %SET-STATE   { #01 .state/changed STZ ;draw-state JSR2 }
 %RESET-STATE { #00 .state/changed STZ ;draw-state JSR2 }
-%RESET-SELECTION { .selection/x1 LDZ2 .selection/x2 STZ2 }
+%RESET-SELECTION { .selection/x1 LDZ2 ;set-selection-from JSR2 }
 %RESET-INSERT { #00 .selection/insert STZ }
 
 %GET-INDEX { #00 SWP #00 .grid/width LDZ ** ROT #00 SWP ++ } ( x y -- index )
@@ -76,10 +76,9 @@
 |40 @Audio1     &vector $2 &position $2 &output $1 &pad   $3 &adsr   $2 &length $2 &addr  $2 &volume $1 &pitch $1
 |50 @Audio2     &vector $2 &position $2 &output $1 &pad   $3 &adsr   $2 &length $2 &addr  $2 &volume $1 &pitch $1
 |60 @Audio3     &vector $2 &position $2 &output $1 &pad   $3 &adsr   $2 &length $2 &addr  $2 &volume $1 &pitch $1
-|70 @Midi       &vector $2 &rchan    $1 &rnote  $1 &rvelo $1 &pad    $3 &wchan  $1 &wnote $1 &wvelo  $1
 |80 @Controller &vector $2 &button   $1 &key    $1
 |90 @Mouse      &vector $2 &x        $2 &y      $2 &state $1 &chord  $1
-|a0 @File       &vector $2 &success  $2 &offset $2 &pad   $2 &name   $2 &length $2 &load $2 &save $2
+|a0 @File       &vector $2 &success  $2 &stat   $2 &delete $1 &append $1 &name  $2 &length $2 &read $2 &write $2
 |b0 @DateTime   &year   $2 &month    $1 &day    $1 &hour  $1 &minute $1 &second $1 &dotw $1 &doty $2 &isdst $1
 
 ( variables )
@@ -298,12 +297,8 @@ BRK
 		POP
 		.Controller/key DEI
 		DUP [ LIT 'a ] ! ,&no-expand JCN
-			#00 .selection/x1 STZ
-			#00 .selection/y1 STZ
-			.grid/width LDZ .selection/x2 STZ
-			.grid/height LDZ .selection/y2 STZ
-			;clamp-selection JSR2
-			;redraw JSR2 POP BRK
+			#0000 .grid/width LDZ2 ;set-selection JSR2
+			POP BRK
 			&no-expand
 		DUP [ LIT 'c ] ! ,&no-copy JCN
 			;copy-snarf JSR2
@@ -319,7 +314,7 @@ BRK
 			&no-cut
 		DUP [ LIT 'o ] ! ,&no-open JCN
 			;load-file JSR2
-			;redraw JSR2 POP BRK
+			POP BRK
 			&no-open
 		DUP [ LIT 'r ] ! ,&no-name JCN
 			#00 ;draw-filepath JSR2
@@ -435,7 +430,7 @@ BRK
 		DUP2 #0100 !! ,&no-down JCN
 			.Mouse/x DEI2 .grid/x1 LDZ2 -- 8// NIP
 			.Mouse/y DEI2 .grid/y1 LDZ2 -- 10// NIP
-				;set-selection JSR2
+				;set-selection-from JSR2
 			,&end JMP
 			&no-down
 		( on release )
@@ -484,7 +479,6 @@ BRK
 		&no-save
 	DUP #02 ! ,&no-load JCN
 		;load-file JSR2
-		;redraw JSR2
 		&no-load
 	DUP #03 ! ,&no-name JCN
 		;new-file JSR2
@@ -497,48 +491,38 @@ BRK
 
 ( general )
 
-@set-selection ( x y -- )
+@set-selection-from ( x y -- )
 
-	,clamp-position JSR
-
-	( check if has changed )
-	DUP2 .selection/x1 LDZ2 == STH
-	DUP2 .selection/x2 LDZ2 == STHr #0101 !! ,&has-changed JCN
-		POP2 RTN
-		&has-changed
-
-	( update )
-	DUP2
-	.selection/y1 STZ
-	.selection/x1 STZ
-	.selection/y2 STZ
-	.selection/x2 STZ
-	;clamp-selection JSR2
-	;redraw JSR2
+	DUP2 ,set-selection JSR
 
 RTN
 
 @set-selection-to ( x y -- )
 
-	,clamp-position JSR
+	.selection/x1 LDZ2 SWP2 ,set-selection JSR
 
-	( check if has changed )
-	DUP2 .selection/x2 LDZ2 !! ,&has-changed JCN
-		POP2 RTN
-		&has-changed
+RTN
 
-	( update )
-	.selection/y2 STZ
-	.selection/x2 STZ
-	;clamp-selection JSR2
-	;redraw JSR2
+@set-selection ( x y x2 y2 -- )
+
+	( keep to over from )
+	OVR2 OVR2 ROT MAX ROT ROT MAX SWP NIP2
+	( changed ) LITr 00
+	,clamp-position JSR 
+		DUP2 .selection/x2 LDZ2 !! JMP INCr 
+		.selection/x2 STZ2
+	,clamp-position JSR 
+		DUP2 .selection/x1 LDZ2 !! JMP INCr
+		.selection/x1 STZ2
+	STHr #00 = ,&no-redraw JCN
+		;redraw JSR2
+		&no-redraw
 
 RTN
 
 @clamp-position ( x y -- x y )
 
-	.grid/height LDZ MIN SWP
-	.grid/width LDZ MIN SWP
+	.grid/height LDZ #01 - MIN SWP .grid/width LDZ #01 - MIN SWP
 
 RTN
 
@@ -589,7 +573,8 @@ RTN
 			.selection/x2 LDZ STHkr + .selection/x2 STZ
 		&no-hor POPr
 
-	;clamp-selection JSR2
+	( clamp result )
+	.selection/x1 LDZ2 .selection/x2 LDZ2 ;set-selection JSR2
 
 	,&drag LDR #00 = ,&no-drag-end JCN
 		;paste-snarf JSR2
@@ -598,23 +583,6 @@ RTN
 RTN
 	&drag $1
 	&scale $1
-
-@clamp-selection ( -- )
-
-	.selection/x1 LDZ .grid/width LDZ #01 - STHk < ,&ok-limitx1 JCN
-		STHkr .selection/x1 STZ &ok-limitx1 POPr
-	.selection/y1 LDZ .grid/height LDZ #01 - STHk < ,&ok-limity1 JCN
-		STHkr .selection/y1 STZ &ok-limity1 POPr
-	.selection/x2 LDZ .grid/width LDZ #01 - STHk < ,&ok-limitx2 JCN
-		STHkr .selection/x2 STZ &ok-limitx2 POPr
-	.selection/y2 LDZ .grid/height LDZ #01 - STHk < ,&ok-limity2 JCN
-		STHkr .selection/y2 STZ &ok-limity2 POPr
-	.selection/x2 LDZ .selection/x1 LDZ STHk > ,&ok-flipx JCN
-		STHkr .selection/x2 STZ &ok-flipx POPr
-	.selection/y2 LDZ .selection/y1 LDZ STHk > ,&ok-flipy JCN
-		STHkr .selection/y2 STZ &ok-flipy POPr
-
-RTN
 
 @set-speed ( speed -- )
 
@@ -752,26 +720,6 @@ RTN
 
 RTN
 
-@get-cell-sprite ( x y -- addr* )
-
-	DUP2 GET-CELL
-	( if character is dot )
-	DUP CHAR-DOT NEQ ,&no-bar JCN
-		( check if x,y is grid )
-		POP
-		DUP2 #01 AND #00 = SWP #03 AND #00 = #0101 NEQ2 ,&no-marker4 JCN
-			POP2 ;font/marker RTN
-			&no-marker4
-		DUP2 GET-TYPE #00 = ,&no-port JCN
-			POP2 ;font/marker RTN
-			&no-port
-		POP2 ;font RTN
-	&no-bar
-	STH POP2 STHr
-	GET-CHAR-ADDR
-
-RTN
-
 @get-port-raw ( addr* -- value )
 
 	( set type ) DUP2 PORTEL-TYPE ROT ROT DATA-TYPES ++ STA
@@ -811,6 +759,12 @@ RTN
 RTN
 
 ( operators )
+
+@operations
+	:op-a :op-b :op-c :op-d :op-e :op-f :op-g :op-h
+	:op-i :op-j :op-k :op-l :op-m :op-n :op-o :op-p
+	:op-q :op-r :op-s :op-t :op-u :op-v :op-w :op-x
+	:op-y :op-z
 
 @op-a ( x y char -- )
 
@@ -1291,24 +1245,6 @@ RTN
 
 ( drawing )
 
-@draw-byte ( byte color -- )
-
-	STH
-	DUP #04 SFT GET-CHAR GET-CHAR-ADDR STHkr ,draw-sprite JSR
-	#0f AND GET-CHAR GET-CHAR-ADDR STHr ,draw-sprite JSR
-
-RTN
-
-@draw-sprite ( addr* color -- )
-	
-	STH .Screen/addr DEO2
-	.Screen/y DEI2
-	STHr .Screen/sprite DEOk DEO
-	.Screen/y DEO2
-	.Screen/x DEI2k #0008 ++ ROT DEO2
-
-RTN
-
 @draw-meter ( -- )
 
 	.toolbar/y1 LDZ2 #0001 -- .Screen/y DEO2
@@ -1371,16 +1307,16 @@ RTN
 		STH2kr #0010 ++ .Screen/x DEO2
 		;font #00 ;draw-sprite JSR2
 		STH2r #0018 ++ .Screen/x DEO2
-		.dpad LDZ GET-CHAR-ADDR #01 ;draw-sprite JSR2
+		.dpad LDZ #01 ;draw-char JSR2
 		,&continue JMP
 		&no-dpad
 	( Speed )
 	.grid/x1 LDZ2 #0050 ++ .Screen/x DEO2
 	.timer/speed LDZ #01 ;draw-byte JSR2
 	.grid/x1 LDZ2 #0060 ++ .Screen/x DEO2
-	( t ) #74 GET-CHAR-ADDR #03 ;draw-sprite JSR2
+	( t ) LIT 't #03 ;draw-char JSR2
 	.grid/x1 LDZ2 #0068 ++ .Screen/x DEO2
-	( h ) #68 GET-CHAR-ADDR #03 ;draw-sprite JSR2
+	( h ) LIT 'h #03 ;draw-char JSR2
 	&continue
 	POP
 
@@ -1408,14 +1344,7 @@ RTN
 	STH
 	.toolbar/y1 LDZ2 .Screen/y DEO2
 	.toolbar/x1 LDZ2 #0078 ++ .Screen/x DEO2
-	;path/name
-	&while
-		LDAk GET-CHAR-ADDR STHkr ;draw-sprite JSR2
-		INC2 LDAk ,&while JCN
-	POP2
-	POPr
-	( clear last )
-	#00 .Screen/sprite DEO
+	;path/name STHr ;draw-str JSR2
 
 RTN
 
@@ -1423,14 +1352,11 @@ RTN
 
 	.grid/height LDZ #00
 	&ver
-		( pos-x ) .grid/x1 LDZ2 .Screen/x DEO2
-		( pos-y ) DUP #00 SWP 10** [ .grid/y1 LDZ2 ++ ] .Screen/y DEO2
+		( x ) .grid/x1 LDZ2 .Screen/x DEO2
+		( y ) DUP #00 SWP 10** [ .grid/y1 LDZ2 ++ ] .Screen/y DEO2
 		.grid/width LDZ #00
 		&hor
-			GET-ITER
-			( sprite ) DUP2 ;get-cell-sprite JSR2
-			( color ) SWP2 ,get-cell-type JSR TOS ;cell-styles ++ LDA
-			;draw-sprite JSR2
+			GET-ITER STH2k ,get-char JSR STH2r ,get-color JSR ;draw-char JSR2
 			INC GTHk ,&hor JCN
 		POP2
 		INC GTHk ,&ver JCN
@@ -1440,15 +1366,76 @@ RTN
 
 RTN
 
-@get-cell-type ( x y -- type )
+@get-color ( x y -- type )
+
+	STH2k GET-TYPE #06 SWP
+	STH2r ,is-selected JSR JMP SWP POP
+		TOS ;cell-styles ++ LDA
+
+RTN
+
+@get-char ( x y -- char )
+
+	DUP2 GET-CELL
+	DUP CHAR-DOT ! ,&no-bar JCN
+		POP
+		DUP2 GET-TYPE #00 = ,&no-port JCN
+			POP2 LIT '. RTN &no-port
+		DUP2 8MOD SWP 10MOD #0000 !! ,&no-marker4 JCN
+			POP2 LIT '+ RTN &no-marker4
+		DUP2 2MOD SWP 4MOD #0000 !! ,&no-marker2 JCN
+			POP2 LIT '. RTN &no-marker2
+		POP2 
+		#20 RTN
+	&no-bar
+	ROT ROT POP2
+
+RTN
+
+@is-selected ( x y -- bool )
 
 	OVR .selection/x1 LDZ < ,&end JCN
 	OVR .selection/x2 LDZ > ,&end JCN
 	DUP .selection/y1 LDZ < ,&end JCN
 	DUP .selection/y2 LDZ > ,&end JCN
-		POP2 #06 RTN
+		POP2 #01 RTN
 	&end
-	GET-TYPE
+	POP2 #00
+
+RTN
+
+@draw-str ( str* color -- )
+
+	STH
+	&while
+		LDAk STHkr ,draw-char JSR
+		INC2 LDAk ,&while JCN
+	POP2
+	POPr
+
+RTN
+
+@draw-byte ( byte color -- )
+
+	STH
+	DUP #04 SFT GET-CHAR STHkr ,draw-char JSR
+	#0f AND GET-CHAR STHr ,draw-char JSR
+
+RTN
+
+@draw-char ( char color -- )
+
+	STH #20 - TOS 10** ;font ++ STHr ,draw-sprite JSR
+
+RTN
+
+@draw-sprite ( addr* color -- )
+	
+	STH .Screen/addr DEO2
+	.Screen/y DEI2
+	STHr .Screen/sprite DEOk DEO
+	.Screen/y DEO2
+	.Screen/x DEI2k #0008 ++ ROT DEO2
 
 RTN
 
@@ -1475,7 +1462,7 @@ RTN
 	#0001 .File/length DEO2
 	( x,y ) LIT2r 0000
 	&stream
-		;&b .File/load DEO2
+		;&b .File/read DEO2
 		( write )
 		;&b LDA IS-CHAR-KEY #00 = ,&invalid JCN
 			OVRr STHr STHkr ;&b LDA SET-CELL
@@ -1487,6 +1474,8 @@ RTN
 			&no-lb
 		.File/success DEI2 #0000 !! ,&stream JCN
 	POP2r
+	;redraw JSR2
+	RESET-STATE
 
 RTN
 	&b $1
@@ -1499,10 +1488,10 @@ RTN
 	&ver
 		.grid/width LDZ #00
 		&hor
-			GET-ITER GET-INDEX DATA-CELLS ++ .File/save DEO2
+			GET-ITER GET-INDEX DATA-CELLS ++ .File/write DEO2
 			INC GTHk ,&hor JCN
 		POP2
-		( linebreak ) ;&lb .File/save DEO2
+		( linebreak ) ;&lb .File/write DEO2
 		INC GTHk ,&ver JCN
 	POP2
 
@@ -1517,7 +1506,7 @@ RTN
 
 	;theme-txt .File/name DEO2
 	#0006 .File/length DEO2
-	#fffa .File/load DEO2
+	#fffa .File/read DEO2
 	.File/success DEI2 #0006 !! ,&ignore JCN
 		#fffa LDA2 .System/r DEO2
 		#fffc LDA2 .System/g DEO2
@@ -1539,10 +1528,10 @@ RTN
 	&ver
 		.selection/x2 LDZ INC .selection/x1 LDZ
 		&hor
-			GET-ITER GET-INDEX DATA-CELLS ++ .File/save DEO2
+			GET-ITER GET-INDEX DATA-CELLS ++ .File/write DEO2
 			INC GTHk ,&hor JCN
 		POP2
-		( linebreak ) ;&lb .File/save DEO2
+		( linebreak ) ;&lb .File/write DEO2
 		INC GTHk ,&ver JCN
 	POP2
 
@@ -1555,7 +1544,7 @@ RTN
 	#0001 .File/length DEO2
 	( x,y ) LIT2r 0000
 	&stream
-		;&b .File/load DEO2
+		;&b .File/read DEO2
 		( write )
 		;&b LDA IS-CHAR-KEY #00 = ,&invalid JCN
 			.selection/x1 LDZ OVRr STHr +
@@ -1655,12 +1644,6 @@ RTN
 	&above #57 + RTN
 
 RTN
-
-@operations
-	:op-a :op-b :op-c :op-d :op-e :op-f :op-g :op-h
-	:op-i :op-j :op-k :op-l :op-m :op-n :op-o :op-p
-	:op-q :op-r :op-s :op-t :op-u :op-v :op-w :op-x
-	:op-y :op-z
 
 @untitled-txt  "untitled.orca $1
 
