@@ -1578,25 +1578,24 @@ RTN
 @paste-snarf ( -- )
 
 	;snarf-txt .File/name DEO2
-	#1000 .File/length DEO2
-	DATA-CLIP .File/load DEO2
-
-	( stash x,y ) .selection LDZ2 STH2
-	.File/success DEI2 #0000
-	&loop
-		( get char ) DUP2 DATA-CLIP ++ LDA
-		DUP #0a ! ,&continue JCN
-			( move-y ) STH2r NIP .selection LDZ SWP INC STH2
-			POP ,&resume JMP
-			&continue
-		( save ) STH2kr ROT SET-CELL
-		( move-x ) STH2r SWP INC SWP STH2
-		&resume
-		INC2 GTH2k ,&loop JCN
-	POP2 POP2
-	( destroy x,y ) POP2r
+	#0001 .File/length DEO2
+	( x,y ) LIT2r 0000
+	&stream
+		;&b .File/load DEO2
+		( write )
+		.selection/x1 LDZ OVRr STHr +
+		.selection/y1 LDZ STHkr +
+			;&b LDA SET-CELL
+		( incr-x ) SWPr INCr SWPr
+		( incr-y )
+		;&b LDA #0a ! ,&no-lb JCN
+			INCr NIPr LITr 00 SWPr
+			&no-lb
+		.File/success DEI2 #0000 !! ,&stream JCN
+	POP2r
 
 RTN
+	&b $1
 
 ( string generics )
 
