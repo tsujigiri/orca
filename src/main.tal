@@ -22,47 +22,13 @@
 		- Catch ports that overflow out of grid
 		- Display on-screen guide )
 
+~src/utils.tal
+
 %DATA-CELLS { #b000 }
 %DATA-LOCKS { #c000 }
 %DATA-TYPES { #d000 }
 %DATA-FILE  { #e000 } ( file transfer )
 %DATA-CLIP  { #f000 } ( copy/paste )
-
-%+  { ADD } %-   { SUB }  %*  { MUL }
-%<  { LTH } %>   { GTH }  %=  { EQU }  %!  { NEQ }
-%++ { ADD2 } %-- { SUB2 } %** { MUL2 } %// { DIV2 }
-%<< { LTH2 } %>> { GTH2 } %== { EQU2 } %!! { NEQ2 }
-
-%DEBUG  { ;print-hex/byte JSR2 #0a .Console/write DEO }
-%DEBUG2 { ;print-hex/short JSR2 #0a .Console/write DEO }
-
-%2* { #10 SFT } %2/ { #01 SFT }
-%4/ { #02 SFT }
-%8* { #30 SFT }
-%10* { #40 SFT }
-%20* { #50 SFT }
-
-%2// { #01 SFT2 }
-%8**  { #30 SFT2 }     %8// { #03 SFT2 }
-%10** { #40 SFT2 }     %10// { #04 SFT2 }
-
-%TOS  { #00 SWP }
-
-%4MOD { #03 AND }
-%8MOD { #07 AND }
-%MOD  { DIVk MUL SUB } %MOD2 { DIV2k MUL2 SUB2 }
-
-%BRK? { #01 JCN BRK }
-%RTN  { JMP2r }
-%RTN? { #01 JCN RTN }
-%SWPr? { #01 JCN SWPr }
-
-%DEC2 { #0001 -- }
-%1MIN { DUP #00 = + }
-
-%TOGGLE { LDZk #00 = SWP STZ }
-%GET-ITER { OVR2 NIP OVR SWP }
-%RELEASE-MOUSE { #00 .Mouse/state DEO }
 
 %LOCKED-TYPE   { #01 } %PORTEL-TYPE   { #02 }
 %OPERATOR-TYPE { #03 } %PORTER-TYPE   { #04 }
@@ -123,12 +89,15 @@
 
 |0000
 
+@dpad $1 
+	&last $1
+
 @state
 	&timer $1 &blink $1 &changed $1
 @timer
 	&beat $1 &alive $1 &speed $1 &frame $2 &seed $2
 @path
-	&length $1 &name $20
+	&name $20
 @grid
 	&x1 $2 &y1 $2
 	&x2 $2 &y2 $2
@@ -143,9 +112,8 @@
 @cursor
 	&x $2 &y $2
 	&last $1
-@variables
-	$36
-@dpad $1 &last $1
+
+@variables $24
 
 |0100
 
@@ -191,7 +159,7 @@
 		.timer/seed STZ2
 
 	( blank file )
-	;untitled-txt ;new-file JSR2
+	;new-file JSR2
 
 	( theme support )
 	;load-theme JSR2
@@ -239,21 +207,11 @@ RTN
 @on-console ( -> )
 
 	.Console/read DEI
-	DUP #11 ! ,&no-up JCN
-		#00ff #00 ;edit-selection JSR2
-		&no-up
-	DUP #12 ! ,&no-down JCN
-		#0001 #00 ;edit-selection JSR2
-		&no-down
-	DUP #13 ! ,&no-left JCN
-		#ff00 #00 ;edit-selection JSR2
-		&no-left
-	DUP #14 ! ,&no-right JCN
-		#0100 #00 ;edit-selection JSR2
-		&no-right
-	DUP IS-CHAR-KEY #00 = ,&no-key JCN
-		STHk .selection LDZ2 STHr SET-CELL
-		&no-key
+	DUP #11 ! ,&no-u JCN #00ff #00 ;edit-selection JSR2 &no-u
+	DUP #12 ! ,&no-d JCN #0001 #00 ;edit-selection JSR2 &no-d
+	DUP #13 ! ,&no-l JCN #ff00 #00 ;edit-selection JSR2 &no-l
+	DUP #14 ! ,&no-r JCN #0100 #00 ;edit-selection JSR2 &no-r
+	DUP IS-CHAR-KEY #00 = ,&no-key JCN STHk .selection LDZ2 STHr SET-CELL &no-key
 	POP
 
 BRK
@@ -370,9 +328,7 @@ BRK
 			&no-name
 		DUP [ LIT 'R ] ! ,&no-rename JCN
 			#00 ;draw-filepath JSR2
-			#00 .Controller/key DEO
-			#00 .path/length STZ
-			#0000 .path/name STZ2
+			;path/name #0020 ;mclr JSR2
 			;trap JSR2
 			POP BRK
 			&no-rename
@@ -381,8 +337,8 @@ BRK
 			;redraw JSR2 POP BRK
 			&no-save
 		DUP [ LIT 'n ] ! ,&no-new JCN
-			#00 ;draw-filepath JSR2 ;untitled-txt ;new-file JSR2
-			;redraw JSR2 POP BRK
+			;new-file JSR2
+			POP BRK
 			&no-new
 		DUP [ LIT 'i ] ! ,&no-insert JCN
 			.selection/insert TOGGLE
@@ -400,18 +356,10 @@ BRK
 	BRK
 
 	&arrows ( button -> )
-		DUP #f0 AND #10 ! ,&no-up JCN
-			#00ff ROT ,&move JMP
-			&no-up
-		DUP #f0 AND #20 ! ,&no-down JCN
-			#0001 ROT ,&move JMP
-			&no-down
-		DUP #f0 AND #40 ! ,&no-left JCN
-			#ff00 ROT ,&move JMP
-			&no-left
-		DUP #f0 AND #80 ! ,&no-right JCN
-			#0100 ROT ,&move JMP
-			&no-right
+		DUP #f0 AND #10 ! ,&no-u JCN #00ff ROT ,&move JMP &no-u
+		DUP #f0 AND #20 ! ,&no-d JCN #0001 ROT ,&move JMP &no-d
+		DUP #f0 AND #40 ! ,&no-l JCN #ff00 ROT ,&move JMP &no-l
+		DUP #f0 AND #80 ! ,&no-r JCN #0100 ROT ,&move JMP &no-r
 		POP BRK
 		&move
 		;edit-selection JSR2
@@ -426,22 +374,21 @@ BRK
 	DUP ,&continue JCN
 		POP BRK
 		&continue
-	DUP ( backspace ) #08 ! ,&no-edit-backspace JCN
-		( clamp ) .path/length LDZ #00 = ,&edit-end JCN
+	( backspace ) #08 !~ ,&no-edit-backspace JCN
+		( clamp ) ;path/name ;slen JSR2 NIP #00 = ,&edit-end JCN
 		#00 ;draw-filepath JSR2
-		.path/length LDZ #01 - STHk .path/length STZ
-		#00 .path/name STHr + STZ
-		#01 ;draw-filepath JSR2 POP BRK
+		;path/name ;spop JSR2
+		#01 ;draw-filepath JSR2
+		POP BRK
 		&no-edit-backspace
-	DUP ( special ) #20 > ,&no-edit-enter JCN
+	( special ) #20 >~ ,&no-edit-enter JCN
 		;untrap JSR2
 		#00 .state/blink STZ
-		#01 ;draw-filepath JSR2 POP BRK
+		#01 ;draw-filepath JSR2
+		POP BRK
 		&no-edit-enter
-	( clamp ) .path/length LDZ #1f = ,&edit-end JCN
-	DUP .path/name .path/length LDZ STHk + STZ
-	STHr INC STHk .path/length STZ
-	#00 .path/name STHr + STZ
+	( append ) ;path/name ;slen JSR2 NIP #1f = ,&edit-end JCN
+	DUP ;path/name ROT ;sput JSR2
 	#01 ;draw-filepath JSR2
 	&edit-end
 	POP
@@ -540,9 +487,7 @@ BRK
 		;redraw JSR2
 		&no-load
 	DUP #03 ! ,&no-name JCN
-		#00 ;draw-filepath JSR2
-		;untitled-txt ;new-file JSR2
-		;redraw JSR2
+		;new-file JSR2
 		&no-name
 	POP
 
@@ -750,17 +695,6 @@ BRK
 
 	( unknown )
 	POP2 POP
-
-RTN
-
-@clear-vars ( -- )
-
-	( blank variables )
-	#36 #00
-	&var
-		DUP .variables + CHAR-DOT SWP STZ
-		INC GTHk ,&var JCN
-	POP2
 
 RTN
 
@@ -1527,18 +1461,15 @@ RTN
 
 @new-file ( default* -- )
 
-	;clear-vars JSR2
+	#00 ;draw-filepath JSR2 
+	( clear variables )
+	;variables #0024 ;mclr JSR2
 	;clear-grid JSR2
 	;clear-attr JSR2
-	STH2
-	#0d #00
-	&loop
-		DUP DUP TOS STH2kr ++ LDA
-		SWP .path/name + STZ
-		INC GTHk ,&loop JCN
-	( end ) #00 SWP .path/name + STZ
-	.path/length STZ
-	POP2r
+	( rename to untitled.txt )
+	;path/name #0020 ;mclr JSR2
+	;untitled-txt ;path/name #000d ;mcpy JSR2
+	;redraw JSR2
 	RESET-STATE
 
 RTN
@@ -1667,6 +1598,60 @@ RTN
 
 RTN
 
+( string generics )
+
+@slen ( str* -- len* )
+
+	DUP2 ,scap JSR SWP2 --
+
+RTN
+
+@scap ( str* -- str-end* )
+
+	( clamp ) LDAk #00 ! JMP RTN
+	&while INC2 LDAk ,&while JCN
+
+RTN
+
+@sput ( str* char -- )
+
+	ROT ROT ,scap JSR STA
+
+RTN
+
+@spop ( str* -- )
+
+	( clamp ) LDAk #00 ! JMP RTN
+	#00 ROT ROT ,scap JSR #0001 -- STA
+
+RTN
+
+( memory generics )
+
+@mclr ( addr* len* -- )
+
+	OVR2 ++ SWP2
+	&loop
+		STH2k #00 STH2r STA
+		INC2 GTH2k ,&loop JCN
+	POP2 POP2
+
+RTN
+
+@mcpy ( src* dst* len* -- )
+
+	SWP2 STH2 SWP2 STH2
+	#0000
+	&loop 
+		( src ) STH2kr LDA
+		( dst ) OVR2r STH2r STA
+		( inc ) INC2r SWP2r INC2r SWP2r
+		INC2 GTH2k ,&loop JCN
+	POP2 POP2
+	POP2r POP2r
+
+RTN
+
 ( generics )
 
 @within-rect ( x* y* rect -- flag )
@@ -1687,19 +1672,14 @@ RTN
 RTN
 
 @print-hex ( value* -- )
-
-	&short ( value* -- )
-		SWP ,&echo JSR
-	&byte ( value -- )
-		,&echo JSR
+	
+	SWP ,&byte JSR 
+	&byte ( byte -- )
+		STHk #04 SFT ,&parse JSR #18 DEO
+		STHr #0f AND ,&parse JSR #18 DEO
 	RTN
-
-	&echo ( value -- )
-	STHk #04 SFT ,&parse JSR .Console/write DEO
-	STHr #0f AND ,&parse JSR .Console/write DEO
-	RTN
-	&parse ( value -- char )
-		DUP #09 GTH ,&above JCN #30 + RTN &above #09 - #60 + RTN
+	&parse ( byte -- char ) DUP #09 GTH ,&above JCN #30 + RTN 
+	&above #57 + RTN
 
 RTN
 
