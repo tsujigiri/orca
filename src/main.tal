@@ -249,7 +249,7 @@ RTN
 		#ff00 #00 ;edit-selection JSR2
 		&no-left
 	DUP #14 ! ,&no-right JCN
-		#0001 #00 ;edit-selection JSR2
+		#0100 #00 ;edit-selection JSR2
 		&no-right
 	DUP IS-CHAR-KEY #00 = ,&no-key JCN
 		STHk .selection LDZ2 STHr SET-CELL
