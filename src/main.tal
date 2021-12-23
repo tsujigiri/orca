@@ -1554,26 +1554,21 @@ RTN
 
 @copy-snarf ( -- )
 
-	( open ) DATA-CLIP STH2
+	;snarf-txt .File/name DEO2
+	#0001 .File/length DEO2
 	.selection/y2 LDZ INC .selection/y1 LDZ
 	&ver
 		.selection/x2 LDZ INC .selection/x1 LDZ
 		&hor
-			( write char ) GET-ITER GET-CELL STH2kr STA
-			( incr index ) LIT2r 0001 ADD2r
+			GET-ITER GET-INDEX DATA-CELLS ++ .File/save DEO2
 			INC GTHk ,&hor JCN
 		POP2
-		( write linebreak ) CHAR-LINE STH2kr STA
-		( incr index ) LIT2r 0001 ADD2r
+		( linebreak ) ;&lb .File/save DEO2
 		INC GTHk ,&ver JCN
 	POP2
-	( close ) #00 STH2kr STA
-
-	;snarf-txt .File/name DEO2
-	STH2r DATA-CLIP -- .File/length DEO2
-	DATA-CLIP .File/save DEO2
 
 RTN
+	&lb 0a
 
 @paste-snarf ( -- )
 
@@ -1583,9 +1578,11 @@ RTN
 	&stream
 		;&b .File/load DEO2
 		( write )
-		.selection/x1 LDZ OVRr STHr +
-		.selection/y1 LDZ STHkr +
-			;&b LDA SET-CELL
+		;&b LDA IS-CHAR-KEY #00 = ,&invalid JCN
+			.selection/x1 LDZ OVRr STHr +
+			.selection/y1 LDZ STHkr +
+				;&b LDA SET-CELL
+			&invalid
 		( incr-x ) SWPr INCr SWPr
 		( incr-y )
 		;&b LDA #0a ! ,&no-lb JCN
