@@ -28,7 +28,6 @@
 %DATA-LOCKS { #c000 }
 %DATA-TYPES { #d000 }
 %DATA-FILE  { #e000 } ( file transfer )
-%DATA-CLIP  { #f000 } ( copy/paste )
 
 %LOCKED-TYPE   { #01 } %PORTEL-TYPE   { #02 }
 %OPERATOR-TYPE { #03 } %PORTER-TYPE   { #04 }
@@ -1477,58 +1476,42 @@ RTN
 @load-file ( -- )
 
 	;path/name .File/name DEO2
-	#1000 .File/length DEO2
-	DATA-FILE .File/load DEO2
-	( setup )
-	( TODO: Stop at #00 instead of fixed length )
-	#1000 #0000
-	&loop
-		( get char ) DUP2 DATA-FILE ++ LDA
-		DUP CHAR-NULL = ,&end JCN
-		DUP CHAR-LINE = ,&linebreak JCN
-			( write  ) STH ,&x LDR ,&y LDR STHr SET-CELL
-			( incr x ) ,&x LDR INC ,&x STR
-			,&continue JMP
-		&linebreak
-			( undo x ) #00 ,&x STR
-			( incr y ) ,&y LDR INC ,&y STR
-			POP
-		&continue
-		INC2 GTH2k ,&loop JCN
-	&end
-	POP2 POP2 POP
-	#00 ,&x STR
-	#00 ,&y STR
-	RESET-STATE
-	RTN
-	&x $1
-	&y $1
+	#0001 .File/length DEO2
+	( x,y ) LIT2r 0000
+	&stream
+		;&b .File/load DEO2
+		( write )
+		;&b LDA IS-CHAR-KEY #00 = ,&invalid JCN
+			OVRr STHr STHkr ;&b LDA SET-CELL
+			&invalid
+		( incr-x ) SWPr INCr SWPr
+		( incr-y )
+		;&b LDA #0a ! ,&no-lb JCN
+			INCr NIPr LITr 00 SWPr
+			&no-lb
+		.File/success DEI2 #0000 !! ,&stream JCN
+	POP2r
 
 RTN
+	&b $1
 
 @save-file ( -- )
 
-	( stash length ) #0000 STH2
-	( setup )
+	;path/name .File/name DEO2
+	#0001 .File/length DEO2
 	.grid/height LDZ #00
 	&ver
 		.grid/width LDZ #00
 		&hor
-			( write char ) GET-ITER GET-CELL [ STH2kr DATA-FILE ++ ] STA
-			( incr index ) #0001 STH2 ADD2r
+			GET-ITER GET-INDEX DATA-CELLS ++ .File/save DEO2
 			INC GTHk ,&hor JCN
 		POP2
-		( write linebreak ) CHAR-LINE [ STH2kr DATA-FILE ++ ] STA
-		( incr index ) #0001 STH2 ADD2r
+		( linebreak ) ;&lb .File/save DEO2
 		INC GTHk ,&ver JCN
 	POP2
 
-	;path/name .File/name DEO2
-	STH2r .File/length DEO2
-	DATA-FILE .File/save DEO2
-	RESET-STATE
-
 RTN
+	&lb 0a
 
 ( theme )
 
