@@ -27,7 +27,6 @@
 %DATA-CELLS { #b000 }
 %DATA-LOCKS { #c000 }
 %DATA-TYPES { #d000 }
-%DATA-FILE  { #e000 } ( file transfer )
 
 %LOCKED-TYPE   { #01 } %PORTEL-TYPE   { #02 }
 %OPERATOR-TYPE { #03 } %PORTER-TYPE   { #04 }
@@ -40,7 +39,6 @@
 %CHAR-SEMI  { #3b }
 
 %IS-CHAR-KEY { STHk #20 > STHr #7b < AND }
-%CIUC { STHk #40 > STHr #5b < AND } ( char -- flag )
 
 %SET-STATE   { #01 .state/changed STZ ;draw-state JSR2 }
 %RESET-STATE { #00 .state/changed STZ ;draw-state JSR2 }
@@ -50,7 +48,7 @@
 %GET-INDEX { #00 SWP #00 .grid/width LDZ ** ROT #00 SWP ++ } ( x y -- index )
 %GET-CHAR  { #24 MOD #00 SWP ;b36clc ++ LDA } ( b36 -- char )
 %GET-VALUE { #20 - #00 SWP ;values ++ LDA } ( char -- b36 )
-%GET-NOTE  { DUP GET-VALUE SWP CIUC #24 * + TOS ;lc-notes ++ LDA } ( char -- midi )
+%GET-NOTE  { DUP GET-VALUE SWP IS-UC #24 * + TOS ;lc-notes ++ LDA } ( char -- midi )
 %GET-CHAR-ADDR { #20 - TOS 10** ;font ++ }
 
 %GET-CELL  { GET-INDEX DATA-CELLS ++ LDA } ( x y -- char )
@@ -63,17 +61,17 @@
 %GET-PORT-RIGHT { DUP2 PORTER-TYPE SET-TYPE DUP2 #01 SET-LOCK GET-CELL GET-VALUE } ( x y -- char )
 %GET-PORT-RIGHT-RAW { DUP2 PORTER-TYPE SET-TYPE DUP2 #01 SET-LOCK GET-CELL } ( x y -- char )
 %SET-PORT-OUTPUT { STH DUP2 OUTPUT-TYPE SET-TYPE DUP2 #01 SET-LOCK STHr SET-CELL } ( x y char -- )
-%LOAD-CASE { GET-CELL CIUC } ( x y -- uc )
+%LOAD-CASE { GET-CELL IS-UC } ( x y -- uc )
 %SAVE-CASE { DUP #60 > STHr 20* * - } ( char uc -- char )
 
-%GET-CASE { DUP CIUC STH }
+%GET-CASE { DUP IS-UC STH }
 %SET-CASE { DUP #60 > STHr 20* * - }
 
 ( devices )
 
 |00 @System     &vector $2 &pad      $6 &r      $2 &g     $2 &b      $2
 |10 @Console    &vector $2 &read     $1 &pad    $5 &write $1
-|20 @Screen     &vector $2 &width    $2 &height $2 &pad   $2 &x      $2 &y      $2 &addr  $2 &pixel  $1 &sprite $1
+|20 @Screen     &vector $2 &width $2 &height $2 &auto $1 &pad $1 &x $2 &y $2 &addr $2 &pixel $1 &sprite $1
 |30 @Audio0     &vector $2 &position $2 &output $1 &pad   $3 &adsr   $2 &length $2 &addr  $2 &volume $1 &pitch $1
 |40 @Audio1     &vector $2 &position $2 &output $1 &pad   $3 &adsr   $2 &length $2 &addr  $2 &volume $1 &pitch $1
 |50 @Audio2     &vector $2 &position $2 &output $1 &pad   $3 &adsr   $2 &length $2 &addr  $2 &volume $1 &pitch $1
@@ -157,6 +155,7 @@
 		#7131 **
 		.timer/seed STZ2
 
+	AUTO-YADDR
 	( blank file )
 	;new-file JSR2
 
@@ -210,7 +209,9 @@ RTN
 	DUP #12 ! ,&no-d JCN #0001 #00 ;edit-selection JSR2 &no-d
 	DUP #13 ! ,&no-l JCN #ff00 #00 ;edit-selection JSR2 &no-l
 	DUP #14 ! ,&no-r JCN #0100 #00 ;edit-selection JSR2 &no-r
-	DUP IS-CHAR-KEY #00 = ,&no-key JCN STHk .selection LDZ2 STHr SET-CELL &no-key
+	DUP IS-CHAR-KEY #00 = ,&no-key JCN 
+		STHk .selection LDZ2 STHr SET-CELL 
+		&no-key
 	POP
 
 BRK
@@ -536,10 +537,8 @@ RTN
 
 @clamp-position ( x y -- x y )
 
-	.grid/height LDZ LTHk JMP SWP POP
-	SWP
-	.grid/width LDZ LTHk JMP SWP POP
-	SWP
+	.grid/height LDZ MIN SWP
+	.grid/width LDZ MIN SWP
 
 RTN
 
@@ -620,7 +619,7 @@ RTN
 @set-speed ( speed -- )
 
 	( clamp )
-	#1f AND [ #04 GTHk JMP SWP POP ] .timer/speed STZ
+	#1f AND [ #04 MAX ] .timer/speed STZ
 	( reset timer )
 	#00 .timer/beat STZ
 
@@ -1295,20 +1294,18 @@ RTN
 @draw-byte ( byte color -- )
 
 	STH
-	DUP #04 SFT GET-CHAR GET-CHAR-ADDR STHkr ,draw-char JSR
-	.Screen/x DEI2 #0008 ++ .Screen/x DEO2
-	#0f AND GET-CHAR GET-CHAR-ADDR STHr ,draw-char JSR
+	DUP #04 SFT GET-CHAR GET-CHAR-ADDR STHkr ,draw-sprite JSR
+	#0f AND GET-CHAR GET-CHAR-ADDR STHr ,draw-sprite JSR
 
 RTN
 
-@draw-char ( addr* color -- )
-
+@draw-sprite ( addr* color -- )
+	
 	STH .Screen/addr DEO2
-	STHkr .Screen/sprite DEO
-	.Screen/addr DEI2 #0008 ++ .Screen/addr DEO2
-	.Screen/y DEI2 STH2k #0008 ++ .Screen/y DEO2
-	ROTr STHr .Screen/sprite DEO
-	STH2r .Screen/y DEO2
+	.Screen/y DEI2
+	STHr .Screen/sprite DEOk DEO
+	.Screen/y DEO2
+	.Screen/x DEI2k #0008 ++ ROT DEO2
 
 RTN
 
@@ -1356,7 +1353,7 @@ RTN
 	.grid/x1 LDZ2 #0020 ++ .Screen/x DEO2
 	;font/selector .selection/insert LDZ TOS 10** ++
 		#02 .selection/x1 LDZ2 .selection/x2 LDZ2 == +
-		;draw-char JSR2
+		;draw-sprite JSR2
 
 	( Frame )
 	.grid/x1 LDZ2 #0030 ++ .Screen/x DEO2
@@ -1365,33 +1362,33 @@ RTN
 	.grid/x1 LDZ2 #0040 ++ .Screen/x DEO2
 	;font/beat
 		#03 .timer/frame INC LDZ #07 AND #00 = -
-		;draw-char JSR2
+		;draw-sprite JSR2
 
 	( d-pad )
 	.dpad LDZ DUP #20 < ,&no-dpad JCN
 		.grid/x1 LDZ2 #0050 ++ STH2k .Screen/x DEO2
 		DUP #04 ;draw-byte JSR2
 		STH2kr #0010 ++ .Screen/x DEO2
-		;font #00 ;draw-char JSR2
+		;font #00 ;draw-sprite JSR2
 		STH2r #0018 ++ .Screen/x DEO2
-		.dpad LDZ GET-CHAR-ADDR #01 ;draw-char JSR2
+		.dpad LDZ GET-CHAR-ADDR #01 ;draw-sprite JSR2
 		,&continue JMP
 		&no-dpad
 	( Speed )
 	.grid/x1 LDZ2 #0050 ++ .Screen/x DEO2
 	.timer/speed LDZ #01 ;draw-byte JSR2
 	.grid/x1 LDZ2 #0060 ++ .Screen/x DEO2
-	( t ) #74 GET-CHAR-ADDR #03 ;draw-char JSR2
+	( t ) #74 GET-CHAR-ADDR #03 ;draw-sprite JSR2
 	.grid/x1 LDZ2 #0068 ++ .Screen/x DEO2
-	( h ) #68 GET-CHAR-ADDR #03 ;draw-char JSR2
+	( h ) #68 GET-CHAR-ADDR #03 ;draw-sprite JSR2
 	&continue
 	POP
 
 	( File )
 	.grid/x2 LDZ2 STH2k #0018 -- .Screen/x DEO2
-	;font/load #01 ;draw-char JSR2
+	;font/load #01 ;draw-sprite JSR2
 	STH2r #0020 -- .Screen/x DEO2
-	;font/make #01 ;draw-char JSR2
+	;font/make #01 ;draw-sprite JSR2
 
 	( filepath )
 	#03 ;draw-filepath JSR2
@@ -1402,7 +1399,7 @@ RTN
 
 	.toolbar/x2 LDZ2 #0008 -- .Screen/x DEO2
 	.toolbar/y1 LDZ2 .Screen/y DEO2
-	;font/save #01 .state/changed LDZ + ;draw-char JSR2
+	;font/save #01 .state/changed LDZ + ;draw-sprite JSR2
 
 RTN
 
@@ -1413,8 +1410,7 @@ RTN
 	.toolbar/x1 LDZ2 #0078 ++ .Screen/x DEO2
 	;path/name
 	&while
-		LDAk GET-CHAR-ADDR STHkr ;draw-char JSR2
-		.Screen/x DEI2 #0008 ++ .Screen/x DEO2
+		LDAk GET-CHAR-ADDR STHkr ;draw-sprite JSR2
 		INC2 LDAk ,&while JCN
 	POP2
 	POPr
@@ -1427,14 +1423,14 @@ RTN
 
 	.grid/height LDZ #00
 	&ver
+		( pos-x ) .grid/x1 LDZ2 .Screen/x DEO2
 		( pos-y ) DUP #00 SWP 10** [ .grid/y1 LDZ2 ++ ] .Screen/y DEO2
 		.grid/width LDZ #00
 		&hor
-			( pos-x ) DUP #00 SWP 8** [ .grid/x1 LDZ2 ++ ] .Screen/x DEO2
 			GET-ITER
 			( sprite ) DUP2 ;get-cell-sprite JSR2
 			( color ) SWP2 ,get-cell-type JSR TOS ;cell-styles ++ LDA
-			;draw-char JSR2
+			;draw-sprite JSR2
 			INC GTHk ,&hor JCN
 		POP2
 		INC GTHk ,&ver JCN
@@ -1587,7 +1583,7 @@ RTN
 
 @scap ( str* -- str-end* )
 
-	( clamp ) LDAk #00 ! JMP RTN
+	LDAk #00 ! JMP RTN
 	&while INC2 LDAk ,&while JCN
 
 RTN
@@ -1619,15 +1615,13 @@ RTN
 
 @mcpy ( src* dst* len* -- )
 
-	SWP2 STH2 SWP2 STH2
-	#0000
-	&loop 
-		( src ) STH2kr LDA
-		( dst ) OVR2r STH2r STA
-		( inc ) INC2r SWP2r INC2r SWP2r
+	SWP2 STH2
+	OVR2 ++ SWP2
+	&loop
+		LDAk STH2kr STA INC2r
 		INC2 GTH2k ,&loop JCN
 	POP2 POP2
-	POP2r POP2r
+	POP2r
 
 RTN
 
