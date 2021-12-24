@@ -87,20 +87,12 @@
 
 @dpad $1 
 	&last $1
-
+@timer
+	&beat $1 &speed $1 &playing $1 &frame $2 &seed $2
 @state
 	&timer $1 &blink $1 &changed $1
-@timer
-	&beat $1 &speed $1 &alive $1  &frame $2 &seed $2
 @path
 	&name $20
-@grid
-	&x1 $2 &y1 $2
-	&x2 $2 &y2 $2
-	&width $1 &height $1
-@toolbar
-	&x1 $2 &y1 $2
-	&x2 $2 &y2 $2
 @selection
 	&x1 $1 &y1 $1
 	&x2 $1 &y2 $1
@@ -108,7 +100,13 @@
 @cursor
 	&x $2 &y $2
 	&last $1
-
+@grid
+	&x1 $2 &y1 $2
+	&x2 $2 &y2 $2
+	&width $1 &height $1
+@toolbar
+	&x1 $2 &y1 $2
+	&x2 $2 &y2 $2
 @variables $24
 
 |0100
@@ -117,6 +115,9 @@
 	#0f38 .System/r DEO2
 	#0fc8 .System/g DEO2
 	#0f98 .System/b DEO2
+
+	( gobal yaddr )
+	AUTO-YADDR
 
 	( synths )
 	#dd .Audio0/volume DEO  #0118 .Audio0/adsr DEO2 #0100 .Audio0/length DEO2
@@ -148,20 +149,16 @@
 	.grid/x2 LDZ2 .toolbar/x2 STZ2
 	.toolbar/y1 LDZ2 #0008 ++ .toolbar/y2 STZ2
 
-	( random seed )
-	.DateTime/minute DEI2 SWP DUP2
-		.DateTime/day DEI2 ++ ++
-		#7131 **
-		.timer/seed STZ2
-
-	AUTO-YADDR
+	( init random )
+	;prng-init JSR2
 	( blank file )
 	;new-file JSR2
 	( theme support )
 	;load-theme JSR2
-	( start )
+	( default speed )
 	#08 ;set-speed JSR2
-	#01 .timer/alive STZ
+	( start )
+	.timer/playing TOGGLE
 
 BRK
 
@@ -202,10 +199,10 @@ RTN
 @on-console ( -> )
 
 	.Console/read DEI
-	DUP #11 ! ,&no-u JCN #00ff #00 ;edit-selection JSR2 &no-u
-	DUP #12 ! ,&no-d JCN #0001 #00 ;edit-selection JSR2 &no-d
-	DUP #13 ! ,&no-l JCN #ff00 #00 ;edit-selection JSR2 &no-l
-	DUP #14 ! ,&no-r JCN #0100 #00 ;edit-selection JSR2 &no-r
+	#11 !~ ,&no-u JCN #00ff #00 ;edit-selection JSR2 &no-u
+	#12 !~ ,&no-d JCN #0001 #00 ;edit-selection JSR2 &no-d
+	#13 !~ ,&no-l JCN #ff00 #00 ;edit-selection JSR2 &no-l
+	#14 !~ ,&no-r JCN #0100 #00 ;edit-selection JSR2 &no-r
 	DUP IS-CHAR-KEY #00 = ,&no-key JCN 
 		STHk .selection LDZ2 STHr SET-CELL 
 		&no-key
@@ -216,14 +213,13 @@ BRK
 @on-frame ( -> )
 
 	( paused ) 
-	.timer/alive LDZ JMP BRK
+	.timer/playing LDZ JMP BRK
 	( inc beat )
 	.timer/beat LDZk INC SWP STZ
 	( on beat )
 	.timer LDZ2 ! ,&skip JCN
 		;run JSR2
-		( reset ) #00 .timer/beat STZ
-		( incr ) .timer/frame LDZ2k INC2 ROT STZ2
+		#00 .timer/beat STZ
 		&skip
 
 BRK
@@ -249,30 +245,35 @@ BRK
 	DUP #0f AND #02 = ;dpad-input/add JCN2
 	POP ( pop last )
 	DUP .dpad/last STZ
-	( normal routing )
+
+	( normal handlers )
 	DUP #f0 AND ;&arrows JCN2
 	DUP #01 AND ;&control JCN2
 	DUP #09 ! ,&no-ctrl-escape JCN
-		.timer/alive TOGGLE
+		.timer/playing TOGGLE
 		&no-ctrl-escape
 	POP
 
 	( default )
 	.Controller/key DEI
+	DUP #00 ! ,&no-null JCN
+		POP BRK
+		&no-null
 	DUP #20 ! ,&no-space JCN
-		.timer/alive TOGGLE
+		( insert mode )
 		.selection/insert LDZ #00 = ,&no-space-insert JCN
-			.timer/alive TOGGLE
 			#01 #00 #00 ;edit-selection JSR2
+			POP BRK
 			&no-space-insert
+		.timer/playing TOGGLE
 		;redraw JSR2 POP BRK
 		&no-space
 	DUP #08 ! OVR #7f ! AND ,&no-backspace JCN
-		CHAR-DOT ;fill-selection JSR2
+		( insert mode )
 		.selection/insert LDZ #00 = ,&no-backspace-insert JCN
 			#ff #00 #00 ;edit-selection JSR2
 			&no-backspace-insert
-		SET-STATE
+		CHAR-DOT ;fill-selection JSR2
 		;redraw JSR2 POP BRK
 		&no-backspace
 	DUP #1b ! ,&no-escape JCN
@@ -281,7 +282,8 @@ BRK
 		;load-theme JSR2 POP BRK
 		&no-escape
 	DUP IS-CHAR-KEY #00 = ,&no-key JCN
-		.selection LDZ2 .Controller/key DEI SET-CELL
+		.Controller/key DEI ;fill-selection JSR2
+		( insert mode )
 		.selection/insert LDZ #00 = ,&no-key-insert JCN
 			#01 #00 #00 ;edit-selection JSR2
 			&no-key-insert
@@ -452,7 +454,7 @@ BRK
 		;redraw JSR2 POP BRK
 		&no-insert
 	DUP #09 > ,&no-pause JCN
-		.timer/alive TOGGLE
+		.timer/playing TOGGLE
 		RELEASE-MOUSE
 		;redraw JSR2 POP BRK
 		&no-pause
@@ -536,6 +538,8 @@ RTN
 		INC GTHk ,&ver JCN
 	POP2
 	POPr
+
+	SET-STATE
 
 RTN
 
@@ -649,28 +653,15 @@ BRK
 		&no-uc
 
 	( special )
-	DUP CHAR-BANG = ;op-bang JCN2
-	DUP CHAR-HASH = ;op-comment JCN2
-	DUP CHAR-SEMI = ;op-note JCN2
-	DUP CHAR-EQUAL = ;op-synth JCN2
-	DUP CHAR-COLON = ;op-midi JCN2
-	DUP CHAR-SLASH = ;op-byte JCN2
+	CHAR-BANG =~ ;op-bang JCN2
+	CHAR-HASH =~ ;op-comment JCN2
+	CHAR-SEMI =~ ;op-note JCN2
+	CHAR-EQUAL =~ ;op-synth JCN2
+	CHAR-COLON =~ ;op-midi JCN2
+	CHAR-SLASH =~ ;op-byte JCN2
 
 	( unknown )
 	POP2 POP
-
-RTN
-
-@clear-grid ( -- )
-
-	#00 .grid/height LDZ #00 .grid/width LDZ ** #0000
-	&loop
-		STH2k
-		CHAR-DOT DATA-CELLS STH2kr ++ STA
-		#00 DATA-LOCKS STH2kr ++ STA
-		#00 DATA-TYPES STH2r ++ STA
-		INC2 GTH2k ,&loop JCN
-	POP2 POP2
 
 RTN
 
@@ -691,6 +682,9 @@ RTN
 		POP2
 		INC GTHk ,&ver JCN
 	POP2
+	( timer )
+	.timer/frame LDZ2k INC2 ROT STZ2
+	( redraw )
 	;redraw JSR2
 
 RTN
@@ -1021,7 +1015,7 @@ RTN
 	( no equal ) NEQk #04 JCN [ #01 - SWP ]
 	( stash min,max ) STH2
 	( incr y ) INC
-	( get key ) .timer/seed LDZ2 .timer/frame LDZ2 ** SWP +
+	( get key ) ;prng JSR2 +
 	( key % max + min ) STH2kr SWP - MOD POPr STHr +
 	GET-CHAR SAVE-CASE SET-PORT-OUTPUT
 
@@ -1232,36 +1226,6 @@ RTN
 
 RTN
 
-( drawing )
-
-@draw-meter ( -- )
-
-	.toolbar/y1 LDZ2 #0001 -- .Screen/y DEO2
-
-	( merge channels )
-	.Audio0/output DEI DUP #0f AND STH #04 SFT STH
-	.Audio1/output DEI DUP #0f AND STH #04 SFT STH
-		ROTr ADDr ROTr ROTr ADDr SWPr
-	.Audio2/output DEI DUP #0f AND STH #04 SFT STH
-		ROTr ADDr ROTr ROTr ADDr SWPr
-	.Audio3/output DEI DUP #0f AND STH #04 SFT STH
-		ROTr ADDr ROTr ROTr ADDr SWPr
-
-	( draw )
-	#00 #08
-	&loop
-		.toolbar/x2 LDZ2 #0028 -- .Screen/x DEO2
-		DUP OVRr STHr 4/ < .Screen/pixel DEO
-		.toolbar/x2 LDZ2 #0026 -- .Screen/x DEO2
-		DUP STHkr 4/ < .Screen/pixel DEO
-		.Screen/y DEI2 INC2 .Screen/y DEO2
-		#01 - LTHk ,&loop JCN
-	POP2
-
-	POP2r
-
-RTN
-
 @draw-toolbar ( -- )
 
 	( skip on small screens )
@@ -1351,7 +1315,6 @@ RTN
 		INC GTHk ,&ver JCN
 	POP2
 	;draw-toolbar JSR2
-	;draw-meter JSR2
 
 RTN
 
@@ -1368,18 +1331,17 @@ RTN
 	DUP2 GET-CELL
 	DUP CHAR-DOT ! ,&no-bar JCN
 		POP
-		DUP2 GET-TYPE #00 = ,&no-port JCN
-			POP2 LIT '. RTN &no-port
-		DUP2 8MOD SWP 10MOD #0000 !! ,&no-marker4 JCN
-			POP2 LIT '+ RTN &no-marker4
-		DUP2 2MOD SWP 4MOD #0000 !! ,&no-marker2 JCN
-			POP2 LIT '. RTN &no-marker2
-		POP2 
-		#20 RTN
+		DUP2 8MOD SWP 10MOD #0000 == ,&cross JCN
+		DUP2 2MOD SWP 4MOD #0000 == ,&dot JCN
+		DUP2 ,is-selected JSR ,&dot JCN
+		DUP2 GET-TYPE ,&dot JCN
+		POP2 #20 RTN
 	&no-bar
 	ROT ROT POP2
 
 RTN
+	&cross POP2 LIT '+ RTN
+	&dot POP2 LIT '. RTN
 
 @is-selected ( x y -- bool )
 
@@ -1435,7 +1397,15 @@ RTN
 	#00 ;draw-filepath JSR2 
 	( clear variables )
 	;variables #0024 ;mclr JSR2
-	;clear-grid JSR2
+	( clear grid )
+	#00 .grid/height LDZ #00 .grid/width LDZ ** #0000
+	&loop
+		STH2k
+		CHAR-DOT DATA-CELLS STH2kr ++ STA
+		#00 DATA-LOCKS STH2kr ++ STA
+		#00 DATA-TYPES STH2r ++ STA
+		INC2 GTH2k ,&loop JCN
+	POP2 POP2
 	( rename to untitled.txt )
 	;path/name #0020 ;mclr JSR2
 	;untitled-txt ;path/name #000d ;mcpy JSR2
@@ -1485,6 +1455,32 @@ RTN
 
 RTN
 	&lb 0a
+
+( random )
+
+@prng-init ( -- )
+
+	( seed prng (must be nonzero) )
+	#00 .DateTime/second DEI
+	#00 .DateTime/minute DEI #60 SFT2 EOR2
+	#00 .DateTime/hour   DEI #c0 SFT2 EOR2 ,prng/x STR2
+	#00 .DateTime/hour   DEI #04 SFT2
+	#00 .DateTime/day    DEI #10 SFT2 EOR2
+	#00 .DateTime/month  DEI #60 SFT2 EOR2
+	    .DateTime/year  DEI2 #a0 SFT2 EOR2 ,prng/y STR2
+
+RTN
+
+@prng ( -- number* )
+
+	LIT2 &x $2
+	DUP2 #50 SFT2 EOR2
+	DUP2 #03 SFT2 EOR2
+	LIT2 &y $2 DUP2 ,&x STR2
+	DUP2 #01 SFT2 EOR2 EOR2
+	,&y STR2k POP
+
+RTN
 
 ( theme )
 
