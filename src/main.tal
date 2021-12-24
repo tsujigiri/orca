@@ -660,8 +660,8 @@ BRK
 	CHAR-COLON =~ ;op-midi JCN2
 	CHAR-SLASH =~ ;op-byte JCN2
 
-	( unknown )
-	POP2 POP
+	( erase )
+	POP CHAR-DOT SET-CELL
 
 RTN
 
@@ -1397,15 +1397,11 @@ RTN
 	#00 ;draw-filepath JSR2 
 	( clear variables )
 	;variables #0024 ;mclr JSR2
-	( clear grid )
-	#00 .grid/height LDZ #00 .grid/width LDZ ** #0000
-	&loop
-		STH2k
-		CHAR-DOT DATA-CELLS STH2kr ++ STA
-		#00 DATA-LOCKS STH2kr ++ STA
-		#00 DATA-TYPES STH2r ++ STA
-		INC2 GTH2k ,&loop JCN
-	POP2 POP2
+	( clear cells/locks/types )
+	#00 .grid/height LDZ #00 .grid/width LDZ ** STH2
+		DATA-CELLS STH2kr ;mclr JSR2
+		DATA-LOCKS STH2kr ;mclr JSR2
+		DATA-TYPES STH2r ;mclr JSR2
 	( rename to untitled.txt )
 	;path/name #0020 ;mclr JSR2
 	;untitled-txt ;path/name #000d ;mcpy JSR2
@@ -1460,7 +1456,7 @@ RTN
 
 @prng-init ( -- )
 
-	( seed prng (must be nonzero) )
+	( seed )
 	#00 .DateTime/second DEI
 	#00 .DateTime/minute DEI #60 SFT2 EOR2
 	#00 .DateTime/hour   DEI #c0 SFT2 EOR2 ,prng/x STR2
