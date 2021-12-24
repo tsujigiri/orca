@@ -91,7 +91,7 @@
 @state
 	&timer $1 &blink $1 &changed $1
 @timer
-	&beat $1 &alive $1 &speed $1 &frame $2 &seed $2
+	&beat $1 &speed $1 &alive $1  &frame $2 &seed $2
 @path
 	&name $20
 @grid
@@ -157,10 +157,8 @@
 	AUTO-YADDR
 	( blank file )
 	;new-file JSR2
-
 	( theme support )
 	;load-theme JSR2
-
 	( start )
 	#08 ;set-speed JSR2
 	#01 .timer/alive STZ
@@ -217,17 +215,16 @@ BRK
 
 @on-frame ( -> )
 
-	( paused ) .timer/alive LDZ BRK?
-
-	.timer/beat LDZ INC
-		DUP .timer/beat STZ
-		.timer/speed LDZ = BRK?
-
-	( incr frame ) .timer/frame LDZ2 INC2 .timer/frame STZ2
-
-	;run JSR2
-
-	#00 .timer/beat STZ
+	( paused ) 
+	.timer/alive LDZ JMP BRK
+	( inc beat )
+	.timer/beat LDZk INC SWP STZ
+	( on beat )
+	.timer LDZ2 ! ,&skip JCN
+		;run JSR2
+		( reset ) #00 .timer/beat STZ
+		( incr ) .timer/frame LDZ2k INC2 ROT STZ2
+		&skip
 
 BRK
 
