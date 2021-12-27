@@ -375,7 +375,7 @@ BRK
 		#01 ;draw-filepath JSR2
 		POP BRK
 		&no-edit-backspace
-	( special ) #20 >~ ,&no-edit-enter JCN
+	( special ) DUP IS-VALID ,&no-edit-enter JCN
 		;untrap JSR2
 		#00 .state/blink STZ
 		#01 ;draw-filepath JSR2
@@ -637,6 +637,12 @@ BRK
 		POP POP2 RTN
 		&not-locked
 	ROT
+
+	( skip numbers )
+	DUP #30 < ,&no-num JCN
+	DUP #39 > ,&no-num JCN
+		POP POP2 RTN
+		&no-num
 
 	( lowercase )
 	DUP #61 < ,&no-lc JCN
