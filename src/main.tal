@@ -821,22 +821,20 @@ RTN
 
 @op-k ( x y char -- ) ( TODO )
 
-	POP
-	( get len ) DUP2 [ SWP #01 - SWP ] GET-PORT-LEFT 1MIN
-	#00
+	POP POP2
+	.head/addr LDZ2 STH2k 
+	DEC2 ;get-port-left-value JSR2 #00
 	&loop
-		( x+i+1,y ) STHk OVR2 STHr ROT + INC SWP
-		( get variable ) DUP2 GET-PORT-RIGHT
-		DUP #00 = ,&skip JCN
-			.variables + LDZ STH
-			( incr y ) INC
-			DUP2 STHkr SET-PORT-OUTPUT
-			STHr
+		DUP TOS STH2kr INC2 ++ STH2k ;get-port-right-raw JSR2 
+		DUP CHAR-DOT = ,&skip JCN
+			( load ) DUP GET-VALUE .variables + LDZ
+			( save ) STH2kr BELOW ;set-port-output JSR2
 			&skip
-		POP POP2
+		POP
+		POP2r
 		INC GTHk ;&loop JCN2
 	POP2
-	POP2
+	POP2r
 
 RTN
 
