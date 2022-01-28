@@ -253,8 +253,8 @@ BRK
 
 	( default )
 	.Controller/key DEI
-	DUP #00 ! ,&no-null JCN 
-		POP BRK 
+	DUP #00 ! ,&no-null JCN
+		POP BRK
 		&no-null
 	DUP #20 ! ,&no-space JCN
 		( insert mode )
@@ -270,7 +270,7 @@ BRK
 			#ff #00 #00 ;edit-selection JSR2
 			&no-backspace-insert
 		CHAR-DOT ;fill-selection JSR2
-		;redraw JSR2 
+		;redraw JSR2
 		POP BRK
 		&no-backspace
 	DUP #1b ! ,&no-escape JCN
@@ -285,7 +285,7 @@ BRK
 			#01 #00 #00 ;edit-selection JSR2
 			&no-key-insert
 		SET-STATE
-		;redraw JSR2 
+		;redraw JSR2
 		POP BRK
 		&no-key
 	POP
@@ -381,7 +381,7 @@ BRK
 	DUP #05 > ,&no-insert JCN ;toggle-insert JSR2 POP BRK &no-insert
 	DUP #09 > ,&no-pause JCN ;toggle-play JSR2 POP BRK &no-pause
 	DUP #0d > ,&no-speed JCN
-		.timer/speed LDZ #01 + 
+		.timer/speed LDZ #01 +
 			[ .Mouse/state DEI #01 ! #02 *   - ] ;set-speed JSR2
 		RELEASE-MOUSE
 		POP BRK
@@ -508,7 +508,7 @@ RTN
 
 	.selection/insert TOGGLE
 	RELEASE-MOUSE
-	;redraw JSR2 
+	;redraw JSR2
 
 RTN
 
@@ -563,7 +563,7 @@ BRK
 		.grid/width LDZ #00
 		&hor
 			DUP .head/x STZ
-			( x,y ) .head LDZ2 
+			( x,y ) .head LDZ2
 			( character ) .head/addr LDZ2 DATA-CELLS ++ LDA
 				,run-char JSR
 			.head/addr LDZ2k INC2 ROT STZ2
@@ -666,6 +666,28 @@ RTN
 
 RTN
 
+@get-port-left-raw ( addr* -- value )
+
+	( set type ) DUP2 PORTEL-TYPE ROT ROT DATA-TYPES ++ STA
+	( get data ) DATA-CELLS ++ LDA
+
+RTN
+
+@get-port-left-value ( addr* -- value )
+
+	( set type ) DUP2 PORTEL-TYPE ROT ROT DATA-TYPES ++ STA
+	( get data ) DATA-CELLS ++ LDA GET-VALUE
+
+RTN
+
+@get-port-right-raw ( addr* -- value )
+
+	( set lock ) DUP2 #01 ROT ROT DATA-LOCKS ++ STA
+	( set type ) DUP2 PORTER-TYPE ROT ROT DATA-TYPES ++ STA
+	( get data ) DATA-CELLS ++ LDA
+
+RTN
+
 ( operators )
 
 @operations
@@ -678,13 +700,12 @@ RTN
 
 	POP POP2
 	.head/addr LDZ2 STH2k
-	( get a ) DEC2 ;get-port-left JSR2
-	( get b ) STH2kr INC2
-		( set lock ) DUP2 #01 ROT ROT DATA-LOCKS ++ STA
-		( set type ) DUP2 PORTER-TYPE ROT ROT DATA-TYPES ++ STA
-		( get data ) DATA-CELLS ++ LDA GET-CASE GET-VALUE
-	( a b + ) +
-	( apply case ) GET-CHAR SET-CASE
+	( a-val ) DEC2 ;get-port-left-value JSR2
+	( b-raw ) STH2kr INC2 ;get-port-right-raw JSR2
+		( get case ) DUP IS-UC ,&case STR
+		( to value ) GET-VALUE
+	( res ) + GET-CHAR
+	( set case ) DUP #60 > [ LIT &case $1 ] AND 20* -
 	( output ) STH2r #00 .grid/width LDZ ++ ;set-port-output JSR2
 
 RTN
@@ -1285,7 +1306,7 @@ RTN
 
 @draw-byte ( byte color -- )
 
-	STH DUP 
+	STH DUP
 	#04 SFT GET-CHAR STHkr ,draw-char JSR
 	#0f AND GET-CHAR STHr ,draw-char JSR
 
@@ -1421,8 +1442,8 @@ RTN
 @cut-snarf ( -- )
 
 	,copy-snarf JSR
-	CHAR-DOT ;fill-selection JSR2 
-	;redraw JSR2 
+	CHAR-DOT ;fill-selection JSR2
+	;redraw JSR2
 	
 RTN
 
@@ -1465,7 +1486,7 @@ RTN
 			&no-lb
 		.File/success DEI2 #0000 !! ,&stream JCN
 	POP2r
-	;redraw JSR2 
+	;redraw JSR2
 
 RTN
 	&b $1
