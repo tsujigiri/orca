@@ -47,6 +47,7 @@
 %IS-LC { DUP #60 > SWP #7b < AND }
 %IS-NUM { DUP #2f > SWP #3a < AND }
 %IS-VALID { DUP #1f > SWP #7f < AND }
+%STANDARD-LB { DUP #0d = #03 * - }
 
 %AUTO-NONE   { #00 .Screen/auto DEO }
 %AUTO-X      { #01 .Screen/auto DEO }

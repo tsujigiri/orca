@@ -1,26 +1,4 @@
-( Orca
-
-	space - toggle play/pause
-	backspace/delete - erase
-	escape - deselect
-	arrow - move
-	shift+arrow - scale selection
-	ctrl+, - speed down
-	ctrl+. - speed up
-	ctrl+arrow - drag selection
-	ctrl+n - new
-	ctrl+s - save
-	ctrl+r - rename
-	ctrl+o - open
-	ctrl+c - copy
-	ctrl+v - paste
-	ctrl+x - cut
-	alt - dpad controls
-	ctrl+escape - toggle play/pause
-
-	TODO
-		- Catch ports that overflow out of grid
-		- Display on-screen guide )
+( Orca )
 
 ~src/utils.tal
 
@@ -85,14 +63,13 @@
 
 |0000
 
-@dpad $1 
+@dpad $1
 	&last $1
 @timer
 	&beat $1 &speed $1 &playing $1 &frame $2 &seed $2
 @state
-	&timer $1 &blink $1 &changed $1
-@path
-	&name $20
+	&timer $1 &changed $1
+@filepath $40
 @selection
 	&x1 $1 &y1 $1
 	&x2 $1 &y2 $1
@@ -107,6 +84,8 @@
 @toolbar
 	&x1 $2 &y1 $2
 	&x2 $2 &y2 $2
+@head
+	&x $1 &y $1 &addr $2
 @variables $24
 
 |0100
@@ -169,10 +148,6 @@ BRK
 	;on-button .Controller/vector DEO2
 	;on-mouse .Mouse/vector DEO2
 	;on-frame .Screen/vector DEO2
-
-	( filepath )
-	#00 .state/blink STZ
-	#01 ;draw-filepath JSR2
 	RELEASE-MOUSE
 
 RTN
@@ -183,10 +158,6 @@ RTN
 	;on-button-trap .Controller/vector DEO2
 	;on-mouse-trap .Mouse/vector DEO2
 	;on-frame-trap .Screen/vector DEO2
-
-	( filepath )
-	#01 .state/blink STZ
-	#01 ;draw-filepath JSR2
 	RELEASE-MOUSE
 
 	( clear cursor )
@@ -203,36 +174,66 @@ RTN
 	#12 !~ ,&no-d JCN #0001 #00 ;edit-selection JSR2 &no-d
 	#13 !~ ,&no-l JCN #ff00 #00 ;edit-selection JSR2 &no-l
 	#14 !~ ,&no-r JCN #0100 #00 ;edit-selection JSR2 &no-r
-	DUP IS-CHAR-KEY #00 = ,&no-key JCN 
-		STHk .selection LDZ2 STHr SET-CELL 
+	DUP IS-CHAR-KEY #00 = ,&no-key JCN
+		STHk .selection LDZ2 STHr SET-CELL
 		&no-key
 	POP
 
 BRK
 
+@on-frame-trap ( -> )
+
+	.state/timer LDZ
+	DUP 8MOD ,&no-blink JCN
+		DUP 8/ 2MOD 8* INC ;draw-filepath JSR2
+		&no-blink
+	INC .state/timer STZ
+
+BRK
+
+@on-button-trap ( -> )
+
+	#00 ;draw-filepath JSR2
+	.Controller/key DEI STANDARD-LB ,capture-trap JSR
+	#01 ;draw-filepath JSR2
+
+BRK
+
+@capture-trap ( button -- )
+
+	DUP ,&no-null JCN POP RTN &no-null
+	[ #08 ] !~ ,&no-pop JCN ;filepath ;spop JSR2 POP RTN &no-pop
+	[ #0a ] !~ ,&no-load JCN ;load-file JSR2 &no-load
+	[ #7f ] !~ ,&no-delete JCN ;filepath #0040 ;mclr JSR2 POP RTN &no-delete
+	[ #20 ] >~ ,&no-special JCN ;untrap JSR2 POP RTN &no-special
+	;filepath ;slen JSR2 NIP #3f = ,&no-push JCN
+		DUP ;filepath ROT ;sput JSR2
+		&no-push
+	POP
+
+RTN
+
+@on-mouse-trap ( -> )
+
+	( release trap on touch )
+	.Mouse/state DEI BRK?
+
+	;untrap JSR2
+
+BRK
+
 @on-frame ( -> )
 
-	( paused ) 
+	( paused )
 	.timer/playing LDZ JMP BRK
 	( inc beat )
 	.timer/beat LDZk INC SWP STZ
 	( on beat )
 	.timer LDZ2 ! ,&skip JCN
 		;run JSR2
+		.timer/frame LDZ2k INC2 ROT STZ2
 		#00 .timer/beat STZ
 		&skip
-
-BRK
-
-@on-frame-trap ( -> )
-
-	.state/timer LDZ INC
-	DUP 8MOD ,&no-blink JCN
-		.state/blink LDZ #00 =
-			DUP 8* INC ;draw-filepath JSR2
-			.state/blink STZ
-		&no-blink
-	.state/timer STZ
 
 BRK
 
@@ -244,29 +245,24 @@ BRK
 	DUP2 #0002 == ;dpad-input/end JCN2
 	DUP #0f AND #02 = ;dpad-input/add JCN2
 	POP ( pop last )
-	DUP .dpad/last STZ
+	.dpad/last STZ
 
-	( normal handlers )
-	DUP #f0 AND ;&arrows JCN2
-	DUP #01 AND ;&control JCN2
-	DUP #09 ! ,&no-ctrl-escape JCN
-		.timer/playing TOGGLE
-		&no-ctrl-escape
-	POP
+	( modifier handlers )
+	.Controller/button DEI #f0 AND ;on-button-arrow JCN2
+	.Controller/button DEI #01 AND ;on-button-ctrl JCN2
 
 	( default )
 	.Controller/key DEI
-	DUP #00 ! ,&no-null JCN
-		POP BRK
+	DUP #00 ! ,&no-null JCN 
+		POP BRK 
 		&no-null
 	DUP #20 ! ,&no-space JCN
 		( insert mode )
 		.selection/insert LDZ #00 = ,&no-space-insert JCN
-			#01 #00 #00 ;edit-selection JSR2
-			POP BRK
+			#01 #00 #00 ;edit-selection JSR2 POP BRK
 			&no-space-insert
-		.timer/playing TOGGLE
-		;redraw JSR2 POP BRK
+		;toggle-play JSR2
+		POP BRK
 		&no-space
 	DUP #08 ! OVR #7f ! AND ,&no-backspace JCN
 		( insert mode )
@@ -274,12 +270,13 @@ BRK
 			#ff #00 #00 ;edit-selection JSR2
 			&no-backspace-insert
 		CHAR-DOT ;fill-selection JSR2
-		;redraw JSR2 POP BRK
+		;redraw JSR2 
+		POP BRK
 		&no-backspace
 	DUP #1b ! ,&no-escape JCN
 		RESET-SELECTION
 		RESET-INSERT
-		;load-theme JSR2 POP BRK
+		POP BRK
 		&no-escape
 	DUP IS-CHAR-KEY #00 = ,&no-key JCN
 		.Controller/key DEI ;fill-selection JSR2
@@ -288,113 +285,46 @@ BRK
 			#01 #00 #00 ;edit-selection JSR2
 			&no-key-insert
 		SET-STATE
-		;redraw JSR2 POP BRK
+		;redraw JSR2 
+		POP BRK
 		&no-key
-	POP BRK
-
-	&control ( button -- )
-		POP
-		.Controller/key DEI
-		DUP [ LIT 'a ] ! ,&no-expand JCN
-			#0000 .grid/width LDZ2 ;set-selection JSR2
-			POP BRK
-			&no-expand
-		DUP [ LIT 'c ] ! ,&no-copy JCN
-			;copy-snarf JSR2
-			;redraw JSR2 POP BRK
-			&no-copy
-		DUP [ LIT 'v ] ! ,&no-paste JCN
-			;paste-snarf JSR2 RESET-SELECTION
-			;redraw JSR2 POP BRK
-			&no-paste
-		DUP [ LIT 'x ] ! ,&no-cut JCN
-			;copy-snarf JSR2 CHAR-DOT ;fill-selection JSR2 RESET-SELECTION
-			;redraw JSR2 POP BRK
-			&no-cut
-		DUP [ LIT 'o ] ! ,&no-open JCN
-			;load-file JSR2
-			POP BRK
-			&no-open
-		DUP [ LIT 'r ] ! ,&no-name JCN
-			#00 ;draw-filepath JSR2
-			;trap JSR2
-			POP BRK
-			&no-name
-		DUP [ LIT 'R ] ! ,&no-rename JCN
-			#00 ;draw-filepath JSR2
-			;path/name #0020 ;mclr JSR2
-			;trap JSR2
-			POP BRK
-			&no-rename
-		DUP [ LIT 's ] ! ,&no-save JCN
-			;save-file JSR2
-			;redraw JSR2 POP BRK
-			&no-save
-		DUP [ LIT 'n ] ! ,&no-new JCN
-			;new-file JSR2
-			POP BRK
-			&no-new
-		DUP [ LIT 'i ] ! ,&no-insert JCN
-			.selection/insert TOGGLE
-			;redraw JSR2 POP BRK
-			&no-insert
-		DUP #2c ! ,&no-slow JCN
-			.timer/speed LDZ #01 - ;set-speed JSR2
-			;redraw JSR2 POP BRK
-			&no-slow
-		DUP #2e ! ,&no-fast JCN
-			.timer/speed LDZ INC ;set-speed
-			;redraw JSR2 POP BRK
-			&no-fast
-		POP
-	BRK
-
-	&arrows ( button -> )
-		DUP #f0 AND #10 ! ,&no-u JCN #00ff ROT ,&move JMP &no-u
-		DUP #f0 AND #20 ! ,&no-d JCN #0001 ROT ,&move JMP &no-d
-		DUP #f0 AND #40 ! ,&no-l JCN #ff00 ROT ,&move JMP &no-l
-		DUP #f0 AND #80 ! ,&no-r JCN #0100 ROT ,&move JMP &no-r
-		POP BRK
-		&move
-		;edit-selection JSR2
-		;redraw JSR2
-	BRK
-
-BRK
-
-@on-button-trap ( -> )
-
-	.Controller/key DEI
-	DUP ,&continue JCN
-		POP BRK
-		&continue
-	( backspace ) #08 !~ ,&no-edit-backspace JCN
-		( clamp ) ;path/name ;slen JSR2 NIP #00 = ,&edit-end JCN
-		#00 ;draw-filepath JSR2
-		;path/name ;spop JSR2
-		#01 ;draw-filepath JSR2
-		POP BRK
-		&no-edit-backspace
-	( special ) DUP IS-VALID ,&no-edit-enter JCN
-		;untrap JSR2
-		#00 .state/blink STZ
-		#01 ;draw-filepath JSR2
-		POP BRK
-		&no-edit-enter
-	( append ) ;path/name ;slen JSR2 NIP #1f = ,&edit-end JCN
-	DUP ;path/name ROT ;sput JSR2
-	#01 ;draw-filepath JSR2
-	&edit-end
 	POP
 
 BRK
 
-@on-mouse-trap ( -> )
+@on-button-ctrl ( -> )
 
-	( release trap on touch )
-	.Mouse/state DEI BRK?
+	.Controller/key DEI
+	( copy/paste/cut )
+	[ LIT 'c ] !~ ,&no-copy JCN ;copy-snarf JSR2 &no-copy
+	[ LIT 'v ] !~ ,&no-paste JCN ;paste-snarf JSR2 &no-paste
+	[ LIT 'x ] !~ ,&no-cut JCN ;cut-snarf JSR2 &no-cut
+	( new/rename/open/save )
+	[ LIT 'n ] !~ ,&no-new JCN ;new-file JSR2 &no-new
+	[ LIT 'r ] !~ ,&no-name JCN ;trap JSR2 &no-name
+	[ LIT 'o ] !~ ,&no-open JCN ;load-file JSR2 &no-open
+	[ LIT 's ] !~ ,&no-save JCN ;save-file JSR2 &no-save
+	( select-all/insert )
+	[ LIT 'a ] !~ ,&no-expand JCN #0000 .grid/width LDZ2 ;set-selection JSR2 &no-expand
+	[ LIT 'i ] !~ ,&no-insert JCN ;toggle-insert JSR2 &no-insert
+	( tempo )
+	[ LIT ', ] !~ ,&no-slow JCN .timer/speed LDZ #01 - ;set-speed JSR2 &no-slow
+	[ LIT '. ] !~ ,&no-fast JCN .timer/speed LDZ INC ;set-speed &no-fast
+	POP
 
-	;untrap JSR2
+BRK
+
+@on-button-arrow ( -> )
+
+	.Controller/button DEI
+	DUP #f0 AND #10 ! ,&no-u JCN #00ff ROT ,&move JMP &no-u
+	DUP #f0 AND #20 ! ,&no-d JCN #0001 ROT ,&move JMP &no-d
+	DUP #f0 AND #40 ! ,&no-l JCN #ff00 ROT ,&move JMP &no-l
+	DUP #f0 AND #80 ! ,&no-r JCN #0100 ROT ,&move JMP &no-r
+	POP BRK
+	&move
+	;edit-selection JSR2
+	;redraw JSR2
 
 BRK
 
@@ -448,40 +378,24 @@ BRK
 
 	( left-side )
 	.Mouse/x DEI2 .grid/x1 LDZ2 -- 8// NIP
-	DUP #05 > ,&no-insert JCN
-		.selection/insert TOGGLE
-		RELEASE-MOUSE
-		;redraw JSR2 POP BRK
-		&no-insert
-	DUP #09 > ,&no-pause JCN
-		.timer/playing TOGGLE
-		RELEASE-MOUSE
-		;redraw JSR2 POP BRK
-		&no-pause
+	DUP #05 > ,&no-insert JCN ;toggle-insert JSR2 POP BRK &no-insert
+	DUP #09 > ,&no-pause JCN ;toggle-play JSR2 POP BRK &no-pause
 	DUP #0d > ,&no-speed JCN
-		.timer/speed LDZ #01 +
-			[ .Controller/button DEI #01 = #02 * - ]
-			;set-speed JSR2
+		.timer/speed LDZ #01 + 
+			[ .Mouse/state DEI #01 ! #02 *   - ] ;set-speed JSR2
 		RELEASE-MOUSE
-		;redraw JSR2 POP BRK
+		POP BRK
 		&no-speed
 	DUP #0f > OVR .grid/width LDZ SWP - #05 > #0101 !! ,&no-rename JCN
-		#00 ;draw-filepath JSR2
 		;trap JSR2
 		&no-rename
 	POP
 
 	( right-side )
 	.grid/x2 LDZ2 .Mouse/x DEI2 -- 8// NIP
-	DUP ,&no-save JCN
-		;save-file JSR2
-		&no-save
-	DUP #02 ! ,&no-load JCN
-		;load-file JSR2
-		&no-load
-	DUP #03 ! ,&no-name JCN
-		;new-file JSR2
-		&no-name
+	[ #01 ] !~ ,&no-save JCN ;save-file JSR2 &no-save
+	[ #02 ] !~ ,&no-load JCN ;load-file JSR2 &no-load
+	[ #03 ] !~ ,&no-name JCN ;new-file JSR2 &no-name
 	POP
 
 	RELEASE-MOUSE
@@ -507,10 +421,10 @@ RTN
 	( keep to over from )
 	OVR2 OVR2 ROT MAX ROT ROT MAX SWP NIP2
 	( changed ) LITr 00
-	,clamp-position JSR 
-		DUP2 .selection/x2 LDZ2 !! JMP INCr 
+	,clamp-position JSR
+		DUP2 .selection/x2 LDZ2 !! JMP INCr
 		.selection/x2 STZ2
-	,clamp-position JSR 
+	,clamp-position JSR
 		DUP2 .selection/x1 LDZ2 !! JMP INCr
 		.selection/x1 STZ2
 	STHr #00 = ,&no-redraw JCN
@@ -538,7 +452,6 @@ RTN
 		INC GTHk ,&ver JCN
 	POP2
 	POPr
-
 	SET-STATE
 
 RTN
@@ -550,12 +463,10 @@ RTN
 		#01 AND #00 ! ;&drag STA
 		#04 AND #00 ! 2* ;&scale STA
 	STH2
-
 	;&drag LDA #00 = ,&no-drag-start JCN
 		;copy-snarf JSR2
 		CHAR-DOT ;fill-selection JSR2
 		&no-drag-start
-
 	( y )
 	STHkr #00 = ,&no-ver JCN
 		( clamp ) STHkr #ff = .selection/y1 [ ,&scale LDR + ] LDZ #00 = AND ,&no-ver JCN
@@ -564,7 +475,6 @@ RTN
 		,&scale LDR ,&no-ver JCN
 			.selection/y2 LDZ STHkr + .selection/y2 STZ
 		&no-ver POPr
-
 	( x )
 	STHkr #00 = ,&no-hor JCN
 		( clamp ) STHkr #ff = .selection/x1 [ ,&scale LDR + ] LDZ #00 = AND ,&no-hor JCN
@@ -573,10 +483,9 @@ RTN
 		,&scale LDR ,&no-hor JCN
 			.selection/x2 LDZ STHkr + .selection/x2 STZ
 		&no-hor POPr
-
 	( clamp result )
 	.selection/x1 LDZ2 .selection/x2 LDZ2 ;set-selection JSR2
-
+	( drag )
 	,&drag LDR #00 = ,&no-drag-end JCN
 		;paste-snarf JSR2
 		&no-drag-end
@@ -591,6 +500,23 @@ RTN
 	#1f AND [ #04 MAX ] .timer/speed STZ
 	( reset timer )
 	#00 .timer/beat STZ
+	;redraw JSR2
+
+RTN
+
+@toggle-insert ( -- )
+
+	.selection/insert TOGGLE
+	RELEASE-MOUSE
+	;redraw JSR2 
+
+RTN
+
+@toggle-play ( -- )
+
+	.timer/playing TOGGLE
+	RELEASE-MOUSE
+	;redraw JSR2
 
 RTN
 
@@ -605,7 +531,6 @@ RTN
 	&end ( button* -> )
 		POP
 		.dpad LDZ #7f > ,&save JCN
-		.dpad LDZ #20 = ,&erase JCN
 		.selection LDZ2 .dpad LDZ SET-CELL
 		SET-STATE
 		RESET-SELECTION
@@ -615,9 +540,6 @@ RTN
 		#02 ! ,&save JCN
 		DUP #04 SFT .dpad LDZ + #7f AND .dpad STZ
 		,&save JMP
-	&erase ( -> )
-		.selection LDZ2 CHAR-DOT SET-CELL SET-STATE
-		#00 .dpad STZ
 	&save ( -> )
 		.dpad/last STZ
 		;redraw JSR2
@@ -625,39 +547,61 @@ RTN
 
 BRK
 
+@run ( -- )
+
+	( clear lock/types/variables )
+	#00 .grid/height LDZ #00 .grid/width LDZ ** STH2
+	DATA-LOCKS STH2kr ;mclr JSR2
+	DATA-TYPES STH2r ;mclr JSR2
+	;variables #0024 ;mclr JSR2
+	( ref to head for quick access )
+	#0000 .head/addr STZ2
+	( do )
+	.grid/height LDZ #00
+	&ver
+		DUP .head/y STZ
+		.grid/width LDZ #00
+		&hor
+			DUP .head/x STZ
+			( x,y ) .head LDZ2 
+			( character ) .head/addr LDZ2 DATA-CELLS ++ LDA
+				,run-char JSR
+			.head/addr LDZ2k INC2 ROT STZ2
+			INC GTHk ,&hor JCN
+		POP2
+		INC GTHk ,&ver JCN
+	POP2
+	;redraw JSR2
+
+RTN
+
 @run-char ( x y char -- )
 
 	( skip dot )
-	DUP CHAR-DOT NEQ ,&not-dot JCN
+	DUP CHAR-DOT ! ,&not-dot JCN
 		POP POP2 RTN
 		&not-dot
-
 	( skip locked )
-	ROT ROT DUP2 GET-LOCK #00 = ,&not-locked JCN
+	.head/addr LDZ2 DATA-LOCKS ++ LDA #00 = ,&not-locked JCN
 		POP POP2 RTN
 		&not-locked
-	ROT
-
 	( skip numbers )
 	DUP #30 < ,&no-num JCN
 	DUP #39 > ,&no-num JCN
 		POP POP2 RTN
 		&no-num
-
 	( lowercase )
 	DUP #61 < ,&no-lc JCN
 	DUP #7a > ,&no-lc JCN
 		STH DUP2 ;get-bang JSR2 ,&run JCN
 		POPr POP2 RTN
 		&no-lc
-
 	( uppercase )
 	DUP #41 < ,&no-uc JCN
 	DUP #5a > ,&no-uc JCN
 		STH DUP2 OPERATOR-TYPE SET-TYPE &run STHr
 		DUP GET-VALUE #0a - 2* TOS ;operations ++ LDA2 JMP2
 		&no-uc
-
 	( special )
 	CHAR-BANG =~ ;op-bang JCN2
 	CHAR-HASH =~ ;op-comment JCN2
@@ -665,33 +609,8 @@ BRK
 	CHAR-EQUAL =~ ;op-synth JCN2
 	CHAR-COLON =~ ;op-midi JCN2
 	CHAR-SLASH =~ ;op-byte JCN2
-
 	( erase )
 	POP CHAR-DOT SET-CELL
-
-RTN
-
-@run ( -- )
-
-	( clear lock/types )
-	#00 .grid/height LDZ #00 .grid/width LDZ ** STH2
-		DATA-LOCKS STH2kr ;mclr JSR2
-		DATA-TYPES STH2r ;mclr JSR2
-	( do )
-	.grid/height LDZ #00
-	&ver
-		.grid/width LDZ #00
-		&hor
-			GET-ITER
-			DUP2 GET-CELL ;run-char JSR2
-			INC GTHk ,&hor JCN
-		POP2
-		INC GTHk ,&ver JCN
-	POP2
-	( timer )
-	.timer/frame LDZ2k INC2 ROT STZ2
-	( redraw )
-	;redraw JSR2
 
 RTN
 
@@ -757,8 +676,8 @@ RTN
 
 @op-a ( x y char -- )
 
-	POP
-	GET-INDEX STH2k
+	POP POP2
+	.head/addr LDZ2 STH2k
 	( get a ) DEC2 ;get-port-left JSR2
 	( get b ) STH2kr INC2
 		( set lock ) DUP2 #01 ROT ROT DATA-LOCKS ++ STA
@@ -772,8 +691,7 @@ RTN
 
 @op-b ( x y char -- )
 
-	POP
-	GET-INDEX STH2k
+	POP POP2 .head/addr LDZ2 STH2k
 	( get a ) DEC2 ;get-port-left JSR2
 	( get b ) STH2kr INC2
 		( set lock ) DUP2 #01 ROT ROT DATA-LOCKS ++ STA
@@ -787,8 +705,7 @@ RTN
 
 @op-c ( x y char -- )
 
-	POP
-	GET-INDEX STH2k
+	POP POP2 .head/addr LDZ2 STH2k
 	( get rate ) DEC2 ;get-port-left JSR2 1MIN
 	( get mod ) STH2kr INC2
 		( set lock ) DUP2 #01 ROT ROT DATA-LOCKS ++ STA
@@ -802,8 +719,7 @@ RTN
 
 @op-d ( x y char -- )
 
-	POP
-	GET-INDEX STH2k
+	POP POP2 .head/addr LDZ2 STH2k
 	( get rate ) DEC2 ;get-port-left JSR2 1MIN
 	( get mod ) STH2kr INC2 ;get-port-right JSR2 1MIN
 	( rate mod * 0 = ) * TOS .timer/frame LDZ2 SWP2 MOD2 #0000 ==
@@ -829,8 +745,7 @@ RTN
 
 @op-f ( x y char -- )
 
-	POP
-	GET-INDEX STH2k
+	POP POP2 .head/addr LDZ2 STH2k
 	( get rate ) DEC2 ;get-port-left JSR2
 	( get mod ) STH2kr INC2 ;get-port-right JSR2
 	( bang on equal ) = [ #fc * CHAR-DOT +  ]
@@ -868,8 +783,7 @@ RTN
 
 @op-i ( x y char -- )
 
-	POP
-	GET-INDEX STH2k
+	POP POP2 .head/addr LDZ2 STH2k
 	( get rate ) DEC2 ;get-port-left JSR2 1MIN
 	( get output ) STH2kr #00 .grid/width LDZ ++ DATA-CELLS ++ LDA GET-VALUE
 	( rate output + ) +
@@ -886,7 +800,8 @@ RTN
 @op-j ( x y char -- )
 
 	POP ( TODO: Wiring )
-	GET-INDEX STH2k
+	POP2
+	.head/addr LDZ2 STH2k
 	( get above ) #00 .grid/width LDZ -- ;get-port-raw JSR2
 	( set below ) STH2r #00 .grid/width LDZ ++ ;set-port-output JSR2
 
@@ -915,8 +830,7 @@ RTN
 
 @op-l ( x y char -- )
 
-	POP
-	GET-INDEX STH2k
+	POP POP2 .head/addr LDZ2 STH2k
 	( get rate ) DEC2 ;get-port-left JSR2
 	( get mod ) STH2kr INC2
 		( set lock ) DUP2 #01 ROT ROT DATA-LOCKS ++ STA
@@ -930,8 +844,7 @@ RTN
 
 @op-m ( x y char -- )
 
-	POP
-	GET-INDEX STH2k
+	POP POP2 .head/addr LDZ2 STH2k
 	( get rate ) DEC2 ;get-port-left JSR2
 	( get mod ) STH2kr INC2
 		( set lock ) DUP2 #01 ROT ROT DATA-LOCKS ++ STA
@@ -1121,7 +1034,8 @@ RTN
 @op-y ( x y char -- )
 
 	POP ( TODO: Wiring )
-	GET-INDEX STH2k
+	POP2
+	.head/addr LDZ2 STH2k
 	( get left ) DEC2 ;get-port-raw JSR2
 	( set right ) STH2r INC2 ;set-port-output JSR2
 
@@ -1234,9 +1148,6 @@ RTN
 
 @draw-toolbar ( -- )
 
-	( skip on small screens )
-	.toolbar/y1 LDZ2 .Screen/height DEI2 << RTN?
-
 	.toolbar/y1 LDZ2 .Screen/y DEO2
 
 	( Positions )
@@ -1303,7 +1214,7 @@ RTN
 	STH
 	.toolbar/y1 LDZ2 .Screen/y DEO2
 	.toolbar/x1 LDZ2 #0078 ++ .Screen/x DEO2
-	;path/name STHr ;draw-str JSR2
+	;filepath STHr ;draw-str JSR2
 
 RTN
 
@@ -1374,8 +1285,8 @@ RTN
 
 @draw-byte ( byte color -- )
 
-	STH
-	DUP #04 SFT GET-CHAR STHkr ,draw-char JSR
+	STH DUP 
+	#04 SFT GET-CHAR STHkr ,draw-char JSR
 	#0f AND GET-CHAR STHr ,draw-char JSR
 
 RTN
@@ -1400,7 +1311,7 @@ RTN
 
 @new-file ( default* -- )
 
-	#00 ;draw-filepath JSR2 
+	#00 ;draw-filepath JSR2
 	( clear variables )
 	;variables #0024 ;mclr JSR2
 	( clear cells/locks/types )
@@ -1409,8 +1320,8 @@ RTN
 		DATA-LOCKS STH2kr ;mclr JSR2
 		DATA-TYPES STH2r ;mclr JSR2
 	( rename to untitled.txt )
-	;path/name #0020 ;mclr JSR2
-	;untitled-txt ;path/name #000d ;mcpy JSR2
+	;filepath #0020 ;mclr JSR2
+	;untitled-txt ;filepath #000d ;mcpy JSR2
 	;redraw JSR2
 	RESET-STATE
 
@@ -1418,7 +1329,7 @@ RTN
 
 @load-file ( -- )
 
-	;path/name .File/name DEO2
+	;filepath .File/name DEO2
 	#0001 .File/length DEO2
 	( x,y ) LIT2r 0000
 	&stream
@@ -1442,7 +1353,7 @@ RTN
 
 @save-file ( -- )
 
-	;path/name .File/name DEO2
+	;filepath .File/name DEO2
 	#0001 .File/length DEO2
 	.grid/height LDZ #00
 	&ver
@@ -1454,6 +1365,7 @@ RTN
 		( linebreak ) ;&lb .File/write DEO2
 		INC GTHk ,&ver JCN
 	POP2
+	;redraw JSR2
 
 RTN
 	&lb 0a
@@ -1469,7 +1381,7 @@ RTN
 	#00 .DateTime/hour   DEI #04 SFT2
 	#00 .DateTime/day    DEI #10 SFT2 EOR2
 	#00 .DateTime/month  DEI #60 SFT2 EOR2
-	    .DateTime/year  DEI2 #a0 SFT2 EOR2 ,prng/y STR2
+		.DateTime/year  DEI2 #a0 SFT2 EOR2 ,prng/y STR2
 
 RTN
 
@@ -1506,6 +1418,14 @@ RTN
 
 @snarf-txt ".snarf $1
 
+@cut-snarf ( -- )
+
+	,copy-snarf JSR
+	CHAR-DOT ;fill-selection JSR2 
+	;redraw JSR2 
+	
+RTN
+
 @copy-snarf ( -- )
 
 	;snarf-txt .File/name DEO2
@@ -1520,6 +1440,7 @@ RTN
 		( linebreak ) ;&lb .File/write DEO2
 		INC GTHk ,&ver JCN
 	POP2
+	;redraw JSR2
 
 RTN
 	&lb 0a
@@ -1544,6 +1465,7 @@ RTN
 			&no-lb
 		.File/success DEI2 #0000 !! ,&stream JCN
 	POP2r
+	;redraw JSR2 
 
 RTN
 	&b $1
@@ -1571,7 +1493,8 @@ RTN
 
 @spop ( str* -- )
 
-	( clamp ) LDAk #00 ! JMP RTN
+	LDAk ,&no-null JCN
+		POP2 RTN &no-null
 	#00 ROT ROT ,scap JSR #0001 -- STA
 
 RTN
@@ -1621,12 +1544,12 @@ RTN
 
 @print-hex ( value* -- )
 	
-	SWP ,&byte JSR 
+	SWP ,&byte JSR
 	&byte ( byte -- )
 		STHk #04 SFT ,&parse JSR #18 DEO
 		STHr #0f AND ,&parse JSR #18 DEO
 	RTN
-	&parse ( byte -- char ) DUP #09 GTH ,&above JCN #30 + RTN 
+	&parse ( byte -- char ) DUP #09 GTH ,&above JCN #30 + RTN
 	&above #57 + RTN
 
 RTN
@@ -1679,7 +1602,5 @@ RTN
 	08 ( 5 port-output )
 	09 ( 6 selected )
 	0c ( 7 io )
-
-@cursor-icn     80c0 e0f0 f8e0 1000
 
 ~src/assets.tal
