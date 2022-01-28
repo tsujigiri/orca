@@ -1000,18 +1000,20 @@ RTN
 
 RTN
 
-@op-v ( x y char -- ) ( TODO )
+@op-v ( x y char -- )
 
-	POP
-	( get write ) DUP2 [ SWP #01 - SWP ] GET-PORT-LEFT STH
-	( get read ) DUP2 [ SWP INC SWP ] GET-PORT-RIGHT-RAW STH
-	OVRr STHr ,&write JCN
-	( incr y ) INC
-	( load ) STHr GET-VALUE .variables + LDZ SET-PORT-OUTPUT
-	POPr
-	RTN
-	&write
-	( save ) STH2r SWP .variables + STZ POP2
+	POP POP2
+	.head/addr LDZ2 STH2k
+	( key ) DEC2 ;get-port-left-raw JSR2 
+	( val ) STH2kr INC2 ;get-port-right-raw JSR2
+	DUP CHAR-DOT = ,&idle JCN
+	OVR GET-VALUE ,&save JCN
+	( load ) 
+		NIP GET-VALUE .variables + LDZ STH2r BELOW ;set-port-output JSR2 RTN
+	&save
+		SWP GET-VALUE .variables + STZ POP2r RTN
+	&idle
+		POP2 POP2r
 
 RTN
 
