@@ -762,14 +762,14 @@ RTN
 
 	POP POP2 
 	.head/addr LDZ2 STH2k
-	( get rate ) DEC2 ;get-port-left-raw JSR2
-	( get mod ) STH2kr INC2 ;get-port-right-raw JSR2
+	( get a ) DEC2 ;get-port-left-raw JSR2
+	( get b ) STH2kr INC2 ;get-port-right-raw JSR2
 	( bang on equal ) = [ #fc * CHAR-DOT +  ]
 	( output ) STH2r #00 .grid/width LDZ ++ ;set-port-output JSR2
 
 RTN
 
-@op-g ( x y char -- )
+@op-g ( x y char -- ) ( TODO )
 
 	POP
 	( get x ) DUP2 [ SWP #03 - SWP ] GET-PORT-LEFT STH
@@ -790,16 +790,17 @@ RTN
 
 @op-h ( x y char -- )
 
-	POP INC
-	GET-INDEX
+	POP POP2
+	( output ) .head/addr LDZ2 #00 .grid/width LDZ ++
 	( set lock ) DUP2 #01 ROT ROT DATA-LOCKS ++ STA
-	( set type ) PORTER-TYPE ROT ROT DATA-TYPES ++ STA
+	( set type ) OUTPUT-TYPE ROT ROT DATA-TYPES ++ STA
 
 RTN
 
-@op-i ( x y char -- )
+@op-i ( x y char -- ) ( TODO )
 
-	POP POP2 .head/addr LDZ2 STH2k
+	POP POP2 
+	.head/addr LDZ2 STH2k
 	( get rate ) DEC2 ;get-port-left-value JSR2 1MIN
 	( get output ) STH2kr #00 .grid/width LDZ ++ DATA-CELLS ++ LDA GET-VALUE
 	( rate output + ) +
@@ -813,17 +814,16 @@ RTN
 
 RTN
 
-@op-j ( x y char -- )
+@op-j ( x y char -- ) ( TODO: Wiring )
 
-	POP ( TODO: Wiring )
-	POP2
+	POP POP2
 	.head/addr LDZ2 STH2k
 	( get above ) #00 .grid/width LDZ -- ;get-port-raw JSR2
 	( set below ) STH2r #00 .grid/width LDZ ++ ;set-port-output JSR2
 
 RTN
 
-@op-k ( x y char -- )
+@op-k ( x y char -- ) ( TODO )
 
 	POP
 	( get len ) DUP2 [ SWP #01 - SWP ] GET-PORT-LEFT 1MIN
@@ -846,28 +846,28 @@ RTN
 
 @op-l ( x y char -- )
 
-	POP POP2 .head/addr LDZ2 STH2k
-	( get rate ) DEC2 ;get-port-left-value JSR2
-	( get mod ) STH2kr INC2
-		( set lock ) DUP2 #01 ROT ROT DATA-LOCKS ++ STA
-		( set type ) DUP2 PORTER-TYPE ROT ROT DATA-TYPES ++ STA
-		( get data ) DATA-CELLS ++ LDA GET-CASE GET-VALUE
-	( min ) LTHk JMP SWP POP
-	( apply case ) GET-CHAR SET-CASE
+	POP POP2 
+	.head/addr LDZ2 STH2k
+	( get a ) DEC2 ;get-port-left-value JSR2
+	( get b ) STH2kr INC2 ;get-port-right-raw JSR2
+		( get case ) DUP IS-UC ,&case STR
+		( to value ) GET-VALUE
+	( res ) LTHk JMP SWP POP
+	( set case ) GET-CHAR DUP #60 > [ LIT &case $1 ] AND 20* -
 	( output ) STH2r #00 .grid/width LDZ ++ ;set-port-output JSR2
 
 RTN
 
 @op-m ( x y char -- )
 
-	POP POP2 .head/addr LDZ2 STH2k
-	( get rate ) DEC2 ;get-port-left-value JSR2
-	( get mod ) STH2kr INC2
-		( set lock ) DUP2 #01 ROT ROT DATA-LOCKS ++ STA
-		( set type ) DUP2 PORTER-TYPE ROT ROT DATA-TYPES ++ STA
-		( get data ) DATA-CELLS ++ LDA GET-CASE GET-VALUE
-	( mul ) *
-	( apply case ) GET-CHAR SET-CASE
+	POP POP2 
+	.head/addr LDZ2 STH2k
+	( get a ) DEC2 ;get-port-left-value JSR2
+	( get b ) STH2kr INC2 ;get-port-right-raw JSR2
+		( get case ) DUP IS-UC ,&case STR
+		( to value ) GET-VALUE
+	( res ) *
+	( set case ) GET-CHAR DUP #60 > [ LIT &case $1 ] AND 20* -
 	( output ) STH2r #00 .grid/width LDZ ++ ;set-port-output JSR2
 
 RTN
@@ -1047,10 +1047,9 @@ RTN
 
 RTN
 
-@op-y ( x y char -- )
+@op-y ( x y char -- ) ( TODO: Wiring )
 
-	POP ( TODO: Wiring )
-	POP2
+	POP POP2
 	.head/addr LDZ2 STH2k
 	( get left ) DEC2 ;get-port-raw JSR2
 	( set right ) STH2r INC2 ;set-port-output JSR2
