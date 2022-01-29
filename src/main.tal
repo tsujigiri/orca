@@ -984,17 +984,17 @@ RTN
 
 @op-u ( x y char -- ) ( TODO )
 
-	POP
-	( get step ) DUP2 [ SWP #01 - SWP ] GET-PORT-LEFT STH
-	( get max ) DUP2 [ SWP INC SWP ] GET-PORT-RIGHT 1MIN STH
-	( incr y ) INC
-	( frame + max - 1 ) .timer/frame LDZ2 STHkr TOS ++ #0001 --
+	POP POP2
+	.head/addr LDZ2 STH2k
+	( step ) DEC2 ;get-port-left-value JSR2
+	( max ) STH2kr INC2 ;get-port-right-value JSR2 1MIN STH2
+	( frame + max - 1 ) .timer/frame LDZ2 STHkr TOS ++ DEC2
 	( * step ) OVRr STHr TOS **
 	( % max ) STHkr TOS MOD2
 	( + step ) SWPr STHr TOS ++
 	( bucket >= max ) STHr TOS << #01 !
 	( bang if equal ) #fc * CHAR-DOT +
-	SET-PORT-OUTPUT
+	STH2r BELOW ;set-port-output JSR2
 
 RTN
 
