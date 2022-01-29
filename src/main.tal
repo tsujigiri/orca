@@ -795,17 +795,14 @@ RTN
 
 @op-i ( x y char -- ) ( TODO )
 
-	POP POP2 
+	POP POP2
 	.head/addr LDZ2 STH2k
-	( get rate ) DEC2 ;get-port-left-value JSR2 1MIN
-	( get output ) STH2kr BELOW DATA-CELLS ++ LDA GET-VALUE
-	( rate output + ) +
-	( get mod ) STH2kr INC2
-		( set lock ) DUP2 #01 ROT ROT DATA-LOCKS ++ STA
-		( set type ) DUP2 PORTER-TYPE ROT ROT DATA-TYPES ++ STA
-		( get data ) DATA-CELLS ++ LDA GET-CASE GET-VALUE 1MIN
-	( result % ) MOD
-	( apply case ) GET-CHAR SET-CASE
+	( step ) DEC2 ;get-port-left-value JSR2
+	( mod ) STH2kr INC2 ;get-port-right-raw JSR2
+		( get case ) DUP IS-UC ,&case STR
+		( to value ) GET-VALUE 1MIN
+	( res ) SWP STH2kr BELOW [ DATA-CELLS ++ LDA GET-VALUE ] + SWP MOD
+	( set case ) GET-CHAR DUP #60 > [ LIT &case $1 ] AND 20* -
 	( output ) STH2r BELOW ;set-port-output JSR2
 
 RTN
@@ -819,7 +816,7 @@ RTN
 
 RTN
 
-@op-k ( x y char -- ) ( TODO )
+@op-k ( x y char -- )
 
 	POP POP2
 	.head/addr LDZ2 STH2k 
@@ -880,7 +877,7 @@ RTN
 
 RTN
 
-@op-o ( x y char -- ) ( TODO )
+@op-o ( x y char -- )
 
 	POP POP2
 	.head/addr LDZ2 STH2k
