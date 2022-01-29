@@ -982,7 +982,7 @@ RTN
 
 RTN
 
-@op-u ( x y char -- ) ( TODO )
+@op-u ( x y char -- )
 
 	POP POP2
 	.head/addr LDZ2 STH2k
@@ -1029,14 +1029,14 @@ RTN
 
 RTN
 
-@op-x ( x y char -- ) ( TODO )
+@op-x ( x y char -- )
 
-	POP
-	( get value ) DUP2 [ SWP INC SWP ] GET-PORT-RIGHT-RAW STH
-	( get x ) DUP2 [ SWP #02 - SWP ] GET-PORT-LEFT STH
-	( get y ) DUP2 [ SWP #01 - SWP ] GET-PORT-LEFT STH
-	( incr y ) STH2r INC ++ STHr
-	SET-PORT-OUTPUT
+	POP POP2
+	.head/addr LDZ2 STH2k
+	( x ) STH2kr #0002 -- ;get-port-left-value JSR2 TOS ++
+	( y ) STH2kr #0001 -- ;get-port-left-value JSR2 INC TOS #00 .grid/width LDZ ** ++
+	( val ) STH2r INC2 ;get-port-right-raw JSR2
+	( output ) ROT ROT ;set-port-output JSR2
 
 RTN
 
