@@ -24,7 +24,6 @@
 %GET-CHAR  { #24 MOD #00 SWP ;b36clc ++ LDA } ( b36 -- char )
 %GET-VALUE { #20 - #00 SWP ;values ++ LDA } ( char -- b36 )
 %GET-NOTE  { DUP GET-VALUE SWP IS-UC #24 * + TOS ;lc-notes ++ LDA } ( char -- midi )
-%GET-CHAR-ADDR { #20 - TOS 10** ;font ++ }
 
 %GET-CELL  { GET-INDEX DATA-CELLS ++ LDA } ( x y -- char )
 %SET-CELL  { ROT ROT GET-INDEX DATA-CELLS ++ STA } ( x y char -- )
@@ -38,9 +37,6 @@
 %SET-PORT-OUTPUT { STH DUP2 OUTPUT-TYPE SET-TYPE DUP2 #01 SET-LOCK STHr SET-CELL } ( x y char -- )
 %LOAD-CASE { GET-CELL IS-UC } ( x y -- uc )
 %SAVE-CASE { DUP #60 > STHr 20* * - } ( char uc -- char )
-
-%GET-CASE { DUP IS-UC STH }
-%SET-CASE { DUP #60 > STHr 20* * - }
 
 ( devices )
 
@@ -793,7 +789,7 @@ RTN
 
 RTN
 
-@op-i ( x y char -- ) ( TODO )
+@op-i ( x y char -- )
 
 	POP POP2
 	.head/addr LDZ2 STH2k
@@ -957,22 +953,21 @@ RTN
 
 RTN
 
-@op-t ( x y char -- ) ( TODO )
+@op-t ( x y char -- )
 
-	POP
-	( get key ) DUP2 [ SWP #02 - SWP ] GET-PORT-LEFT STH
-	( get len ) DUP2 [ SWP #01 - SWP ] GET-PORT-LEFT 1MIN STHk
+	POP POP2
+	.head/addr LDZ2 STH2k
+	( key ) #0002 -- ;get-port-left-value JSR2
+	( len ) STH2kr #0001 -- ;get-port-left-value JSR2 1MIN
 	#00
 	&loop
-		( x+i+1,y ) STHk OVR2 STHr ROT + INC SWP
-		( lock ) DUP2 #01 SET-LOCK
-		( type ) LOCKED-TYPE SET-TYPE
+		#00 OVR STH2kr INC2 ++ STH2
+		( lock ) #01 STH2kr DATA-LOCKS ++ STA
+		( type ) LOCKED-TYPE STH2r DATA-TYPES ++ STA
 		INC GTHk ,&loop JCN
-	POP2
-	( read )
-	( x-offset ) DUP2 SWP INC SWP STH2r MOD ROT + SWP
-	( x,y ) GET-PORT-RIGHT-RAW STH INC
-	STHr SET-PORT-OUTPUT
+	POP
+	( read ) MOD TOS STH2kr INC2 ++ ;get-port-right-raw JSR2
+	STH2r BELOW ;set-port-output JSR2
 
 RTN
 
