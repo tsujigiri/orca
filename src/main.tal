@@ -932,20 +932,17 @@ RTN
 
 RTN
 
-@op-r ( x y char -- ) ( TODO )
+@op-r ( x y char -- )
 
-	POP
-	( get case ) DUP2 [ SWP INC SWP ] LOAD-CASE STH
-	( get min ) DUP2 [ SWP #01 - SWP ] GET-PORT-LEFT STH
-	( get max ) DUP2 [ SWP INC SWP ] GET-PORT-RIGHT 1MIN STH
-	( unstash min,max ) STH2r
-	( real max ) LTHk JMP SWP
-	( no equal ) NEQk #04 JCN [ #01 - SWP ]
-	( stash min,max ) STH2
-	( incr y ) INC
-	( get key ) ;prng JSR2 +
-	( key % max + min ) STH2kr SWP - MOD POPr STHr +
-	GET-CHAR SAVE-CASE SET-PORT-OUTPUT
+	POP POP2
+	.head/addr LDZ2 STH2k
+	( a-min ) DEC2 ;get-port-left-value JSR2
+	( b-max ) STH2kr INC2 ;get-port-right-raw JSR2
+		( get case ) DUP IS-UC ,&case STR
+		( to value ) GET-VALUE 1MIN
+	( mod ) OVR - ;prng JSR2 + SWP MOD +
+	( set case ) GET-CHAR DUP #60 > [ LIT &case $1 ] AND 20* -
+	( output ) STH2r BELOW ;set-port-output JSR2
 
 RTN
 
