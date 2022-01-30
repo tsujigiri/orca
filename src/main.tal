@@ -886,21 +886,19 @@ RTN
 
 @op-p ( x y char -- ) ( TODO )
 
-	POP
-	( get key ) DUP2 [ SWP #02 - SWP ] GET-PORT-LEFT STH
-	( get len ) DUP2 [ SWP #01 - SWP ] GET-PORT-LEFT 1MIN STH
-	( get input ) DUP2 [ SWP INC SWP ] GET-PORT-RIGHT-RAW STH
-	OVRr STHr #00
+	POP POP2
+	.head/addr LDZ2 STH2k
+	( key ) #0002 -- ;get-port-left-value JSR2
+	( len ) STH2kr #0001 -- ;get-port-left-value JSR2 1MIN
+	#00
 	&loop
-		( x+i+1,y ) STHk OVR2 STHr ROT + SWP INC
-		( lock ) DUP2 #01 SET-LOCK
-		( type ) LOCKED-TYPE SET-TYPE
+		#00 OVR STH2kr BELOW ++ STH2
+		( lock ) #01 STH2kr DATA-LOCKS ++ STA
+		( type ) LOCKED-TYPE STH2r DATA-TYPES ++ STA
 		INC GTHk ,&loop JCN
-	POP2
-	( write )
-	( x-offset ) ROTr ROTr STH2r MOD
-	( x,y ) SWP INC STH + STHr
-	STHr SET-PORT-OUTPUT
+	POP
+	( read ) STH2kr INC2 ;get-port-right-raw JSR2
+	( output ) ROT ROT MOD TOS STH2r BELOW ++ ;set-port-output JSR2
 
 RTN
 
