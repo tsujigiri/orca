@@ -31,7 +31,7 @@ To display the list of operators inside of Orca, use `CmdOrCtrl+G`.
 - `E` **east**: Moves eastward, or bangs.
 - `F` **if**(*a* b): Bangs if inputs are equal.
 - `G` **generator**(*x* *y* *len*): Writes operands with offset.
-- `H` **halt**: Halts southward operand.
+- `H` **hold**: Holds southward operand.
 - `I` **increment**(*step* mod): Increments southward operand.
 - `J` **jumper**(*val*): Outputs northward operand.
 - `K` **konkat**(*len*): Reads multiple variables.

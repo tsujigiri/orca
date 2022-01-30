@@ -34,9 +34,6 @@
 %GET-PORT-LEFT  { DUP2 PORTEL-TYPE SET-TYPE GET-CELL GET-VALUE } ( x y -- char )
 %GET-PORT-RIGHT { DUP2 PORTER-TYPE SET-TYPE DUP2 #01 SET-LOCK GET-CELL GET-VALUE } ( x y -- char )
 %GET-PORT-RIGHT-RAW { DUP2 PORTER-TYPE SET-TYPE DUP2 #01 SET-LOCK GET-CELL } ( x y -- char )
-%SET-PORT-OUTPUT { STH DUP2 OUTPUT-TYPE SET-TYPE DUP2 #01 SET-LOCK STHr SET-CELL } ( x y char -- )
-%LOAD-CASE { GET-CELL IS-UC } ( x y -- uc )
-%SAVE-CASE { DUP #60 > STHr 20* * - } ( char uc -- char )
 
 ( devices )
 
@@ -1039,25 +1036,33 @@ RTN
 
 @op-z ( x y char -- ) ( TODO )
 
-	POP
-	( get case ) DUP2 [ SWP INC SWP ] LOAD-CASE STH
-	( get rate ) DUP2 [ SWP #01 - SWP ] GET-PORT-LEFT STH
-	( get target ) DUP2 [ SWP INC SWP ] GET-PORT-RIGHT STH
-	( incr y ) INC
-	( get val ) DUP2 GET-CELL GET-VALUE STH
-	EQUkr STHr ,&end JCN
-	LTHkr STHr #00 ! ,&no-below JCN
-		( val rate + ) STHr OVRr STH SWPr ADDr
-		( clamp ) GTHkr STHr SWPr?
-		,&end JMP
-		&no-below
-	GTHkr STHr #00 ! ,&no-above JCN
-		( val rate - ) STHr OVRr STH SWPr SUBr
-		( clamp ) LTHkr STHr SWPr?
-		&no-above
-	&end
-	STHr GET-CHAR POP2r SAVE-CASE SET-PORT-OUTPUT
+	POP POP2
+	.head/addr LDZ2 STH2k
+	( rate ) DEC2 ;get-port-left-value JSR2
+	( target ) STH2kr INC2 ;get-port-right-raw JSR2
+		( get case ) DUP IS-UC ,&case STR
+		( to value ) GET-VALUE
+	( val ) STH2kr BELOW [ DATA-CELLS ++ LDA GET-VALUE ]
+	( res ) ;lerp JSR2
+	( set case ) GET-CHAR DUP #60 > [ LIT &case $1 ] AND 20* -
+	( output ) STH2r BELOW ;set-port-output JSR2
 
+RTN
+
+@lerp ( rate target val -- val )
+
+	DUP2 DIF STH
+	( if rate > target )
+	ROT DUP STHr < ,&skip JCN
+		POP2 RTN
+		&skip
+	( target val rate )
+	STH 
+	GTHk ,&no-below JCN
+		NIP STHr SUB RTN
+		&no-below
+	NIP STHr ADD
+	
 RTN
 
 @op-bang ( x y char -- )
