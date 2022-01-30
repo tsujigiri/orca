@@ -27,12 +27,13 @@
 
 %GET-CELL  { GET-INDEX DATA-CELLS ++ LDA } ( x y -- char )
 %SET-CELL  { ROT ROT GET-INDEX DATA-CELLS ++ STA } ( x y char -- )
-%GET-TYPE  { GET-INDEX DATA-TYPES ++ LDA } ( x y -- type )
-%SET-TYPE  { ROT ROT GET-INDEX DATA-TYPES ++ STA } ( x y type -- )
 
-( keep )
+( helpers )
+
 %GET-LOCK  { DATA-LOCKS ++ LDA } ( cell* -- type )
 %SET-LOCK  { DATA-LOCKS ++ STA } ( type cell* -- )
+%GET-TYPE  { DATA-TYPES ++ LDA } ( cell* -- type )
+%SET-TYPE  { DATA-TYPES ++ STA } ( type cell* -- )
 
 ( devices )
 
@@ -547,7 +548,7 @@ BRK
 	DATA-LOCKS STH2kr ;mclr JSR2
 	DATA-TYPES STH2r ;mclr JSR2
 	;variables #0024 ;mclr JSR2
-	( ref to head for quick access )
+	( reset head )
 	#0000 .head/addr STZ2
 	( do )
 	.grid/height LDZ #00
@@ -556,8 +557,9 @@ BRK
 		.grid/width LDZ #00
 		&hor
 			DUP .head/x STZ
-			.head/addr LDZ2 DATA-CELLS ++ LDA ,run-char JSR
-			.head/addr LDZ2k INC2 ROT STZ2
+			.head/addr LDZ2
+				DUP2 DATA-CELLS ++ LDA ,run-char JSR
+				INC2 .head/addr STZ2
 			INC GTHk ,&hor JCN
 		POP2
 		INC GTHk ,&ver JCN
@@ -590,9 +592,9 @@ RTN
 	( uppercase )
 	DUP #41 < ,&no-uc JCN
 	DUP #5a > ,&no-uc JCN
-		&run 
-		.head/addr LDZ2 STH2k 
-		( set operator type ) OPERATOR-TYPE STH2r DATA-TYPES ++ STA
+		&run
+		.head/addr LDZ2 STH2k
+		( set operator type ) OPERATOR-TYPE STH2r SET-TYPE
 		( run operator ) ROT GET-VALUE #0a - 2* TOS ;operations ++ LDA2 JMP2
 		&no-uc
 	( special )
@@ -603,7 +605,7 @@ RTN
 	CHAR-COLON =~ ;op-midi JCN2
 	CHAR-SLASH =~ ;op-byte JCN2
 	( erase )
-	POP 
+	POP
 	CHAR-DOT .head/addr LDZ2 DATA-CELLS ++ STA
 
 RTN
@@ -625,7 +627,7 @@ RTN
 @set-port-output ( value addr* -- )
 
 	( set lock ) DUP2 #01 ROT ROT SET-LOCK
-	( set type ) DUP2 OUTPUT-TYPE ROT ROT DATA-TYPES ++ STA
+	( set type ) DUP2 OUTPUT-TYPE ROT ROT SET-TYPE
 	( set data ) DATA-CELLS ++ STA
 
 RTN
@@ -633,38 +635,35 @@ RTN
 @set-port-raw ( value addr* -- )
 
 	( set lock ) DUP2 #01 ROT ROT SET-LOCK
-	( set type ) DUP2 #00 ROT ROT DATA-TYPES ++ STA
+	( set type ) DUP2 #00 ROT ROT SET-TYPE
 	( set data ) DATA-CELLS ++ STA
 
 RTN
 
 @get-port-left-raw ( addr* -- value )
 
-	( set type ) DUP2 PORTEL-TYPE ROT ROT DATA-TYPES ++ STA
+	( set type ) DUP2 PORTEL-TYPE ROT ROT SET-TYPE
 	( get data ) DATA-CELLS ++ LDA
 
 RTN
 
 @get-port-left-value ( addr* -- value )
 
-	( set type ) DUP2 PORTEL-TYPE ROT ROT DATA-TYPES ++ STA
-	( get data ) DATA-CELLS ++ LDA GET-VALUE
+	,get-port-left-raw JSR GET-VALUE
 
 RTN
 
 @get-port-right-raw ( addr* -- value )
 
 	( set lock ) DUP2 #01 ROT ROT SET-LOCK
-	( set type ) DUP2 PORTER-TYPE ROT ROT DATA-TYPES ++ STA
+	( set type ) DUP2 PORTER-TYPE ROT ROT SET-TYPE
 	( get data ) DATA-CELLS ++ LDA
 
 RTN
 
 @get-port-right-value ( addr* -- value )
 
-	( set lock ) DUP2 #01 ROT ROT SET-LOCK
-	( set type ) DUP2 PORTER-TYPE ROT ROT DATA-TYPES ++ STA
-	( get data ) DATA-CELLS ++ LDA GET-VALUE
+	,get-port-right-raw JSR GET-VALUE
 
 RTN
 
@@ -772,7 +771,7 @@ RTN
 
 	BELOW
 	( set lock ) DUP2 #01 ROT ROT SET-LOCK
-	( set type ) OUTPUT-TYPE ROT ROT DATA-TYPES ++ STA
+	( set type ) OUTPUT-TYPE ROT ROT SET-TYPE
 
 RTN
 
@@ -873,7 +872,7 @@ RTN
 	&loop
 		#00 OVR STH2kr BELOW ++ STH2
 		( lock ) #01 STH2kr SET-LOCK
-		( type ) LOCKED-TYPE STH2r DATA-TYPES ++ STA
+		( type ) LOCKED-TYPE STH2r SET-TYPE
 		INC GTHk ,&loop JCN
 	POP
 	( read ) STH2kr INC2 ;get-port-right-raw JSR2
@@ -936,7 +935,7 @@ RTN
 	&loop
 		#00 OVR STH2kr INC2 ++ STH2
 		( lock ) #01 STH2kr SET-LOCK
-		( type ) LOCKED-TYPE STH2r DATA-TYPES ++ STA
+		( type ) LOCKED-TYPE STH2r SET-TYPE
 		INC GTHk ,&loop JCN
 	POP
 	( read ) MOD TOS STH2kr INC2 ++ ;get-port-right-raw JSR2
@@ -1022,21 +1021,21 @@ RTN
 
 @op-bang ( x y char -- )
 
-	POP 
+	POP
 	CHAR-DOT .head/addr LDZ2 DATA-CELLS ++ STA
 
 RTN
 
 @op-comment ( x y char -- )
 
-	POP 
+	POP
 	.head/addr LDZ2 STH2k
 	( bounds )
 	#00 .grid/width LDZ .head/x LDZ - ++
 	STH2r INC2
 	&loop
 		( set lock ) DUP2 #01 ROT ROT SET-LOCK
-		( set type ) DUP2 LOCKED-TYPE ROT ROT DATA-TYPES ++ STA
+		( set type ) DUP2 LOCKED-TYPE ROT ROT SET-TYPE
 		( stop at hash ) DUP2 DATA-CELLS ++ LDA CHAR-HASH = ,&end JCN
 		INC2 GTH2k ,&loop JCN
 	&end
@@ -1070,12 +1069,12 @@ RTN
 	( get note ) GET-NOTE SWP [ #0c * ] +
 	( get channel ) [ LIT &ch $1 ]
 	( note on )
-	DUP #90 + .Console/write DEO 
-	OVR .Console/write DEO 
+	DUP #90 + .Console/write DEO
+	OVR .Console/write DEO
 	#7f .Console/write DEO
 	( note off )
-	#80 + .Console/write DEO 
-	OVR .Console/write DEO 
+	#80 + .Console/write DEO
+	OVR .Console/write DEO
 	#00 .Console/write DEO
 
 RTN
@@ -1094,7 +1093,7 @@ RTN
 
 @op-byte ( x y char -- )
 
-	POP 
+	POP
 	.head/addr LDZ2 STH2k
 	( hn ) INC2 ;get-port-right-value JSR2
 	( ln ) STH2r #0002 ++ ;get-port-right-value JSR2
@@ -1193,42 +1192,54 @@ RTN
 
 @redraw ( -- )
 
-	.grid/height LDZ #00
-	&ver
-		( x ) .grid/x1 LDZ2 .Screen/x DEO2
-		( y ) DUP #00 SWP 10** [ .grid/y1 LDZ2 ++ ] .Screen/y DEO2
-		.grid/width LDZ #00
-		&hor
-			GET-ITER STH2k ,get-char JSR STH2r ,get-color JSR ;draw-char JSR2
-			INC GTHk ,&hor JCN
-		POP2
-		INC GTHk ,&ver JCN
-	POP2
+	;draw-grid JSR2
 	;draw-toolbar JSR2
 
 RTN
 
-@get-color ( x y -- type )
+@draw-grid ( -- )
 
-	STH2k GET-TYPE #06 SWP
-	STH2r ,is-selected JSR JMP SWP POP
-		TOS ;cell-styles ++ LDA
+	( reset head )
+	#0000 .head/addr STZ2
+	( do )
+	.grid/height LDZ #00
+	&ver
+		DUP .head/y STZ
+		( x ) .grid/x1 LDZ2 .Screen/x DEO2
+		( y ) DUP #00 SWP 10** [ .grid/y1 LDZ2 ++ ] .Screen/y DEO2
+		.grid/width LDZ #00
+		&hor
+			DUP .head/x STZ
+			,get-char JSR ,get-color JSR ;draw-char JSR2
+			.head/addr LDZ2k INC2 ROT STZ2
+			INC GTHk ,&hor JCN
+		POP2
+		INC GTHk ,&ver JCN
+	POP2
 
 RTN
 
-@get-char ( x y -- char )
+@get-color ( -- type )
 
-	DUP2 GET-CELL
+	.head LDZ2 ;is-selected JSR2 ,&selected JCN
+		.head/addr LDZ2 GET-TYPE TOS ;cell-styles ++ LDA RTN
+	&selected
+		#09
+
+RTN
+
+@get-char ( -- char )
+
+	.head/addr LDZ2 DATA-CELLS ++ LDA
 	DUP CHAR-DOT ! ,&no-bar JCN
-		POP
+		POP .head LDZ2
 		DUP2 8MOD SWP 10MOD #0000 == ,&cross JCN
 		DUP2 2MOD SWP 4MOD #0000 == ,&dot JCN
 		DUP2 ,is-selected JSR ,&dot JCN
-		DUP2 GET-TYPE ,&dot JCN
-		POP2 #20 RTN
+		.head/addr LDZ2 GET-TYPE ,&dot JCN
+		POP2 #20
 	&no-bar
-	ROT ROT POP2
-
+	
 RTN
 	&cross POP2 LIT '+ RTN
 	&dot POP2 LIT '. RTN
