@@ -695,13 +695,13 @@ RTN
 
 @op-b ( x y char -- )
 
-	POP POP2 
+	POP POP2
 	.head/addr LDZ2 STH2k
 	( get a ) DEC2 ;get-port-left-value JSR2
 	( get b ) STH2kr INC2 ;get-port-right-raw JSR2
 		( get case ) DUP IS-UC ,&case STR
 		( to value ) GET-VALUE
-	( res ) - DUP #80 < ,&bounce JCN #24 SWP - &bounce 
+	( res ) - DUP #80 < ,&bounce JCN #24 SWP - &bounce
 	( set case ) GET-CHAR DUP #60 > [ LIT &case $1 ] AND 20* -
 	( output ) STH2r BELOW ;set-port-output JSR2
 
@@ -709,7 +709,7 @@ RTN
 
 @op-c ( x y char -- )
 
-	POP POP2 
+	POP POP2
 	.head/addr LDZ2 STH2k
 	( get rate ) DEC2 ;get-port-left-value JSR2 1MIN
 	( get mod ) STH2kr INC2 ;get-port-right-raw JSR2
@@ -723,7 +723,7 @@ RTN
 
 @op-d ( x y char -- )
 
-	POP POP2 
+	POP POP2
 	.head/addr LDZ2 STH2k
 	( get rate ) DEC2 ;get-port-left-value JSR2 1MIN
 	( get mod ) STH2kr INC2 ;get-port-right-value JSR2 1MIN
@@ -735,9 +735,9 @@ RTN
 
 @op-e ( x y char -- )
 
-	,&self STR POP 
-	.head/addr LDZ2 STH2
-	( wall ) INC .grid/width LDZ = ,&collide JCN
+	POP POP2
+	.head/addr LDZ2 STH2k DATA-CELLS ++ LDA ,&self STR
+	( wall ) .head/x LDZ INC .grid/width LDZ = ,&collide JCN
 	( cell ) STH2kr INC2 DATA-CELLS ++ LDA CHAR-DOT ! ,&collide JCN
 	( write new ) [ LIT &self $1 ] STH2kr INC2 ;set-port-raw JSR2
 	( erase old ) CHAR-DOT STH2r ;set-port-raw JSR2
@@ -749,7 +749,7 @@ RTN
 
 @op-f ( x y char -- )
 
-	POP POP2 
+	POP POP2
 	.head/addr LDZ2 STH2k
 	( get a ) DEC2 ;get-port-left-raw JSR2
 	( get b ) STH2kr INC2 ;get-port-right-raw JSR2
@@ -762,10 +762,10 @@ RTN
 
 	POP POP2
 	.head/addr LDZ2 STH2k
-	( x ) STH2kr #0003 -- ;get-port-left-value JSR2 
+	( x ) STH2kr #0003 -- ;get-port-left-value JSR2
 		( load ) TOS ++
-	( y ) STH2kr #0002 -- ;get-port-left-value JSR2 
-		( load ) TOS INC2 [ #00 .grid/width LDZ ** ] ++ 
+	( y ) STH2kr #0002 -- ;get-port-left-value JSR2
+		( load ) TOS INC2 [ #00 .grid/width LDZ ** ] ++
 	,&save STR2
 	( len ) STH2kr #0001 -- ;get-port-left-value JSR2 1MIN
 	#00
@@ -813,10 +813,10 @@ RTN
 @op-k ( x y char -- )
 
 	POP POP2
-	.head/addr LDZ2 STH2k 
+	.head/addr LDZ2 STH2k
 	DEC2 ;get-port-left-value JSR2 #00
 	&loop
-		DUP TOS STH2kr INC2 ++ STH2k ;get-port-right-raw JSR2 
+		DUP TOS STH2kr INC2 ++ STH2k ;get-port-right-raw JSR2
 		DUP CHAR-DOT = ,&skip JCN
 			( load ) DUP GET-VALUE .variables + LDZ
 			( save ) STH2kr BELOW ;set-port-output JSR2
@@ -831,7 +831,7 @@ RTN
 
 @op-l ( x y char -- )
 
-	POP POP2 
+	POP POP2
 	.head/addr LDZ2 STH2k
 	( get a ) DEC2 ;get-port-left-value JSR2
 	( get b ) STH2kr INC2 ;get-port-right-raw JSR2
@@ -845,7 +845,7 @@ RTN
 
 @op-m ( x y char -- )
 
-	POP POP2 
+	POP POP2
 	.head/addr LDZ2 STH2k
 	( get a ) DEC2 ;get-port-left-value JSR2
 	( get b ) STH2kr INC2 ;get-port-right-raw JSR2
@@ -859,9 +859,9 @@ RTN
 
 @op-n ( x y char -- )
 
-	,&self STR NIP 
-	.head/addr LDZ2 STH2
-	( wall ) DEC #ff = ,&collide JCN
+	POP POP2
+	.head/addr LDZ2 STH2k DATA-CELLS ++ LDA ,&self STR
+	( wall ) .head/y LDZ DEC #ff = ,&collide JCN
 	( cell ) STH2kr ABOVE DATA-CELLS ++ LDA CHAR-DOT ! ,&collide JCN
 	( write new ) [ LIT &self $1 ] STH2kr ABOVE ;set-port-raw JSR2
 	( erase old ) CHAR-DOT STH2r ;set-port-raw JSR2
@@ -904,10 +904,10 @@ RTN
 
 	POP POP2
 	.head/addr LDZ2 STH2k
-	( x ) STH2kr #0003 -- ;get-port-left-value JSR2 
+	( x ) STH2kr #0003 -- ;get-port-left-value JSR2
 		( load ) TOS INC2 ++
-	( y ) STH2kr #0002 -- ;get-port-left-value JSR2 
-		( load ) TOS [ #00 .grid/width LDZ ** ] ++ 
+	( y ) STH2kr #0002 -- ;get-port-left-value JSR2
+		( load ) TOS [ #00 .grid/width LDZ ** ] ++
 	,&load STR2
 	( len ) STH2kr #0001 -- ;get-port-left-value JSR2 1MIN
 		( save ) DUP TOS STH2kr BELOW SWP2 -- INC2 ,&save STR2
@@ -937,9 +937,9 @@ RTN
 
 @op-s ( x y char -- )
 
-	,&self STR NIP 
-	.head/addr LDZ2 STH2
-	( wall ) INC .grid/height LDZ = ,&collide JCN
+	POP POP2
+	.head/addr LDZ2 STH2k DATA-CELLS ++ LDA ,&self STR
+	( wall ) .head/y LDZ INC .grid/height LDZ = ,&collide JCN
 	( cell ) STH2kr BELOW DATA-CELLS ++ LDA CHAR-DOT ! ,&collide JCN
 	( write new ) [ LIT &self $1 ] STH2kr BELOW ;set-port-raw JSR2
 	( erase old ) CHAR-DOT STH2r ;set-port-raw JSR2
@@ -987,11 +987,11 @@ RTN
 
 	POP POP2
 	.head/addr LDZ2 STH2k
-	( key ) DEC2 ;get-port-left-raw JSR2 
+	( key ) DEC2 ;get-port-left-raw JSR2
 	( val ) STH2kr INC2 ;get-port-right-raw JSR2
 	DUP CHAR-DOT = ,&idle JCN
 	OVR GET-VALUE ,&save JCN
-	( load ) 
+	( load )
 		NIP GET-VALUE .variables + LDZ STH2r BELOW ;set-port-output JSR2 RTN
 	&save
 		SWP GET-VALUE .variables + STZ POP2r RTN
@@ -1002,9 +1002,9 @@ RTN
 
 @op-w ( x y char -- )
 
-	,&self STR POP 
-	.head/addr LDZ2 STH2
-	( wall ) DEC #ff = ,&collide JCN
+	POP POP2
+	.head/addr LDZ2 STH2k DATA-CELLS ++ LDA ,&self STR
+	( wall ) .head/x LDZ DEC #ff = ,&collide JCN
 	( cell ) STH2kr DEC2 DATA-CELLS ++ LDA CHAR-DOT ! ,&collide JCN
 	( write new ) [ LIT &self $1 ] STH2kr DEC2 ;set-port-raw JSR2
 	( erase old ) CHAR-DOT STH2r ;set-port-raw JSR2
@@ -1049,48 +1049,31 @@ RTN
 
 RTN
 
-@lerp ( rate target val -- val )
-
-	DUP2 DIF STH
-	( if rate > target )
-	ROT DUP STHr < ,&skip JCN
-		POP2 RTN
-		&skip
-	( target val rate )
-	STH 
-	GTHk ,&no-below JCN
-		NIP STHr SUB RTN
-		&no-below
-	NIP STHr ADD
-	
-RTN
-
 @op-bang ( x y char -- )
 
-	POP
-	CHAR-DOT SET-CELL
+	POP POP2
+	CHAR-DOT .head/addr LDZ2 DATA-CELLS ++ STA
 
 RTN
 
 @op-comment ( x y char -- )
 
-	POP
-	STH
-	.grid/width LDZ SWP INC
+	POP POP2
+	.head/addr LDZ2 STH2k
+	( bounds )
+	#00 .grid/width LDZ .head/x LDZ - ++
+	STH2r INC2
 	&loop
-		DUP STHkr
-		( lock )  DUP2 #01 SET-LOCK
-		( close ) DUP2 GET-CELL CHAR-HASH = ,&end JCN
-		( type )  LOCKED-TYPE SET-TYPE
-		INC GTHk ,&loop JCN
-	POP2 POPr
-	RTN
+		( set lock ) DUP2 #01 ROT ROT DATA-LOCKS ++ STA
+		( set type ) DUP2 LOCKED-TYPE ROT ROT DATA-TYPES ++ STA
+		( stop at hash ) DUP2 DATA-CELLS ++ LDA CHAR-HASH = ,&end JCN
+		INC2 GTH2k ,&loop JCN
 	&end
-	POP2 POP2 POPr
+	POP2 POP2
 
 RTN
 
-@op-synth ( x y char -- )
+@op-synth ( x y char -- ) ( TODO )
 
 	POP
 	( get channel ) DUP2 [ SWP INC SWP ] GET-PORT-RIGHT STH
@@ -1103,7 +1086,7 @@ RTN
 
 RTN
 
-@op-midi ( x y char -- )
+@op-midi ( x y char -- ) ( TODO )
 
 	POP
 	( get channel ) DUP2 [ SWP INC SWP ] GET-PORT-RIGHT STH
@@ -1119,7 +1102,7 @@ RTN
 
 RTN
 
-@op-note ( x y char -- )
+@op-note ( x y char -- ) ( TODO )
 
 	POP
 	DUP2
@@ -1133,7 +1116,7 @@ RTN
 
 RTN
 
-@op-byte ( x y char -- )
+@op-byte ( x y char -- ) ( TODO )
 
 	POP
 	DUP2
@@ -1145,6 +1128,22 @@ RTN
 	( set type ) STH2r IO-TYPE ROT ROT DATA-TYPES ++ STA
 	( write byte ) #0f AND SWP #0f AND #40 SFT + .Console/write DEO
 
+RTN
+
+@lerp ( rate target val -- val )
+
+	DUP2 DIF STH
+	( if rate > target )
+	ROT DUP STHr < ,&skip JCN
+		POP2 RTN
+		&skip
+	( target val rate )
+	STH
+	GTHk ,&no-below JCN
+		NIP STHr SUB RTN
+		&no-below
+	NIP STHr ADD
+	
 RTN
 
 @draw-toolbar ( -- )
