@@ -20,15 +20,13 @@
 %RESET-SELECTION { .selection/x1 LDZ2 ;set-selection-from JSR2 }
 %RESET-INSERT { #00 .selection/insert STZ }
 
-%GET-INDEX { #00 SWP #00 .grid/width LDZ ** ROT #00 SWP ++ } ( x y -- index )
-%GET-CELL  { GET-INDEX DATA-CELLS ++ LDA } ( x y -- char )
-%SET-CELL  { ROT ROT GET-INDEX DATA-CELLS ++ STA } ( x y char -- )
-
 ( helpers )
 
 %GET-CHAR  { #24 MOD #00 SWP ;b36clc ++ LDA } ( b36 -- char )
 %GET-VALUE { #20 - #00 SWP ;values ++ LDA } ( char -- b36 )
 %GET-NOTE  { DUP GET-VALUE SWP IS-UC #24 * + TOS ;lc-notes ++ LDA } ( char -- midi )
+%GET-CELL  { DATA-CELLS ++ LDA } ( cell* -- type )
+%SET-CELL  { DATA-CELLS ++ STA } ( type cell* -- )
 %GET-LOCK  { DATA-LOCKS ++ LDA } ( cell* -- type )
 %SET-LOCK  { DATA-LOCKS ++ STA } ( type cell* -- )
 %GET-TYPE  { DATA-TYPES ++ LDA } ( cell* -- type )
@@ -141,6 +139,7 @@ BRK
 	;on-button .Controller/vector DEO2
 	;on-mouse .Mouse/vector DEO2
 	;on-frame .Screen/vector DEO2
+	#01 ;draw-filepath JSR2
 	RELEASE-MOUSE
 
 RTN
@@ -168,7 +167,7 @@ RTN
 	#13 !~ ,&no-l JCN #ff00 #00 ;edit-selection JSR2 &no-l
 	#14 !~ ,&no-r JCN #0100 #00 ;edit-selection JSR2 &no-r
 	DUP IS-CHAR-KEY #00 = ,&no-key JCN
-		STHk .selection LDZ2 STHr SET-CELL
+		STHk .selection LDZ2 STHr ;set-cell JSR2
 		&no-key
 	POP
 
@@ -377,7 +376,7 @@ BRK
 		RELEASE-MOUSE
 		POP BRK
 		&no-speed
-	DUP #0f > OVR .grid/width LDZ SWP - #05 > #0101 !! ,&no-rename JCN
+	DUP #0e > OVR .grid/width LDZ SWP - #05 > #0101 !! ,&no-rename JCN
 		;trap JSR2
 		&no-rename
 	POP
@@ -444,7 +443,8 @@ RTN
 	&ver
 		.selection/x2 LDZ INC .selection/x1 LDZ
 		&hor
-			( write char ) GET-ITER STHkr SET-CELL
+			( get ) GET-ITER ;get-index JSR2
+			( set ) STHkr ROT ROT SET-CELL
 			INC GTHk ,&hor JCN
 		POP2
 		INC GTHk ,&ver JCN
@@ -530,10 +530,11 @@ RTN
 	&end ( button* -> )
 		POP
 		.dpad LDZ #7f > ,&save JCN
-		.selection LDZ2 .dpad LDZ SET-CELL
+		.selection LDZ2 .dpad LDZ ;set-cell JSR2
 		SET-STATE
 		RESET-SELECTION
 		#00 .dpad STZ
+		;draw-speed JSR2
 		,&save JMP
 	&add ( button* -> )
 		#02 ! ,&save JCN
@@ -563,7 +564,7 @@ BRK
 		&hor
 			DUP .head/x STZ
 			.head/addr LDZ2
-				DUP2 DATA-CELLS ++ LDA ,run-char JSR
+				DUP2 GET-CELL ,run-char JSR
 				INC2 .head/addr STZ2
 			INC GTHk ,&hor JCN
 		POP2
@@ -612,7 +613,19 @@ RTN
 	CHAR-SLASH =~ ;op-byte JCN2
 	( erase )
 	POP
-	CHAR-DOT .head/addr LDZ2 DATA-CELLS ++ STA
+	CHAR-DOT .head/addr LDZ2 SET-CELL
+
+RTN
+
+@set-cell ( x y c -- )
+
+	ROT ROT ,get-index JSR SET-CELL
+
+RTN
+
+@get-index ( x y -- addr* )
+
+	#00 SWP #00 .grid/width LDZ ** ROT #00 SWP ++ 
 
 RTN
 
@@ -634,7 +647,7 @@ RTN
 
 	( set lock ) DUP2 #01 ROT ROT SET-LOCK
 	( set type ) DUP2 OUTPUT-TYPE ROT ROT SET-TYPE
-	( set data ) DATA-CELLS ++ STA
+	( set data ) SET-CELL
 
 RTN
 
@@ -642,14 +655,14 @@ RTN
 
 	( set lock ) DUP2 #01 ROT ROT SET-LOCK
 	( set type ) DUP2 #00 ROT ROT SET-TYPE
-	( set data ) DATA-CELLS ++ STA
+	( set data ) SET-CELL
 
 RTN
 
 @get-port-left-raw ( addr* -- value )
 
 	( set type ) DUP2 PORTEL-TYPE ROT ROT SET-TYPE
-	( get data ) DATA-CELLS ++ LDA
+	( get data ) GET-CELL
 
 RTN
 
@@ -663,7 +676,7 @@ RTN
 
 	( set lock ) DUP2 #01 ROT ROT SET-LOCK
 	( set type ) DUP2 PORTER-TYPE ROT ROT SET-TYPE
-	( get data ) DATA-CELLS ++ LDA
+	( get data ) GET-CELL
 
 RTN
 
@@ -733,9 +746,9 @@ RTN
 
 @op-e ( addr* -- )
 
-	STH2k DATA-CELLS ++ LDA ,&self STR
+	STH2k GET-CELL ,&self STR
 	( wall ) .head/x LDZ INC .grid/width LDZ = ,&collide JCN
-	( cell ) STH2kr INC2 DATA-CELLS ++ LDA CHAR-DOT ! ,&collide JCN
+	( cell ) STH2kr INC2 GET-CELL CHAR-DOT ! ,&collide JCN
 	( write new ) [ LIT &self $1 ] STH2kr INC2 ;set-port-raw JSR2
 	( erase old ) CHAR-DOT STH2r ;set-port-raw JSR2
 	RTN
@@ -788,7 +801,7 @@ RTN
 	( mod ) STH2kr INC2 ;get-port-right-raw JSR2
 		( get case ) DUP IS-UC ,&case STR
 		( to value ) GET-VALUE 1MIN
-	( res ) SWP STH2kr BELOW [ DATA-CELLS ++ LDA GET-VALUE ] + SWP MOD
+	( res ) SWP STH2kr BELOW [ GET-CELL GET-VALUE ] + SWP MOD
 	( set case ) GET-CHAR DUP #60 > [ LIT &case $1 ] AND 20* -
 	( output ) STH2r BELOW ;set-port-output JSR2
 
@@ -848,9 +861,9 @@ RTN
 
 @op-n ( addr* -- )
 
-	STH2k DATA-CELLS ++ LDA ,&self STR
+	STH2k GET-CELL ,&self STR
 	( wall ) .head/y LDZ DEC #ff = ,&collide JCN
-	( cell ) STH2kr ABOVE DATA-CELLS ++ LDA CHAR-DOT ! ,&collide JCN
+	( cell ) STH2kr ABOVE GET-CELL CHAR-DOT ! ,&collide JCN
 	( write new ) [ LIT &self $1 ] STH2kr ABOVE ;set-port-raw JSR2
 	( erase old ) CHAR-DOT STH2r ;set-port-raw JSR2
 	RTN
@@ -921,9 +934,9 @@ RTN
 
 @op-s ( addr* -- )
 
-	STH2k DATA-CELLS ++ LDA ,&self STR
+	STH2k GET-CELL ,&self STR
 	( wall ) .head/y LDZ INC .grid/height LDZ = ,&collide JCN
-	( cell ) STH2kr BELOW DATA-CELLS ++ LDA CHAR-DOT ! ,&collide JCN
+	( cell ) STH2kr BELOW GET-CELL CHAR-DOT ! ,&collide JCN
 	( write new ) [ LIT &self $1 ] STH2kr BELOW ;set-port-raw JSR2
 	( erase old ) CHAR-DOT STH2r ;set-port-raw JSR2
 	RTN
@@ -982,9 +995,9 @@ RTN
 
 @op-w ( addr* -- )
 
-	STH2k DATA-CELLS ++ LDA ,&self STR
+	STH2k GET-CELL ,&self STR
 	( wall ) .head/x LDZ DEC #ff = ,&collide JCN
-	( cell ) STH2kr DEC2 DATA-CELLS ++ LDA CHAR-DOT ! ,&collide JCN
+	( cell ) STH2kr DEC2 GET-CELL CHAR-DOT ! ,&collide JCN
 	( write new ) [ LIT &self $1 ] STH2kr DEC2 ;set-port-raw JSR2
 	( erase old ) CHAR-DOT STH2r ;set-port-raw JSR2
 	RTN
@@ -1018,7 +1031,7 @@ RTN
 	( target ) STH2kr INC2 ;get-port-right-raw JSR2
 		( get case ) DUP IS-UC ,&case STR
 		( to value ) GET-VALUE
-	( val ) STH2kr BELOW [ DATA-CELLS ++ LDA GET-VALUE ]
+	( val ) STH2kr BELOW [ GET-CELL GET-VALUE ]
 	( res ) ;lerp JSR2
 	( set case ) GET-CHAR DUP #60 > [ LIT &case $1 ] AND 20* -
 	( output ) STH2r BELOW ;set-port-output JSR2
@@ -1028,7 +1041,7 @@ RTN
 @op-bang ( x y char -- )
 
 	POP
-	CHAR-DOT .head/addr LDZ2 DATA-CELLS ++ STA
+	CHAR-DOT .head/addr LDZ2 SET-CELL
 
 RTN
 
@@ -1042,7 +1055,7 @@ RTN
 	&loop
 		( set lock ) DUP2 #01 ROT ROT SET-LOCK
 		( set type ) DUP2 LOCKED-TYPE ROT ROT SET-TYPE
-		( stop at hash ) DUP2 DATA-CELLS ++ LDA CHAR-HASH = ,&end JCN
+		( stop at hash ) DUP2 GET-CELL CHAR-HASH = ,&end JCN
 		INC2 GTH2k ,&loop JCN
 	&end
 	POP2 POP2
@@ -1242,7 +1255,7 @@ RTN
 
 @get-char ( -- char )
 
-	.head/addr LDZ2 DATA-CELLS ++ LDA
+	.head/addr LDZ2 GET-CELL
 	DUP CHAR-DOT ! ,&no-bar JCN
 		POP .head LDZ2
 		DUP2 8MOD SWP 10MOD #0000 == ,&cross JCN
@@ -1334,7 +1347,7 @@ RTN
 		;&b .File/read DEO2
 		( write )
 		;&b LDA IS-CHAR-KEY #00 = ,&invalid JCN
-			OVRr STHr STHkr ;&b LDA SET-CELL
+			OVRr STHr STHkr ;&b LDA ;set-cell JSR2
 			&invalid
 		( incr-x ) SWPr INCr SWPr
 		( incr-y )
@@ -1358,7 +1371,7 @@ RTN
 	&ver
 		.grid/width LDZ #00
 		&hor
-			GET-ITER GET-INDEX DATA-CELLS ++ .File/write DEO2
+			GET-ITER ;get-index JSR2 DATA-CELLS ++ .File/write DEO2
 			INC GTHk ,&hor JCN
 		POP2
 		( linebreak ) ;&lb .File/write DEO2
@@ -1432,7 +1445,7 @@ RTN
 	&ver
 		.selection/x2 LDZ INC .selection/x1 LDZ
 		&hor
-			GET-ITER GET-INDEX DATA-CELLS ++ .File/write DEO2
+			GET-ITER ;get-index JSR2 DATA-CELLS ++ .File/write DEO2
 			INC GTHk ,&hor JCN
 		POP2
 		( linebreak ) ;&lb .File/write DEO2
