@@ -556,9 +556,7 @@ BRK
 		.grid/width LDZ #00
 		&hor
 			DUP .head/x STZ
-			( x,y ) .head LDZ2
-			( character ) .head/addr LDZ2 DATA-CELLS ++ LDA
-				,run-char JSR
+			.head/addr LDZ2 DATA-CELLS ++ LDA ,run-char JSR
 			.head/addr LDZ2k INC2 ROT STZ2
 			INC GTHk ,&hor JCN
 		POP2
@@ -572,28 +570,27 @@ RTN
 
 	( skip dot )
 	DUP CHAR-DOT ! ,&not-dot JCN
-		POP POP2 RTN
+		POP  RTN
 		&not-dot
 	( skip numbers )
 	DUP #30 < ,&no-num JCN
 	DUP #39 > ,&no-num JCN
-		POP POP2 RTN
+		POP  RTN
 		&no-num
 	( skip locked )
 	.head/addr LDZ2 GET-LOCK #00 = ,&not-locked JCN
-		POP POP2 RTN
+		POP  RTN
 		&not-locked
 	( lowercase )
 	DUP #61 < ,&no-lc JCN
 	DUP #7a > ,&no-lc JCN
 		;get-bang JSR2 ,&run JCN
-		POP POP2 RTN
+		POP  RTN
 		&no-lc
 	( uppercase )
 	DUP #41 < ,&no-uc JCN
 	DUP #5a > ,&no-uc JCN
 		&run 
-		( remove pos ) NIP NIP
 		.head/addr LDZ2 STH2k 
 		( set operator type ) OPERATOR-TYPE STH2r DATA-TYPES ++ STA
 		( run operator ) ROT GET-VALUE #0a - 2* TOS ;operations ++ LDA2 JMP2
@@ -606,7 +603,8 @@ RTN
 	CHAR-COLON =~ ;op-midi JCN2
 	CHAR-SLASH =~ ;op-byte JCN2
 	( erase )
-	POP CHAR-DOT SET-CELL
+	POP 
+	CHAR-DOT .head/addr LDZ2 DATA-CELLS ++ STA
 
 RTN
 
@@ -1024,14 +1022,14 @@ RTN
 
 @op-bang ( x y char -- )
 
-	POP POP2
+	POP 
 	CHAR-DOT .head/addr LDZ2 DATA-CELLS ++ STA
 
 RTN
 
 @op-comment ( x y char -- )
 
-	POP POP2
+	POP 
 	.head/addr LDZ2 STH2k
 	( bounds )
 	#00 .grid/width LDZ .head/x LDZ - ++
@@ -1048,7 +1046,7 @@ RTN
 
 @op-synth ( x y char -- )
 
-	POP POP2
+	POP
 	.head/addr LDZ2 STH2k
 	( channel ) INC2 ;get-port-right-value JSR2 [ ,&ch STR ]
 	( octave ) STH2kr #0002 ++ ;get-port-right-value JSR2
@@ -1062,7 +1060,7 @@ RTN
 
 @op-midi ( x y char -- )
 
-	POP POP2
+	POP
 	.head/addr LDZ2 STH2k
 	( channel ) INC2 ;get-port-right-value JSR2 [ ,&ch STR ]
 	( octave ) STH2kr #0002 ++ ;get-port-right-value JSR2
@@ -1084,7 +1082,7 @@ RTN
 
 @op-note ( x y char -- )
 
-	POP POP2
+	POP
 	.head/addr LDZ2 STH2k
 	( octave ) INC2 ;get-port-right-value JSR2
 	( note ) STH2r #0002 ++ ;get-port-right-raw JSR2
@@ -1096,7 +1094,7 @@ RTN
 
 @op-byte ( x y char -- )
 
-	POP POP2
+	POP 
 	.head/addr LDZ2 STH2k
 	( hn ) INC2 ;get-port-right-value JSR2
 	( ln ) STH2r #0002 ++ ;get-port-right-value JSR2
