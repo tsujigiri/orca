@@ -884,7 +884,7 @@ RTN
 
 RTN
 
-@op-p ( x y char -- ) ( TODO )
+@op-p ( x y char -- )
 
 	POP POP2
 	.head/addr LDZ2 STH2k
@@ -902,24 +902,24 @@ RTN
 
 RTN
 
-@op-q ( x y char -- ) ( TODO )
+@op-q ( x y char -- )
 
-	POP
-	( get x ) DUP2 [ SWP #03 - SWP ] GET-PORT-LEFT STH
-	( get y ) DUP2 [ SWP #02 - SWP ] GET-PORT-LEFT STH
-	( get len ) DUP2 [ SWP #01 - SWP ] GET-PORT-LEFT 1MIN
+	POP POP2
+	.head/addr LDZ2 STH2k
+	( x ) STH2kr #0003 -- ;get-port-left-value JSR2 
+		( load ) TOS INC2 ++
+	( y ) STH2kr #0002 -- ;get-port-left-value JSR2 
+		( load ) TOS [ #00 .grid/width LDZ ** ] ++ 
+	,&load STR2
+	( len ) STH2kr #0001 -- ;get-port-left-value JSR2 1MIN
+		( save ) DUP TOS STH2kr BELOW SWP2 -- INC2 ,&save STR2
 	#00
 	&loop
-		( x+i+1,y ) STHk OVR2 STHr ROT + INC SWP
-		( x+x0,y+y0 ) STHkr + SWP OVRr STHr + SWP
-		GET-PORT-RIGHT-RAW STH
-		( x-i-len ) DUP2  - STH
-		( x,y ) OVR2 SWP STHr - INC SWP INC
-		STHr SET-PORT-OUTPUT
-		 INC
-		GTHk ;&loop JCN2
+		( load ) DUP TOS [ LIT2 &load $2 ] ++ ;get-port-right-raw JSR2
+		( save ) OVR TOS [ LIT2 &save $2 ] ++ ;set-port-output JSR2
+		INC GTHk ,&loop JCN
 	POP2
-	( clean ) POP2 POP2r
+	POP2r
 
 RTN
 
