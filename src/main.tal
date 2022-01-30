@@ -1467,7 +1467,7 @@ RTN
 		;&b LDA IS-CHAR-KEY #00 = ,&invalid JCN
 			.selection/x1 LDZ OVRr STHr +
 			.selection/y1 LDZ STHkr +
-				;&b LDA SET-CELL
+				;&b LDA ;set-cell JSR2
 			&invalid
 		( incr-x ) SWPr INCr SWPr
 		( incr-y )
