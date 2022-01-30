@@ -1075,12 +1075,12 @@ RTN
 	( get note ) GET-NOTE SWP [ #0c * ] +
 	( get channel ) [ LIT &ch $1 ]
 	( note on )
-	DUP #90 + .Console/write DEO
+	DUP .Console/write DEO
 	OVR .Console/write DEO
 	#7f .Console/write DEO
 	( note off )
-	#80 + .Console/write DEO
-	OVR .Console/write DEO
+	.Console/write DEO
+	.Console/write DEO
 	#00 .Console/write DEO
 
 RTN
