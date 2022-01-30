@@ -608,20 +608,14 @@ RTN
 
 @get-bang ( x y -- bang )
 
-	DUP2 INC GET-CELL CHAR-BANG = ,&bang JCN
-	DUP2 #01 - GET-CELL CHAR-BANG = ,&bang JCN
-	DUP2 SWP INC SWP GET-CELL CHAR-BANG = ,&bang JCN
-	DUP2 SWP #01 - SWP GET-CELL CHAR-BANG = ,&bang JCN
-	POP2 #00 RTN
-	&bang
-		POP2 #01
-
-RTN
-
-@get-port-raw ( addr* -- value )
-
-	( set type ) DUP2 PORTEL-TYPE ROT ROT DATA-TYPES ++ STA
-	( get data ) DATA-CELLS ++ LDA
+	POP2 
+	.head/addr LDZ2 DATA-CELLS ++ STH2
+	STH2kr DEC2 LDA CHAR-BANG = ,&bang JCN
+	STH2kr INC2 LDA CHAR-BANG = ,&bang JCN
+	STH2kr ABOVE LDA CHAR-BANG = ,&bang JCN
+	STH2kr BELOW LDA CHAR-BANG = ,&bang JCN
+	POP2r #00 RTN
+	&bang POP2r #01
 
 RTN
 
@@ -767,7 +761,7 @@ RTN
 	( y ) STH2kr #0002 -- ;get-port-left-value JSR2
 		( load ) TOS INC2 [ #00 .grid/width LDZ ** ] ++
 	,&save STR2
-	( len ) STH2kr #0001 -- ;get-port-left-value JSR2 1MIN
+	( len ) STH2kr DEC2 ;get-port-left-value JSR2 1MIN
 	#00
 	&loop
 		( load ) DUP TOS STH2kr INC2 ++ ;get-port-right-raw JSR2
@@ -805,7 +799,7 @@ RTN
 
 	POP POP2
 	.head/addr LDZ2 STH2k
-	( get above ) ABOVE ;get-port-raw JSR2
+	( get above ) ABOVE ;get-port-left-raw JSR2
 	( set below ) STH2r BELOW ;set-port-output JSR2
 
 RTN
@@ -876,7 +870,7 @@ RTN
 	POP POP2
 	.head/addr LDZ2 STH2k
 	( x ) STH2kr #0002 -- ;get-port-left-value JSR2 INC TOS ++
-	( y ) STH2kr #0001 -- ;get-port-left-value JSR2 TOS #00 .grid/width LDZ ** ++
+	( y ) STH2kr DEC2 ;get-port-left-value JSR2 TOS #00 .grid/width LDZ ** ++
 	( val ) ;get-port-right-raw JSR2
 	( output ) STH2r BELOW ;set-port-output JSR2
 
@@ -887,7 +881,7 @@ RTN
 	POP POP2
 	.head/addr LDZ2 STH2k
 	( key ) #0002 -- ;get-port-left-value JSR2
-	( len ) STH2kr #0001 -- ;get-port-left-value JSR2 1MIN
+	( len ) STH2kr DEC2 ;get-port-left-value JSR2 1MIN
 	#00
 	&loop
 		#00 OVR STH2kr BELOW ++ STH2
@@ -909,7 +903,7 @@ RTN
 	( y ) STH2kr #0002 -- ;get-port-left-value JSR2
 		( load ) TOS [ #00 .grid/width LDZ ** ] ++
 	,&load STR2
-	( len ) STH2kr #0001 -- ;get-port-left-value JSR2 1MIN
+	( len ) STH2kr DEC2 ;get-port-left-value JSR2 1MIN
 		( save ) DUP TOS STH2kr BELOW SWP2 -- INC2 ,&save STR2
 	#00
 	&loop
@@ -954,7 +948,7 @@ RTN
 	POP POP2
 	.head/addr LDZ2 STH2k
 	( key ) #0002 -- ;get-port-left-value JSR2
-	( len ) STH2kr #0001 -- ;get-port-left-value JSR2 1MIN
+	( len ) STH2kr DEC2 ;get-port-left-value JSR2 1MIN
 	#00
 	&loop
 		#00 OVR STH2kr INC2 ++ STH2
@@ -1019,7 +1013,7 @@ RTN
 	POP POP2
 	.head/addr LDZ2 STH2k
 	( x ) STH2kr #0002 -- ;get-port-left-value JSR2 TOS ++
-	( y ) STH2kr #0001 -- ;get-port-left-value JSR2 INC TOS #00 .grid/width LDZ ** ++
+	( y ) STH2kr DEC2 ;get-port-left-value JSR2 INC TOS #00 .grid/width LDZ ** ++
 	( val ) STH2r INC2 ;get-port-right-raw JSR2
 	( output ) ROT ROT ;set-port-output JSR2
 
@@ -1029,7 +1023,7 @@ RTN
 
 	POP POP2
 	.head/addr LDZ2 STH2k
-	( get left ) DEC2 ;get-port-raw JSR2
+	( get left ) DEC2 ;get-port-left-raw JSR2
 	( set right ) STH2r INC2 ;set-port-output JSR2
 
 RTN
