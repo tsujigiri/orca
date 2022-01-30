@@ -583,7 +583,7 @@ RTN
 	( lowercase )
 	DUP #61 < ,&no-lc JCN
 	DUP #7a > ,&no-lc JCN
-		STH DUP2 ;get-bang JSR2 ,&run JCN
+		STH ;get-bang JSR2 ,&run JCN
 		POPr POP2 RTN
 		&no-lc
 	( uppercase )
@@ -606,9 +606,8 @@ RTN
 
 ( operations )
 
-@get-bang ( x y -- bang )
+@get-bang ( -- bang )
 
-	POP2 
 	.head/addr LDZ2 DATA-CELLS ++ STH2
 	STH2kr DEC2 LDA CHAR-BANG = ,&bang JCN
 	STH2kr INC2 LDA CHAR-BANG = ,&bang JCN
@@ -1074,7 +1073,7 @@ RTN
 	( get octave ) DUP2 [ SWP #02 + SWP ] GET-PORT-RIGHT [ #0c * ] STH
 	( get note ) DUP2 [ SWP #03 + SWP ] GET-PORT-RIGHT-RAW
 		( req note ) DUP CHAR-DOT ! ,&is-active JCN [ POP POP2 POP2r RTN ] &is-active GET-NOTE STH ADDr
-	( req bang ) DUP2 ;get-bang JSR2 ,&is-bang [ JCN POP2 POP2r RTN ] &is-bang
+	( req bang ) ;get-bang JSR2 ,&is-bang [ JCN POP2 POP2r RTN ] &is-bang
 	STHr .Audio0/pitch STHr 4MOD 10* + DEO
 	IO-TYPE SET-TYPE
 
@@ -1087,7 +1086,7 @@ RTN
 	( get octave ) DUP2 [ SWP #02 + SWP ] GET-PORT-RIGHT [ #0c * ] STH
 	( get note ) DUP2 [ SWP #03 + SWP ] GET-PORT-RIGHT-RAW
 		( req note ) DUP CHAR-DOT ! ,&is-active JCN [ POP POP2 POP2r RTN ] &is-active GET-NOTE STH
-	( req bang ) DUP2 ;get-bang JSR2 ,&is-bang JCN [ POP2 POP2r POPr RTN ] &is-bang
+	( req bang ) ;get-bang JSR2 ,&is-bang JCN [ POP2 POP2r POPr RTN ] &is-bang
 	IO-TYPE SET-TYPE
 	ADDr
 	( note on ) OVRr STHr .Console/write DEO STHkr .Console/write DEO #7f .Console/write DEO
@@ -1099,7 +1098,6 @@ RTN
 @op-note ( x y char -- ) ( TODO )
 
 	POP
-	DUP2
 		;get-bang JSR2 STH
 		GET-INDEX STH2k
 	( get a ) INC2 ;get-port-right-value JSR2
@@ -1113,7 +1111,6 @@ RTN
 @op-byte ( x y char -- ) ( TODO )
 
 	POP
-	DUP2
 		;get-bang JSR2 STH
 		GET-INDEX STH2k
 	( get a ) INC2 ;get-port-right-value JSR2
