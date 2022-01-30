@@ -593,7 +593,15 @@ RTN
 	DUP #41 < ,&no-uc JCN
 	DUP #5a > ,&no-uc JCN
 		STH DUP2 OPERATOR-TYPE SET-TYPE 
-		&run STHr DUP GET-VALUE #0a - 2* TOS ;operations ++ LDA2 JMP2
+		&run 
+
+
+		STHr DUP GET-VALUE #0a - 2* 
+
+
+		NIP NIP NIP .head/addr LDZ2 ROT
+
+		TOS ;operations ++ LDA2 JMP2
 		&no-uc
 	( special )
 	CHAR-BANG =~ ;op-bang JCN2
@@ -675,10 +683,9 @@ RTN
 	:op-q :op-r :op-s :op-t :op-u :op-v :op-w :op-x
 	:op-y :op-z
 
-@op-a ( x y char -- )
+@op-a ( addr* -- )
 
-	POP POP2
-	.head/addr LDZ2 STH2k
+	STH2k
 	( a-val ) DEC2 ;get-port-left-value JSR2
 	( b-raw ) STH2kr INC2 ;get-port-right-raw JSR2
 		( get case ) DUP IS-UC ,&case STR
@@ -689,10 +696,9 @@ RTN
 
 RTN
 
-@op-b ( x y char -- )
+@op-b ( addr* -- )
 
-	POP POP2
-	.head/addr LDZ2 STH2k
+	STH2k
 	( get a ) DEC2 ;get-port-left-value JSR2
 	( get b ) STH2kr INC2 ;get-port-right-raw JSR2
 		( get case ) DUP IS-UC ,&case STR
@@ -703,10 +709,9 @@ RTN
 
 RTN
 
-@op-c ( x y char -- )
+@op-c ( addr* -- )
 
-	POP POP2
-	.head/addr LDZ2 STH2k
+	STH2k
 	( get rate ) DEC2 ;get-port-left-value JSR2 1MIN
 	( get mod ) STH2kr INC2 ;get-port-right-raw JSR2
 		( get case ) DUP IS-UC ,&case STR
@@ -717,10 +722,9 @@ RTN
 
 RTN
 
-@op-d ( x y char -- )
+@op-d ( addr* -- )
 
-	POP POP2
-	.head/addr LDZ2 STH2k
+	STH2k
 	( get rate ) DEC2 ;get-port-left-value JSR2 1MIN
 	( get mod ) STH2kr INC2 ;get-port-right-value JSR2 1MIN
 	( res ) * TOS .timer/frame LDZ2 SWP2 MOD2 #0000 ==
@@ -729,10 +733,9 @@ RTN
 
 RTN
 
-@op-e ( x y char -- )
+@op-e ( addr* -- )
 
-	POP POP2
-	.head/addr LDZ2 STH2k DATA-CELLS ++ LDA ,&self STR
+	STH2k DATA-CELLS ++ LDA ,&self STR
 	( wall ) .head/x LDZ INC .grid/width LDZ = ,&collide JCN
 	( cell ) STH2kr INC2 DATA-CELLS ++ LDA CHAR-DOT ! ,&collide JCN
 	( write new ) [ LIT &self $1 ] STH2kr INC2 ;set-port-raw JSR2
@@ -743,10 +746,9 @@ RTN
 
 RTN
 
-@op-f ( x y char -- )
+@op-f ( addr* -- )
 
-	POP POP2
-	.head/addr LDZ2 STH2k
+	STH2k
 	( get a ) DEC2 ;get-port-left-raw JSR2
 	( get b ) STH2kr INC2 ;get-port-right-raw JSR2
 	( bang on equal ) = [ #fc * CHAR-DOT +  ]
@@ -754,10 +756,9 @@ RTN
 
 RTN
 
-@op-g ( x y char -- )
+@op-g ( addr* -- )
 
-	POP POP2
-	.head/addr LDZ2 STH2k
+	STH2k
 	( x ) STH2kr #0003 -- ;get-port-left-value JSR2
 		( load ) TOS ++
 	( y ) STH2kr #0002 -- ;get-port-left-value JSR2
@@ -774,19 +775,17 @@ RTN
 
 RTN
 
-@op-h ( x y char -- )
+@op-h ( addr* -- )
 
-	POP POP2
-	( output ) .head/addr LDZ2 BELOW
+	BELOW
 	( set lock ) DUP2 #01 ROT ROT SET-LOCK
 	( set type ) OUTPUT-TYPE ROT ROT DATA-TYPES ++ STA
 
 RTN
 
-@op-i ( x y char -- )
+@op-i ( addr* -- )
 
-	POP POP2
-	.head/addr LDZ2 STH2k
+	STH2k
 	( step ) DEC2 ;get-port-left-value JSR2
 	( mod ) STH2kr INC2 ;get-port-right-raw JSR2
 		( get case ) DUP IS-UC ,&case STR
@@ -797,19 +796,17 @@ RTN
 
 RTN
 
-@op-j ( x y char -- ) ( TODO: Wiring )
+@op-j ( addr* -- )
 
-	POP POP2
-	.head/addr LDZ2 STH2k
+	STH2k
 	( get above ) ABOVE ;get-port-left-raw JSR2
 	( set below ) STH2r BELOW ;set-port-output JSR2
 
 RTN
 
-@op-k ( x y char -- )
+@op-k ( addr* -- )
 
-	POP POP2
-	.head/addr LDZ2 STH2k
+	STH2k
 	DEC2 ;get-port-left-value JSR2 #00
 	&loop
 		DUP TOS STH2kr INC2 ++ STH2k ;get-port-right-raw JSR2
@@ -825,10 +822,9 @@ RTN
 
 RTN
 
-@op-l ( x y char -- )
+@op-l ( addr* -- )
 
-	POP POP2
-	.head/addr LDZ2 STH2k
+	STH2k
 	( get a ) DEC2 ;get-port-left-value JSR2
 	( get b ) STH2kr INC2 ;get-port-right-raw JSR2
 		( get case ) DUP IS-UC ,&case STR
@@ -839,10 +835,9 @@ RTN
 
 RTN
 
-@op-m ( x y char -- )
+@op-m ( addr* -- )
 
-	POP POP2
-	.head/addr LDZ2 STH2k
+	STH2k
 	( get a ) DEC2 ;get-port-left-value JSR2
 	( get b ) STH2kr INC2 ;get-port-right-raw JSR2
 		( get case ) DUP IS-UC ,&case STR
@@ -853,10 +848,9 @@ RTN
 
 RTN
 
-@op-n ( x y char -- )
+@op-n ( addr* -- )
 
-	POP POP2
-	.head/addr LDZ2 STH2k DATA-CELLS ++ LDA ,&self STR
+	STH2k DATA-CELLS ++ LDA ,&self STR
 	( wall ) .head/y LDZ DEC #ff = ,&collide JCN
 	( cell ) STH2kr ABOVE DATA-CELLS ++ LDA CHAR-DOT ! ,&collide JCN
 	( write new ) [ LIT &self $1 ] STH2kr ABOVE ;set-port-raw JSR2
@@ -867,10 +861,9 @@ RTN
 
 RTN
 
-@op-o ( x y char -- )
+@op-o ( addr* -- )
 
-	POP POP2
-	.head/addr LDZ2 STH2k
+	STH2k
 	( x ) STH2kr #0002 -- ;get-port-left-value JSR2 INC TOS ++
 	( y ) STH2kr DEC2 ;get-port-left-value JSR2 TOS #00 .grid/width LDZ ** ++
 	( val ) ;get-port-right-raw JSR2
@@ -878,10 +871,9 @@ RTN
 
 RTN
 
-@op-p ( x y char -- )
+@op-p ( addr* -- )
 
-	POP POP2
-	.head/addr LDZ2 STH2k
+	STH2k
 	( key ) #0002 -- ;get-port-left-value JSR2
 	( len ) STH2kr DEC2 ;get-port-left-value JSR2 1MIN
 	#00
@@ -896,10 +888,9 @@ RTN
 
 RTN
 
-@op-q ( x y char -- )
+@op-q ( addr* -- )
 
-	POP POP2
-	.head/addr LDZ2 STH2k
+	STH2k
 	( x ) STH2kr #0003 -- ;get-port-left-value JSR2
 		( load ) TOS INC2 ++
 	( y ) STH2kr #0002 -- ;get-port-left-value JSR2
@@ -917,10 +908,9 @@ RTN
 
 RTN
 
-@op-r ( x y char -- )
+@op-r ( addr* -- )
 
-	POP POP2
-	.head/addr LDZ2 STH2k
+	STH2k
 	( a-min ) DEC2 ;get-port-left-value JSR2
 	( b-max ) STH2kr INC2 ;get-port-right-raw JSR2
 		( get case ) DUP IS-UC ,&case STR
@@ -931,10 +921,9 @@ RTN
 
 RTN
 
-@op-s ( x y char -- )
+@op-s ( addr* -- )
 
-	POP POP2
-	.head/addr LDZ2 STH2k DATA-CELLS ++ LDA ,&self STR
+	STH2k DATA-CELLS ++ LDA ,&self STR
 	( wall ) .head/y LDZ INC .grid/height LDZ = ,&collide JCN
 	( cell ) STH2kr BELOW DATA-CELLS ++ LDA CHAR-DOT ! ,&collide JCN
 	( write new ) [ LIT &self $1 ] STH2kr BELOW ;set-port-raw JSR2
@@ -945,10 +934,9 @@ RTN
 
 RTN
 
-@op-t ( x y char -- )
+@op-t ( addr* -- )
 
-	POP POP2
-	.head/addr LDZ2 STH2k
+	STH2k
 	( key ) #0002 -- ;get-port-left-value JSR2
 	( len ) STH2kr DEC2 ;get-port-left-value JSR2 1MIN
 	#00
@@ -963,10 +951,9 @@ RTN
 
 RTN
 
-@op-u ( x y char -- )
+@op-u ( addr* -- )
 
-	POP POP2
-	.head/addr LDZ2 STH2k
+	STH2k
 	( step ) DEC2 ;get-port-left-value JSR2
 	( max ) STH2kr INC2 ;get-port-right-value JSR2 1MIN STH2
 	( frame + max - 1 ) .timer/frame LDZ2 STHkr TOS ++ DEC2
@@ -979,10 +966,9 @@ RTN
 
 RTN
 
-@op-v ( x y char -- )
+@op-v ( addr* -- )
 
-	POP POP2
-	.head/addr LDZ2 STH2k
+	STH2k
 	( key ) DEC2 ;get-port-left-raw JSR2
 	( val ) STH2kr INC2 ;get-port-right-raw JSR2
 	DUP CHAR-DOT = ,&idle JCN
@@ -996,10 +982,9 @@ RTN
 
 RTN
 
-@op-w ( x y char -- )
+@op-w ( addr* -- )
 
-	POP POP2
-	.head/addr LDZ2 STH2k DATA-CELLS ++ LDA ,&self STR
+	STH2k DATA-CELLS ++ LDA ,&self STR
 	( wall ) .head/x LDZ DEC #ff = ,&collide JCN
 	( cell ) STH2kr DEC2 DATA-CELLS ++ LDA CHAR-DOT ! ,&collide JCN
 	( write new ) [ LIT &self $1 ] STH2kr DEC2 ;set-port-raw JSR2
@@ -1010,10 +995,9 @@ RTN
 
 RTN
 
-@op-x ( x y char -- )
+@op-x ( addr* -- )
 
-	POP POP2
-	.head/addr LDZ2 STH2k
+	STH2k
 	( x ) STH2kr #0002 -- ;get-port-left-value JSR2 TOS ++
 	( y ) STH2kr DEC2 ;get-port-left-value JSR2 INC TOS #00 .grid/width LDZ ** ++
 	( val ) STH2r INC2 ;get-port-right-raw JSR2
@@ -1021,19 +1005,17 @@ RTN
 
 RTN
 
-@op-y ( x y char -- ) ( TODO: Wiring )
+@op-y ( addr* -- )
 
-	POP POP2
-	.head/addr LDZ2 STH2k
+	STH2k
 	( get left ) DEC2 ;get-port-left-raw JSR2
 	( set right ) STH2r INC2 ;set-port-output JSR2
 
 RTN
 
-@op-z ( x y char -- )
+@op-z ( addr* -- )
 
-	POP POP2
-	.head/addr LDZ2 STH2k
+	STH2k
 	( rate ) DEC2 ;get-port-left-value JSR2
 	( target ) STH2kr INC2 ;get-port-right-raw JSR2
 		( get case ) DUP IS-UC ,&case STR
