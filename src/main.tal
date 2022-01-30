@@ -58,7 +58,9 @@
 	&timer $1 &changed $1
 @filepath $40
 @selection
+	&from
 	&x1 $1 &y1 $1
+	&to
 	&x2 $1 &y2 $1
 	&insert $1
 @cursor
@@ -408,7 +410,14 @@ RTN
 
 @set-selection-to ( x y -- )
 
-	.selection/x1 LDZ2 SWP2 ,set-selection JSR
+	.selection/y1 LDZ MAX STH
+	.selection/x1 LDZ MAX STHr
+	DUP2 .selection/to LDZ2 == ,&no-change JCN
+		DUP2 .selection/to STZ2
+		;draw-grid JSR2
+		;draw-position JSR2
+		&no-change
+	POP2
 
 RTN
 
@@ -424,6 +433,7 @@ RTN
 		DUP2 .selection/x1 LDZ2 !! JMP INCr
 		.selection/x1 STZ2
 	STHr #00 = ,&no-redraw JCN
+		#aa DEBUG
 		;draw-grid JSR2
 		;draw-position JSR2
 		&no-redraw
