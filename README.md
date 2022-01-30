@@ -71,14 +71,18 @@ Orca listens to stdin events and inputs the byte values as keyboard inputs. The 
 
 ## Controls
 
+### Mouse
+
+- `mouse1` select cell
+
+### Arrows
+
 - `arrow` move
 - `shift+arrow` scale selection
 - `ctrl+arrow` drag selection
-- `space` toggle play/paste
-- `backspace` erase
-- `escape` deselect
-- `ctrl+,` speed down
-- `ctrl+.` speed up
+
+### Ctrl
+
 - `ctrl+n` new
 - `ctrl+r` rename
 - `ctrl+o` open
@@ -87,9 +91,11 @@ Orca listens to stdin events and inputs the byte values as keyboard inputs. The 
 - `ctrl+v` paste
 - `ctrl+x` cut
 
-## Systems
+### Misc
 
-The teletype resolution is `128 x 64`(16x8), some of the features have been adapted to that resolution.
+- `space` toggle play
+- `backspace` erase
+- `escape` deselect
 
 ## Help
 

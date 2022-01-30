@@ -88,6 +88,10 @@
 	( gobal yaddr )
 	AUTO-YADDR
 
+	( size )
+	#0300 .Screen/width DEO2
+	#01c0 .Screen/height DEO2
+
 	( synths )
 	#dd .Audio0/volume DEO  #0118 .Audio0/adsr DEO2 #0100 .Audio0/length DEO2
 	#ce .Audio1/volume DEO  #0334 .Audio1/adsr DEO2 #0100 .Audio1/length DEO2
@@ -1027,7 +1031,7 @@ RTN
 
 RTN
 
-@op-z ( x y char -- ) ( TODO )
+@op-z ( x y char -- )
 
 	POP POP2
 	.head/addr LDZ2 STH2k
@@ -1066,7 +1070,7 @@ RTN
 
 RTN
 
-@op-synth ( x y char -- ) ( TODO )
+@op-synth ( x y char -- )
 
 	POP POP2
 	.head/addr LDZ2 STH2k
@@ -1098,27 +1102,24 @@ RTN
 
 @op-note ( x y char -- ) ( TODO )
 
-	POP
-		;get-bang JSR2 STH
-		GET-INDEX STH2k
-	( get a ) INC2 ;get-port-right-value JSR2
-	( get b ) STH2kr INC2 INC2 ;get-port-right-value JSR2
-	( req bang ) ROTr STHr ,&is-bang JCN [ POP2 POP2r RTN ] &is-bang
-	( set type ) STH2r IO-TYPE ROT ROT DATA-TYPES ++ STA
-	( send note ) SWP #0c * + .Console/write DEO
+	POP POP2
+	.head/addr LDZ2 STH2k
+	( octave ) INC2 ;get-port-right-value JSR2
+	( note ) STH2r #0002 ++ ;get-port-right-raw JSR2
+	( has note ) DUP CHAR-DOT ! ,&has-note JCN [ POP2 RTN ] &has-note
+	( has bang ) ;get-bang JSR2 ,&is-bang JCN [ POP2 RTN ] &is-bang
+	( get note ) GET-NOTE SWP [ #0c * ] + .Console/write DEO
 
 RTN
 
 @op-byte ( x y char -- ) ( TODO )
 
-	POP
-		;get-bang JSR2 STH
-		GET-INDEX STH2k
-	( get a ) INC2 ;get-port-right-value JSR2
-	( get b ) STH2kr INC2 INC2 ;get-port-right-value JSR2
-	( req bang ) ROTr STHr ,&is-bang JCN [ POP2 POP2r RTN ] &is-bang
-	( set type ) STH2r IO-TYPE ROT ROT DATA-TYPES ++ STA
-	( write byte ) #0f AND SWP #0f AND #40 SFT + .Console/write DEO
+	POP POP2
+	.head/addr LDZ2 STH2k
+	( hn ) INC2 ;get-port-right-value JSR2
+	( ln ) STH2r #0002 ++ ;get-port-right-value JSR2
+	( has bang ) ;get-bang JSR2 ,&is-bang JCN [ POP2 RTN ] &is-bang
+	#0f AND SWP #0f AND #40 SFT + .Console/write DEO
 
 RTN
 
