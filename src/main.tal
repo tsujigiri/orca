@@ -586,22 +586,17 @@ RTN
 	( lowercase )
 	DUP #61 < ,&no-lc JCN
 	DUP #7a > ,&no-lc JCN
-		STH ;get-bang JSR2 ,&run JCN
-		POPr POP2 RTN
+		;get-bang JSR2 ,&run JCN
+		POP POP2 RTN
 		&no-lc
 	( uppercase )
 	DUP #41 < ,&no-uc JCN
 	DUP #5a > ,&no-uc JCN
-		STH DUP2 OPERATOR-TYPE SET-TYPE 
 		&run 
-
-
-		STHr DUP GET-VALUE #0a - 2* 
-
-
-		NIP NIP NIP .head/addr LDZ2 ROT
-
-		TOS ;operations ++ LDA2 JMP2
+		( remove pos ) NIP NIP
+		.head/addr LDZ2 STH2k 
+		( set operator type ) OPERATOR-TYPE STH2r DATA-TYPES ++ STA
+		( run operator ) ROT GET-VALUE #0a - 2* TOS ;operations ++ LDA2 JMP2
 		&no-uc
 	( special )
 	CHAR-BANG =~ ;op-bang JCN2
