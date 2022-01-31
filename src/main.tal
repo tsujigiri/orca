@@ -25,11 +25,11 @@
 %GET-CHAR  { #24 MOD #00 SWP ;b36clc ++ LDA } ( b36 -- char )
 %GET-VALUE { #20 - #00 SWP ;values ++ LDA } ( char -- b36 )
 %GET-NOTE  { DUP GET-VALUE SWP IS-UC #24 * + TOS ;lc-notes ++ LDA } ( char -- midi )
-%GET-CELL  { DATA-CELLS ++ LDA } ( cell* -- type )
+%GET-CELL  { DATA-CELLS ++ LDA } ( cell* -- type ) 
 %SET-CELL  { DATA-CELLS ++ STA } ( type cell* -- )
-%GET-LOCK  { DATA-LOCKS ++ LDA } ( cell* -- type )
+%GET-LOCK  { DATA-LOCKS ++ LDA } ( cell* -- type ) 
 %SET-LOCK  { DATA-LOCKS ++ STA } ( type cell* -- )
-%GET-TYPE  { DATA-TYPES ++ LDA } ( cell* -- type )
+%GET-TYPE  { DATA-TYPES ++ LDA } ( cell* -- type ) 
 %SET-TYPE  { DATA-TYPES ++ STA } ( type cell* -- )
 
 ( devices )
@@ -56,6 +56,7 @@
 	&beat $1 &speed $1 &playing $1 &frame $2
 @state
 	&timer $1 &changed $1
+@guide $1
 @filepath $40
 @grid
 	&x1 $2 &y1 $2
@@ -119,6 +120,8 @@
 	.grid/x2 LDZ2 .toolbar/x2 STZ2
 	.toolbar/y1 LDZ2 #0008 ++ .toolbar/y2 STZ2
 
+	( display guide )
+	#01 .guide STZ
 	( init random )
 	;prng-init JSR2
 	( blank file )
@@ -407,6 +410,10 @@ RTN
 
 	DUP2 .selection/from STZ2
 	.selection/to STZ2
+
+	( hide guide )
+	.guide LDZ #00 = ,&no-guide JCN #00 .guide STZ &no-guide
+
 	;draw-grid JSR2
 	;draw-position JSR2
 
@@ -477,6 +484,8 @@ RTN
 	,&drag LDR #00 = ,&no-drag-end JCN
 		;paste-snarf JSR2
 		&no-drag-end
+	( hide guide )
+	.guide LDZ #00 = ,&no-guide JCN #00 .guide STZ &no-guide
 
 RTN
 	&drag $1
@@ -591,15 +600,15 @@ RTN
 		&run
 		.head/addr LDZ2 STH2k
 		( set type ) OPERATOR-TYPE STH2r SET-TYPE
-		( run ) ROT GET-VALUE #0a - 2* TOS ;operations ++ LDA2 JMP2
+		( run ) ROT GET-VALUE #0a - 2* TOS ;op-table/func ++ LDA2 JMP2
 		&no-uc
 	( special )
-	CHAR-BANG =~ ;op-bang JCN2
-	CHAR-HASH =~ ;op-comment JCN2
-	CHAR-SEMI =~ ;op-note JCN2
-	CHAR-EQUAL =~ ;op-synth JCN2
-	CHAR-COLON =~ ;op-midi JCN2
-	CHAR-SLASH =~ ;op-byte JCN2
+	CHAR-BANG =~ ;op-bang/func JCN2
+	CHAR-HASH =~ ;op-comment/func JCN2
+	CHAR-SEMI =~ ;op-pitch/func JCN2
+	CHAR-EQUAL =~ ;op-synth/func JCN2
+	CHAR-COLON =~ ;op-midi/func JCN2
+	CHAR-SLASH =~ ;op-byte/func JCN2
 	( erase )
 	POP
 	CHAR-DOT .head/addr LDZ2 SET-CELL
@@ -629,484 +638,6 @@ RTN
 	STH2kr BELOW LDA CHAR-BANG = ,&bang JCN
 	POP2r #00 RTN
 	&bang POP2r #01
-
-RTN
-
-@set-port-output ( value addr* -- )
-
-	( set lock ) DUP2 #01 ROT ROT SET-LOCK
-	( set type ) DUP2 OUTPUT-TYPE ROT ROT SET-TYPE
-	( set data ) SET-CELL
-
-RTN
-
-@set-port-raw ( value addr* -- )
-
-	( set lock ) DUP2 #01 ROT ROT SET-LOCK
-	( set type ) DUP2 #00 ROT ROT SET-TYPE
-	( set data ) SET-CELL
-
-RTN
-
-@get-port-left-raw ( addr* -- value )
-
-	( set type ) DUP2 PORTEL-TYPE ROT ROT SET-TYPE
-	( get data ) GET-CELL
-
-RTN
-
-@get-port-left-value ( addr* -- value )
-
-	,get-port-left-raw JSR GET-VALUE
-
-RTN
-
-@get-port-right-raw ( addr* -- value )
-
-	( set lock ) DUP2 #01 ROT ROT SET-LOCK
-	( set type ) DUP2 PORTER-TYPE ROT ROT SET-TYPE
-	( get data ) GET-CELL
-
-RTN
-
-@get-port-right-value ( addr* -- value )
-
-	,get-port-right-raw JSR GET-VALUE
-
-RTN
-
-( operators )
-
-@operations
-	:op-a :op-b :op-c :op-d :op-e :op-f :op-g :op-h
-	:op-i :op-j :op-k :op-l :op-m :op-n :op-o :op-p
-	:op-q :op-r :op-s :op-t :op-u :op-v :op-w :op-x
-	:op-y :op-z
-
-@op-a ( addr* -- )
-
-	STH2k
-	( a-val ) DEC2 ;get-port-left-value JSR2
-	( b-raw ) STH2kr INC2 ;get-port-right-raw JSR2
-		( get case ) DUP IS-UC ,&case STR
-		( to value ) GET-VALUE
-	( res ) +
-	( set case ) GET-CHAR DUP #60 > [ LIT &case $1 ] AND 20* -
-	( output ) STH2r BELOW ;set-port-output JSR2
-
-RTN
-
-@op-b ( addr* -- )
-
-	STH2k
-	( get a ) DEC2 ;get-port-left-value JSR2
-	( get b ) STH2kr INC2 ;get-port-right-raw JSR2
-		( get case ) DUP IS-UC ,&case STR
-		( to value ) GET-VALUE
-	( res ) - DUP #80 < ,&bounce JCN #24 SWP - &bounce
-	( set case ) GET-CHAR DUP #60 > [ LIT &case $1 ] AND 20* -
-	( output ) STH2r BELOW ;set-port-output JSR2
-
-RTN
-
-@op-c ( addr* -- )
-
-	STH2k
-	( get rate ) DEC2 ;get-port-left-value JSR2 1MIN
-	( get mod ) STH2kr INC2 ;get-port-right-raw JSR2
-		( get case ) DUP IS-UC ,&case STR
-		( to value ) GET-VALUE 1MIN
-	( res ) TOS ROT TOS .timer/frame LDZ2 SWP2 // SWP2 MOD2 NIP
-	( set case ) GET-CHAR DUP #60 > [ LIT &case $1 ] AND 20* -
-	( output ) STH2r BELOW ;set-port-output JSR2
-
-RTN
-
-@op-d ( addr* -- )
-
-	STH2k
-	( get rate ) DEC2 ;get-port-left-value JSR2 1MIN
-	( get mod ) STH2kr INC2 ;get-port-right-value JSR2 1MIN
-	( res ) * TOS .timer/frame LDZ2 SWP2 MOD2 #0000 ==
-	( bang on equal ) #fc * CHAR-DOT +
-	( output ) STH2r BELOW ;set-port-output JSR2
-
-RTN
-
-@op-e ( addr* -- )
-
-	STH2k GET-CELL ,&self STR
-	( wall ) .head/x LDZ INC .grid/width LDZ = ,&collide JCN
-	( cell ) STH2kr INC2 GET-CELL CHAR-DOT ! ,&collide JCN
-	( write new ) [ LIT &self $1 ] STH2kr INC2 ;set-port-raw JSR2
-	( erase old ) CHAR-DOT STH2r ;set-port-raw JSR2
-	RTN
-	&collide
-	( output ) CHAR-BANG STH2r ;set-port-output JSR2
-
-RTN
-
-@op-f ( addr* -- )
-
-	STH2k
-	( get a ) DEC2 ;get-port-left-raw JSR2
-	( get b ) STH2kr INC2 ;get-port-right-raw JSR2
-	( bang on equal ) = [ #fc * CHAR-DOT +  ]
-	( output ) STH2r BELOW ;set-port-output JSR2
-
-RTN
-
-@op-g ( addr* -- )
-
-	STH2k
-	( x ) STH2kr #0003 -- ;get-port-left-value JSR2
-		( load ) TOS ++
-	( y ) STH2kr #0002 -- ;get-port-left-value JSR2
-		( load ) TOS INC2 [ #00 .grid/width LDZ ** ] ++
-	,&save STR2
-	( len ) STH2kr DEC2 ;get-port-left-value JSR2 1MIN
-	#00
-	&loop
-		( load ) DUP TOS STH2kr INC2 ++ ;get-port-right-raw JSR2
-		( save ) OVR TOS [ LIT2 &save $2 ] ++ ;set-port-output JSR2
-		INC GTHk ,&loop JCN
-	POP2
-	POP2r	
-
-RTN
-
-@op-h ( addr* -- )
-
-	BELOW
-	( set lock ) DUP2 #01 ROT ROT SET-LOCK
-	( set type ) OUTPUT-TYPE ROT ROT SET-TYPE
-
-RTN
-
-@op-i ( addr* -- )
-
-	STH2k
-	( step ) DEC2 ;get-port-left-value JSR2
-	( mod ) STH2kr INC2 ;get-port-right-raw JSR2
-		( get case ) DUP IS-UC ,&case STR
-		( to value ) GET-VALUE 1MIN
-	( res ) SWP STH2kr BELOW [ GET-CELL GET-VALUE ] + SWP MOD
-	( set case ) GET-CHAR DUP #60 > [ LIT &case $1 ] AND 20* -
-	( output ) STH2r BELOW ;set-port-output JSR2
-
-RTN
-
-@op-j ( addr* -- )
-
-	STH2k
-	( get above ) ABOVE ;get-port-left-raw JSR2
-	( set below ) STH2r BELOW ;set-port-output JSR2
-
-RTN
-
-@op-k ( addr* -- )
-
-	STH2k
-	DEC2 ;get-port-left-value JSR2 #00
-	&loop
-		DUP TOS STH2kr INC2 ++ STH2k ;get-port-right-raw JSR2
-		DUP CHAR-DOT = ,&skip JCN
-			( load ) DUP GET-VALUE .variables + LDZ
-			( save ) STH2kr BELOW ;set-port-output JSR2
-			&skip
-		POP
-		POP2r
-		INC GTHk ;&loop JCN2
-	POP2
-	POP2r
-
-RTN
-
-@op-l ( addr* -- )
-
-	STH2k
-	( get a ) DEC2 ;get-port-left-value JSR2
-	( get b ) STH2kr INC2 ;get-port-right-raw JSR2
-		( get case ) DUP IS-UC ,&case STR
-		( to value ) GET-VALUE
-	( res ) LTHk JMP SWP POP
-	( set case ) GET-CHAR DUP #60 > [ LIT &case $1 ] AND 20* -
-	( output ) STH2r BELOW ;set-port-output JSR2
-
-RTN
-
-@op-m ( addr* -- )
-
-	STH2k
-	( get a ) DEC2 ;get-port-left-value JSR2
-	( get b ) STH2kr INC2 ;get-port-right-raw JSR2
-		( get case ) DUP IS-UC ,&case STR
-		( to value ) GET-VALUE
-	( res ) *
-	( set case ) GET-CHAR DUP #60 > [ LIT &case $1 ] AND 20* -
-	( output ) STH2r BELOW ;set-port-output JSR2
-
-RTN
-
-@op-n ( addr* -- )
-
-	STH2k GET-CELL ,&self STR
-	( wall ) .head/y LDZ DEC #ff = ,&collide JCN
-	( cell ) STH2kr ABOVE GET-CELL CHAR-DOT ! ,&collide JCN
-	( write new ) [ LIT &self $1 ] STH2kr ABOVE ;set-port-raw JSR2
-	( erase old ) CHAR-DOT STH2r ;set-port-raw JSR2
-	RTN
-	&collide
-	( output ) CHAR-BANG STH2r ;set-port-output JSR2
-
-RTN
-
-@op-o ( addr* -- )
-
-	STH2k
-	( x ) STH2kr #0002 -- ;get-port-left-value JSR2 INC TOS ++
-	( y ) STH2kr DEC2 ;get-port-left-value JSR2 TOS #00 .grid/width LDZ ** ++
-	( val ) ;get-port-right-raw JSR2
-	( output ) STH2r BELOW ;set-port-output JSR2
-
-RTN
-
-@op-p ( addr* -- )
-
-	STH2k
-	( key ) #0002 -- ;get-port-left-value JSR2
-	( len ) STH2kr DEC2 ;get-port-left-value JSR2 1MIN
-	#00
-	&loop
-		#00 OVR STH2kr BELOW ++ STH2
-		( lock ) #01 STH2kr SET-LOCK
-		( type ) LOCKED-TYPE STH2r SET-TYPE
-		INC GTHk ,&loop JCN
-	POP
-	( read ) STH2kr INC2 ;get-port-right-raw JSR2
-	( output ) ROT ROT MOD TOS STH2r BELOW ++ ;set-port-output JSR2
-
-RTN
-
-@op-q ( addr* -- )
-
-	STH2k
-	( x ) STH2kr #0003 -- ;get-port-left-value JSR2
-		( load ) TOS INC2 ++
-	( y ) STH2kr #0002 -- ;get-port-left-value JSR2
-		( load ) TOS [ #00 .grid/width LDZ ** ] ++
-	,&load STR2
-	( len ) STH2kr DEC2 ;get-port-left-value JSR2 1MIN
-		( save ) DUP TOS STH2kr BELOW SWP2 -- INC2 ,&save STR2
-	#00
-	&loop
-		( load ) DUP TOS [ LIT2 &load $2 ] ++ ;get-port-right-raw JSR2
-		( save ) OVR TOS [ LIT2 &save $2 ] ++ ;set-port-output JSR2
-		INC GTHk ,&loop JCN
-	POP2
-	POP2r
-
-RTN
-
-@op-r ( addr* -- )
-
-	STH2k
-	( a-min ) DEC2 ;get-port-left-value JSR2
-	( b-max ) STH2kr INC2 ;get-port-right-raw JSR2
-		( get case ) DUP IS-UC ,&case STR
-		( to value ) GET-VALUE 1MIN
-	( mod ) OVR - ;prng JSR2 + SWP MOD +
-	( set case ) GET-CHAR DUP #60 > [ LIT &case $1 ] AND 20* -
-	( output ) STH2r BELOW ;set-port-output JSR2
-
-RTN
-
-@op-s ( addr* -- )
-
-	STH2k GET-CELL ,&self STR
-	( wall ) .head/y LDZ INC .grid/height LDZ = ,&collide JCN
-	( cell ) STH2kr BELOW GET-CELL CHAR-DOT ! ,&collide JCN
-	( write new ) [ LIT &self $1 ] STH2kr BELOW ;set-port-raw JSR2
-	( erase old ) CHAR-DOT STH2r ;set-port-raw JSR2
-	RTN
-	&collide
-	( output ) CHAR-BANG STH2r ;set-port-output JSR2
-
-RTN
-
-@op-t ( addr* -- )
-
-	STH2k
-	( key ) #0002 -- ;get-port-left-value JSR2
-	( len ) STH2kr DEC2 ;get-port-left-value JSR2 1MIN
-	#00
-	&loop
-		#00 OVR STH2kr INC2 ++ STH2
-		( lock ) #01 STH2kr SET-LOCK
-		( type ) LOCKED-TYPE STH2r SET-TYPE
-		INC GTHk ,&loop JCN
-	POP
-	( read ) MOD TOS STH2kr INC2 ++ ;get-port-right-raw JSR2
-	STH2r BELOW ;set-port-output JSR2
-
-RTN
-
-@op-u ( addr* -- )
-
-	STH2k
-	( step ) DEC2 ;get-port-left-value JSR2
-	( max ) STH2kr INC2 ;get-port-right-value JSR2 1MIN STH2
-	( frame + max - 1 ) .timer/frame LDZ2 STHkr TOS ++ DEC2
-	( * step ) OVRr STHr TOS **
-	( % max ) STHkr TOS MOD2
-	( + step ) SWPr STHr TOS ++
-	( bucket >= max ) STHr TOS << #01 !
-	( bang if equal ) #fc * CHAR-DOT +
-	STH2r BELOW ;set-port-output JSR2
-
-RTN
-
-@op-v ( addr* -- )
-
-	STH2k
-	( key ) DEC2 ;get-port-left-raw JSR2
-	( val ) STH2kr INC2 ;get-port-right-raw JSR2
-	DUP CHAR-DOT = ,&idle JCN
-	OVR GET-VALUE ,&save JCN
-	( load )
-		NIP GET-VALUE .variables + LDZ STH2r BELOW ;set-port-output JSR2 RTN
-	&save
-		SWP GET-VALUE .variables + STZ POP2r RTN
-	&idle
-		POP2 POP2r
-
-RTN
-
-@op-w ( addr* -- )
-
-	STH2k GET-CELL ,&self STR
-	( wall ) .head/x LDZ DEC #ff = ,&collide JCN
-	( cell ) STH2kr DEC2 GET-CELL CHAR-DOT ! ,&collide JCN
-	( write new ) [ LIT &self $1 ] STH2kr DEC2 ;set-port-raw JSR2
-	( erase old ) CHAR-DOT STH2r ;set-port-raw JSR2
-	RTN
-	&collide
-	( output ) CHAR-BANG STH2r ;set-port-output JSR2
-
-RTN
-
-@op-x ( addr* -- )
-
-	STH2k
-	( x ) STH2kr #0002 -- ;get-port-left-value JSR2 TOS ++
-	( y ) STH2kr DEC2 ;get-port-left-value JSR2 INC TOS #00 .grid/width LDZ ** ++
-	( val ) STH2r INC2 ;get-port-right-raw JSR2
-	( output ) ROT ROT ;set-port-output JSR2
-
-RTN
-
-@op-y ( addr* -- )
-
-	STH2k
-	( get left ) DEC2 ;get-port-left-raw JSR2
-	( set right ) STH2r INC2 ;set-port-output JSR2
-
-RTN
-
-@op-z ( addr* -- )
-
-	STH2k
-	( rate ) DEC2 ;get-port-left-value JSR2
-	( target ) STH2kr INC2 ;get-port-right-raw JSR2
-		( get case ) DUP IS-UC ,&case STR
-		( to value ) GET-VALUE
-	( val ) STH2kr BELOW [ GET-CELL GET-VALUE ]
-	( res ) ;lerp JSR2
-	( set case ) GET-CHAR DUP #60 > [ LIT &case $1 ] AND 20* -
-	( output ) STH2r BELOW ;set-port-output JSR2
-
-RTN
-
-@op-bang ( x y char -- )
-
-	POP
-	CHAR-DOT .head/addr LDZ2 SET-CELL
-
-RTN
-
-@op-comment ( x y char -- )
-
-	POP
-	.head/addr LDZ2 STH2k
-	( bounds )
-	#00 .grid/width LDZ .head/x LDZ - ++
-	STH2r INC2
-	&loop
-		( set lock ) DUP2 #01 ROT ROT SET-LOCK
-		( set type ) DUP2 LOCKED-TYPE ROT ROT SET-TYPE
-		( stop at hash ) DUP2 GET-CELL CHAR-HASH = ,&end JCN
-		INC2 GTH2k ,&loop JCN
-	&end
-	POP2 POP2
-
-RTN
-
-@op-synth ( x y char -- )
-
-	POP
-	.head/addr LDZ2 STH2k
-	( channel ) INC2 ;get-port-right-value JSR2 [ ,&ch STR ]
-	( octave ) STH2kr #0002 ++ ;get-port-right-value JSR2
-	( note ) STH2r #0003 ++ ;get-port-right-raw JSR2
-	( has note ) DUP CHAR-DOT ! ,&has-note JCN [ POP2 RTN ] &has-note
-	( has bang ) ;get-bang JSR2 ,&is-bang JCN [ POP2 RTN ] &is-bang
-	( get note ) GET-NOTE SWP [ #0c * ] +
-	( play ) .Audio0/pitch [ LIT &ch $1 ] 4MOD 10* + DEO
-
-RTN
-
-@op-midi ( x y char -- )
-
-	POP
-	.head/addr LDZ2 STH2k
-	( channel ) INC2 ;get-port-right-value JSR2 [ ,&ch STR ]
-	( octave ) STH2kr #0002 ++ ;get-port-right-value JSR2
-	( note ) STH2r #0003 ++ ;get-port-right-raw JSR2
-	( has note ) DUP CHAR-DOT ! ,&has-note JCN [ POP2 RTN ] &has-note
-	( has bang ) ;get-bang JSR2 ,&is-bang JCN [ POP2 RTN ] &is-bang
-	( get note ) GET-NOTE SWP [ #0c * ] +
-	( get channel ) [ LIT &ch $1 ]
-	( note on )
-	DUP .Console/write DEO
-	OVR .Console/write DEO
-	#7f .Console/write DEO
-	( note off )
-	.Console/write DEO
-	.Console/write DEO
-	#00 .Console/write DEO
-
-RTN
-
-@op-note ( x y char -- )
-
-	POP
-	.head/addr LDZ2 STH2k
-	( octave ) INC2 ;get-port-right-value JSR2
-	( note ) STH2r #0002 ++ ;get-port-right-raw JSR2
-	( has note ) DUP CHAR-DOT ! ,&has-note JCN [ POP2 RTN ] &has-note
-	( has bang ) ;get-bang JSR2 ,&is-bang JCN [ POP2 RTN ] &is-bang
-	( get note ) GET-NOTE SWP [ #0c * ] + .Console/write DEO
-
-RTN
-
-@op-byte ( x y char -- )
-
-	POP
-	.head/addr LDZ2 STH2k
-	( hn ) INC2 ;get-port-right-value JSR2
-	( ln ) STH2r #0002 ++ ;get-port-right-value JSR2
-	( has bang ) ;get-bang JSR2 ,&is-bang JCN [ POP2 RTN ] &is-bang
-	#0f AND SWP #0f AND #40 SFT + .Console/write DEO
 
 RTN
 
@@ -1231,6 +762,11 @@ RTN
 		INC GTHk ,&ver JCN
 	POP2
 
+	( draw guide overlay )
+	.guide LDZ #00 = ,&no-guide JCN
+		;draw-guide JSR2
+		&no-guide
+
 RTN
 
 @get-color ( -- type )
@@ -1269,6 +805,17 @@ RTN
 	POP2 #00
 
 RTN
+
+@draw-guide ( -- )
+
+	#0010 .Screen/x DEO2
+	#0010 .Screen/y DEO2
+
+	;&test #01 ;draw-str JSR2
+
+RTN
+
+	&test "hello-there $1
 
 @draw-str ( str* color -- )
 
@@ -1554,53 +1101,5 @@ RTN
 
 RTN
 
-@untitled-txt  "untitled.orca $1
-
-@lc-notes
-	00 00 00 00 00 00 00 00
-	00 00
-	0a 0c 01 03 05 06 08 0a
-	0c 0d 0f 11 12 14 16 18
-	19 1b 1d 1e 20 22 24 25
-	27 29
-
-@uc-notes
-	00 00 00 00 00 00 00 00
-	00 00
-	09 0b 00 02 04 05 07 09
-	0b 0c 0e 10 11 13 15 17
-	18 1a 1c 1d 1f 21 23 24
-	26 28
-
-@values ( char to b36 )
-	00 00 00 00 00 00 00 00
-	00 00 00 00 00 00 00 00
-	00 01 02 03 04 05 06 07
-	08 09 00 00 00 00 00 00
-	00 0a 0b 0c 0d 0e 0f 10
-	11 12 13 14 15 16 17 18
-	19 1a 1b 1c 1d 1e 1f 20
-	21 22 23 00 00 00 00 00
-	00 0a 0b 0c 0d 0e 0f 10
-	11 12 13 14 15 16 17 18
-	19 1a 1b 1c 1d 1e 1f 20
-	21 22 23 00 00 00 00 00
-
-@b36clc ( b36 to char-lc )
-	30 31 32 33 34 35 36 37
-	38 39 61 62 63 64 65 66
-	67 68 69 6a 6b 6c 6d 6e
-	6f 70 71 72 73 74 75 76
-	77 78 79 7a
-
-@cell-styles
-	03 ( 0 normal )
-	03 ( 1 locked )
-	01 ( 2 port-unlocked )
-	04 ( 3 operator )
-	02 ( 4 port-locked )
-	08 ( 5 port-output )
-	09 ( 6 selected )
-	0c ( 7 io )
-
+~src/opcodes.tal
 ~src/assets.tal

@@ -1,0 +1,587 @@
+( orca/opcodes )
+
+@op-table
+	:op-a :op-b :op-c :op-d :op-e :op-f :op-g :op-h
+	:op-i :op-j :op-k :op-l :op-m :op-n :op-o :op-p
+	:op-q :op-r :op-s :op-t :op-u :op-v :op-w :op-x
+	:op-y :op-z
+	&docs
+	:op-a/docs :op-b/docs :op-c/docs :op-d/docs :op-e/docs :op-f/docs :op-g/docs :op-h/docs
+	:op-i/docs :op-j/docs :op-k/docs :op-l/docs :op-m/docs :op-n/docs :op-o/docs :op-p/docs
+	:op-q/docs :op-r/docs :op-s/docs :op-t/docs :op-u/docs :op-v/docs :op-w/docs :op-x/docs
+	:op-y/docs :op-z/docs
+	&func
+	:op-a/func :op-b/func :op-c/func :op-d/func :op-e/func :op-f/func :op-g/func :op-h/func
+	:op-i/func :op-j/func :op-k/func :op-l/func :op-m/func :op-n/func :op-o/func :op-p/func
+	:op-q/func :op-r/func :op-s/func :op-t/func :op-u/func :op-v/func :op-w/func :op-x/func
+	:op-y/func :op-z/func
+
+@op-a
+	"add $1
+	&docs "A_Outputs_sum_of_inputs $1
+	&func ( addr* -- ) 
+
+	STH2k
+	( a-val ) DEC2 ;get-port-left-value JSR2
+	( b-raw ) STH2kr INC2 ;get-port-right-raw JSR2
+		( get case ) DUP IS-UC ,&case STR
+		( to value ) GET-VALUE
+	( res ) +
+	( set case ) GET-CHAR DUP #60 > [ LIT &case $1 ] AND 20* -
+	( output ) STH2r BELOW ;set-port-output JSR2
+
+RTN
+
+@op-b
+	"subtract $1
+	&docs "B_Outputs_difference_of_inputs $1
+	&func ( addr* -- ) 
+
+	STH2k
+	( get a ) DEC2 ;get-port-left-value JSR2
+	( get b ) STH2kr INC2 ;get-port-right-raw JSR2
+		( get case ) DUP IS-UC ,&case STR
+		( to value ) GET-VALUE
+	( res ) - DUP #80 < ,&bounce JCN #24 SWP - &bounce
+	( set case ) GET-CHAR DUP #60 > [ LIT &case $1 ] AND 20* -
+	( output ) STH2r BELOW ;set-port-output JSR2
+
+RTN
+
+@op-c
+	"clock $1
+	&docs "C_Outputs_modulo_of_frame $1
+	&func ( addr* -- ) 
+
+	STH2k
+	( get rate ) DEC2 ;get-port-left-value JSR2 1MIN
+	( get mod ) STH2kr INC2 ;get-port-right-raw JSR2
+		( get case ) DUP IS-UC ,&case STR
+		( to value ) GET-VALUE 1MIN
+	( res ) TOS ROT TOS .timer/frame LDZ2 SWP2 // SWP2 MOD2 NIP
+	( set case ) GET-CHAR DUP #60 > [ LIT &case $1 ] AND 20* -
+	( output ) STH2r BELOW ;set-port-output JSR2
+
+RTN
+
+@op-d
+	"delay $1
+	&docs "D_Bangs_on_modulo_of_frame $1
+	&func ( addr* -- ) 
+
+	STH2k
+	( get rate ) DEC2 ;get-port-left-value JSR2 1MIN
+	( get mod ) STH2kr INC2 ;get-port-right-value JSR2 1MIN
+	( res ) * TOS .timer/frame LDZ2 SWP2 MOD2 #0000 ==
+	( bang on equal ) #fc * CHAR-DOT +
+	( output ) STH2r BELOW ;set-port-output JSR2
+
+RTN
+
+@op-e
+	"east $1
+	&docs "E_Moves_eastward_or_bangs $1
+	&func ( addr* -- ) 
+
+	STH2k GET-CELL ,&self STR
+	( wall ) .head/x LDZ INC .grid/width LDZ = ,&collide JCN
+	( cell ) STH2kr INC2 GET-CELL CHAR-DOT ! ,&collide JCN
+	( write new ) [ LIT &self $1 ] STH2kr INC2 ;set-port-raw JSR2
+	( erase old ) CHAR-DOT STH2r ;set-port-raw JSR2
+	RTN
+	&collide
+	( output ) CHAR-BANG STH2r ;set-port-output JSR2
+
+RTN
+
+@op-f
+	"if $1
+	&docs "F_Bangs_if_inputs_are_equal $1
+	&func ( addr* -- ) 
+
+	STH2k
+	( get a ) DEC2 ;get-port-left-raw JSR2
+	( get b ) STH2kr INC2 ;get-port-right-raw JSR2
+	( bang on equal ) = [ #fc * CHAR-DOT +  ]
+	( output ) STH2r BELOW ;set-port-output JSR2
+
+RTN
+
+@op-g
+	"generator $1
+	&docs "G_Writes_operands_with_offset $1
+	&func ( addr* -- ) 
+
+	STH2k
+	( x ) STH2kr #0003 -- ;get-port-left-value JSR2
+		( load ) TOS ++
+	( y ) STH2kr #0002 -- ;get-port-left-value JSR2
+		( load ) TOS INC2 [ #00 .grid/width LDZ ** ] ++
+	,&save STR2
+	( len ) STH2kr DEC2 ;get-port-left-value JSR2 1MIN
+	#00
+	&loop
+		( load ) DUP TOS STH2kr INC2 ++ ;get-port-right-raw JSR2
+		( save ) OVR TOS [ LIT2 &save $2 ] ++ ;set-port-output JSR2
+		INC GTHk ,&loop JCN
+	POP2
+	POP2r	
+
+RTN
+
+@op-h
+	"hold $1
+	&docs "H_Holds_southward_operand $1
+	&func ( addr* -- ) 
+
+	BELOW
+	( set lock ) DUP2 #01 ROT ROT SET-LOCK
+	( set type ) OUTPUT-TYPE ROT ROT SET-TYPE
+
+RTN
+
+@op-i
+	"increment $1
+	&docs "I_Increments_southward_operand $1
+	&func ( addr* -- ) 
+
+	STH2k
+	( step ) DEC2 ;get-port-left-value JSR2
+	( mod ) STH2kr INC2 ;get-port-right-raw JSR2
+		( get case ) DUP IS-UC ,&case STR
+		( to value ) GET-VALUE 1MIN
+	( res ) SWP STH2kr BELOW [ GET-CELL GET-VALUE ] + SWP MOD
+	( set case ) GET-CHAR DUP #60 > [ LIT &case $1 ] AND 20* -
+	( output ) STH2r BELOW ;set-port-output JSR2
+
+RTN
+
+@op-j
+	"jumper $1
+	&docs "J_Outputs_northward_operand $1
+	&func ( addr* -- ) 
+
+	STH2k
+	( get above ) ABOVE ;get-port-left-raw JSR2
+	( set below ) STH2r BELOW ;set-port-output JSR2
+
+RTN
+
+@op-k
+	"konkat $1
+	&docs "K_Reads_multiple_variables $1
+	&func ( addr* -- ) 
+
+	STH2k
+	DEC2 ;get-port-left-value JSR2 #00
+	&loop
+		DUP TOS STH2kr INC2 ++ STH2k ;get-port-right-raw JSR2
+		DUP CHAR-DOT = ,&skip JCN
+			( load ) DUP GET-VALUE .variables + LDZ
+			( save ) STH2kr BELOW ;set-port-output JSR2
+			&skip
+		POP
+		POP2r
+		INC GTHk ;&loop JCN2
+	POP2
+	POP2r
+
+RTN
+
+@op-l
+	"lesser $1
+	&docs "L_Outputs_smallest_of_inputs $1
+	&func ( addr* -- ) 
+
+	STH2k
+	( get a ) DEC2 ;get-port-left-value JSR2
+	( get b ) STH2kr INC2 ;get-port-right-raw JSR2
+		( get case ) DUP IS-UC ,&case STR
+		( to value ) GET-VALUE
+	( res ) LTHk JMP SWP POP
+	( set case ) GET-CHAR DUP #60 > [ LIT &case $1 ] AND 20* -
+	( output ) STH2r BELOW ;set-port-output JSR2
+
+RTN
+
+@op-m
+	"multiply $1
+	&docs "M_Outputs_product_of_inputs $1
+	&func ( addr* -- ) 
+
+	STH2k
+	( get a ) DEC2 ;get-port-left-value JSR2
+	( get b ) STH2kr INC2 ;get-port-right-raw JSR2
+		( get case ) DUP IS-UC ,&case STR
+		( to value ) GET-VALUE
+	( res ) *
+	( set case ) GET-CHAR DUP #60 > [ LIT &case $1 ] AND 20* -
+	( output ) STH2r BELOW ;set-port-output JSR2
+
+RTN
+
+@op-n
+	"north $1
+	&docs "N_Moves_Northward_or_bangs $1
+	&func ( addr* -- ) 
+
+	STH2k GET-CELL ,&self STR
+	( wall ) .head/y LDZ DEC #ff = ,&collide JCN
+	( cell ) STH2kr ABOVE GET-CELL CHAR-DOT ! ,&collide JCN
+	( write new ) [ LIT &self $1 ] STH2kr ABOVE ;set-port-raw JSR2
+	( erase old ) CHAR-DOT STH2r ;set-port-raw JSR2
+	RTN
+	&collide
+	( output ) CHAR-BANG STH2r ;set-port-output JSR2
+
+RTN
+
+@op-o
+	"read $1
+	&docs "O_Reads_operand_with_offset $1
+	&func ( addr* -- ) 
+
+	STH2k
+	( x ) STH2kr #0002 -- ;get-port-left-value JSR2 INC TOS ++
+	( y ) STH2kr DEC2 ;get-port-left-value JSR2 TOS #00 .grid/width LDZ ** ++
+	( val ) ;get-port-right-raw JSR2
+	( output ) STH2r BELOW ;set-port-output JSR2
+
+RTN
+
+@op-p
+	"push $1
+	&docs "P_Writes_eastward_operand $1
+	&func ( addr* -- ) 
+
+	STH2k
+	( key ) #0002 -- ;get-port-left-value JSR2
+	( len ) STH2kr DEC2 ;get-port-left-value JSR2 1MIN
+	#00
+	&loop
+		#00 OVR STH2kr BELOW ++ STH2
+		( lock ) #01 STH2kr SET-LOCK
+		( type ) LOCKED-TYPE STH2r SET-TYPE
+		INC GTHk ,&loop JCN
+	POP
+	( read ) STH2kr INC2 ;get-port-right-raw JSR2
+	( output ) ROT ROT MOD TOS STH2r BELOW ++ ;set-port-output JSR2
+
+RTN
+
+@op-q
+	"query $1
+	&docs "Q_Reads_operands_with_offset $1
+	&func ( addr* -- ) 
+
+	STH2k
+	( x ) STH2kr #0003 -- ;get-port-left-value JSR2
+		( load ) TOS INC2 ++
+	( y ) STH2kr #0002 -- ;get-port-left-value JSR2
+		( load ) TOS [ #00 .grid/width LDZ ** ] ++
+	,&load STR2
+	( len ) STH2kr DEC2 ;get-port-left-value JSR2 1MIN
+		( save ) DUP TOS STH2kr BELOW SWP2 -- INC2 ,&save STR2
+	#00
+	&loop
+		( load ) DUP TOS [ LIT2 &load $2 ] ++ ;get-port-right-raw JSR2
+		( save ) OVR TOS [ LIT2 &save $2 ] ++ ;set-port-output JSR2
+		INC GTHk ,&loop JCN
+	POP2
+	POP2r
+
+RTN
+
+@op-r
+	"random $1
+	&docs "R_Outputs_random_value $1
+	&func ( addr* -- ) 
+
+	STH2k
+	( a-min ) DEC2 ;get-port-left-value JSR2
+	( b-max ) STH2kr INC2 ;get-port-right-raw JSR2
+		( get case ) DUP IS-UC ,&case STR
+		( to value ) GET-VALUE 1MIN
+	( mod ) OVR - ;prng JSR2 + SWP MOD +
+	( set case ) GET-CHAR DUP #60 > [ LIT &case $1 ] AND 20* -
+	( output ) STH2r BELOW ;set-port-output JSR2
+
+RTN
+
+@op-s
+	"south $1
+	&docs "S_Moves_southward_or_bangs $1
+	&func ( addr* -- ) 
+
+	STH2k GET-CELL ,&self STR
+	( wall ) .head/y LDZ INC .grid/height LDZ = ,&collide JCN
+	( cell ) STH2kr BELOW GET-CELL CHAR-DOT ! ,&collide JCN
+	( write new ) [ LIT &self $1 ] STH2kr BELOW ;set-port-raw JSR2
+	( erase old ) CHAR-DOT STH2r ;set-port-raw JSR2
+	RTN
+	&collide
+	( output ) CHAR-BANG STH2r ;set-port-output JSR2
+
+RTN
+
+@op-t
+	"track $1
+	&docs "T_Reads_eastward_operand $1
+	&func ( addr* -- ) 
+
+	STH2k
+	( key ) #0002 -- ;get-port-left-value JSR2
+	( len ) STH2kr DEC2 ;get-port-left-value JSR2 1MIN
+	#00
+	&loop
+		#00 OVR STH2kr INC2 ++ STH2
+		( lock ) #01 STH2kr SET-LOCK
+		( type ) LOCKED-TYPE STH2r SET-TYPE
+		INC GTHk ,&loop JCN
+	POP
+	( read ) MOD TOS STH2kr INC2 ++ ;get-port-right-raw JSR2
+	STH2r BELOW ;set-port-output JSR2
+
+RTN
+
+@op-u
+	"Uclid $1
+	&docs "U_Bangs_on_Euclidean_rhythm $1
+	&func ( addr* -- ) 
+
+	STH2k
+	( step ) DEC2 ;get-port-left-value JSR2
+	( max ) STH2kr INC2 ;get-port-right-value JSR2 1MIN STH2
+	( frame + max - 1 ) .timer/frame LDZ2 STHkr TOS ++ DEC2
+	( * step ) OVRr STHr TOS **
+	( % max ) STHkr TOS MOD2
+	( + step ) SWPr STHr TOS ++
+	( bucket >= max ) STHr TOS << #01 !
+	( bang if equal ) #fc * CHAR-DOT +
+	STH2r BELOW ;set-port-output JSR2
+
+RTN
+
+@op-v
+	"variable $1
+	&docs "V_Reads_and_writes_variable $1
+	&func ( addr* -- ) 
+
+	STH2k
+	( key ) DEC2 ;get-port-left-raw JSR2
+	( val ) STH2kr INC2 ;get-port-right-raw JSR2
+	DUP CHAR-DOT = ,&idle JCN
+	OVR GET-VALUE ,&save JCN
+	( load )
+		NIP GET-VALUE .variables + LDZ STH2r BELOW ;set-port-output JSR2 RTN
+	&save
+		SWP GET-VALUE .variables + STZ POP2r RTN
+	&idle
+		POP2 POP2r
+
+RTN
+
+@op-w
+	"west $1
+	&docs "W_Moves_westward_or_bangs $1
+	&func ( addr* -- ) 
+
+	STH2k GET-CELL ,&self STR
+	( wall ) .head/x LDZ DEC #ff = ,&collide JCN
+	( cell ) STH2kr DEC2 GET-CELL CHAR-DOT ! ,&collide JCN
+	( write new ) [ LIT &self $1 ] STH2kr DEC2 ;set-port-raw JSR2
+	( erase old ) CHAR-DOT STH2r ;set-port-raw JSR2
+	RTN
+	&collide
+	( output ) CHAR-BANG STH2r ;set-port-output JSR2
+
+RTN
+
+@op-x
+	"write $1
+	&docs "X_Writes_operand_with_offset $1
+	&func ( addr* -- ) 
+
+	STH2k
+	( x ) STH2kr #0002 -- ;get-port-left-value JSR2 TOS ++
+	( y ) STH2kr DEC2 ;get-port-left-value JSR2 INC TOS #00 .grid/width LDZ ** ++
+	( val ) STH2r INC2 ;get-port-right-raw JSR2
+	( output ) ROT ROT ;set-port-output JSR2
+
+RTN
+
+@op-y
+	"yumper $1
+	&docs "Y_Outputs_westward_operand $1
+	&func ( addr* -- ) 
+
+	STH2k
+	( get left ) DEC2 ;get-port-left-raw JSR2
+	( set right ) STH2r INC2 ;set-port-output JSR2
+
+RTN
+
+@op-z
+	"lerp $1
+	&docs "Z_Transitions_operand_to_input $1
+	&func ( addr* -- ) 
+
+	STH2k
+	( rate ) DEC2 ;get-port-left-value JSR2
+	( target ) STH2kr INC2 ;get-port-right-raw JSR2
+		( get case ) DUP IS-UC ,&case STR
+		( to value ) GET-VALUE
+	( val ) STH2kr BELOW [ GET-CELL GET-VALUE ]
+	( res ) ;lerp JSR2
+	( set case ) GET-CHAR DUP #60 > [ LIT &case $1 ] AND 20* -
+	( output ) STH2r BELOW ;set-port-output JSR2
+
+RTN
+
+( special )
+
+@op-bang
+	"bang $1
+	&docs "*_Bangs_neighboring_operands $1
+	&func ( char -- ) 
+
+	POP
+	CHAR-DOT .head/addr LDZ2 SET-CELL
+
+RTN
+
+@op-comment
+	"comment $1
+	&docs "#_Comments_a_line $1
+	&func
+ ( char -- ) 
+	POP
+	.head/addr LDZ2 STH2k
+	( bounds )
+	#00 .grid/width LDZ .head/x LDZ - ++
+	STH2r INC2
+	&loop
+		( set lock ) DUP2 #01 ROT ROT SET-LOCK
+		( set type ) DUP2 LOCKED-TYPE ROT ROT SET-TYPE
+		( stop at hash ) DUP2 GET-CELL CHAR-HASH = ,&end JCN
+		INC2 GTH2k ,&loop JCN
+	&end
+	POP2 POP2
+
+RTN
+
+@op-synth
+	"synth $1
+	&docs "=_Play_note_with_uxn_synth $1
+	&func
+ ( char -- ) 
+	POP
+	.head/addr LDZ2 STH2k
+	( channel ) INC2 ;get-port-right-value JSR2 [ ,&ch STR ]
+	( octave ) STH2kr #0002 ++ ;get-port-right-value JSR2
+	( note ) STH2r #0003 ++ ;get-port-right-raw JSR2
+	( has note ) DUP CHAR-DOT ! ,&has-note JCN [ POP2 RTN ] &has-note
+	( has bang ) ;get-bang JSR2 ,&is-bang JCN [ POP2 RTN ] &is-bang
+	( get note ) GET-NOTE SWP [ #0c * ] +
+	( play ) .Audio0/pitch [ LIT &ch $1 ] 4MOD 10* + DEO
+
+RTN
+
+@op-midi
+	"midi $1
+	&docs ":_Send_a_midi_note $1
+	&func ( char -- ) 
+
+	POP
+	.head/addr LDZ2 STH2k
+	( channel ) INC2 ;get-port-right-value JSR2 [ ,&ch STR ]
+	( octave ) STH2kr #0002 ++ ;get-port-right-value JSR2
+	( note ) STH2r #0003 ++ ;get-port-right-raw JSR2
+	( has note ) DUP CHAR-DOT ! ,&has-note JCN [ POP2 RTN ] &has-note
+	( has bang ) ;get-bang JSR2 ,&is-bang JCN [ POP2 RTN ] &is-bang
+	( get note ) GET-NOTE SWP [ #0c * ] +
+	( get channel ) [ LIT &ch $1 ]
+	( note on )
+	DUP .Console/write DEO
+	OVR .Console/write DEO
+	#7f .Console/write DEO
+	( note off )
+	.Console/write DEO
+	.Console/write DEO
+	#00 .Console/write DEO
+
+RTN
+
+@op-pitch
+	"pitch $1
+	&docs "/_Send_a_raw_pitch_byte $1
+	&func ( char -- ) 
+
+	POP
+	.head/addr LDZ2 STH2k
+	( octave ) INC2 ;get-port-right-value JSR2
+	( note ) STH2r #0002 ++ ;get-port-right-raw JSR2
+	( has note ) DUP CHAR-DOT ! ,&has-note JCN [ POP2 RTN ] &has-note
+	( has bang ) ;get-bang JSR2 ,&is-bang JCN [ POP2 RTN ] &is-bang
+	( get note ) GET-NOTE SWP [ #0c * ] + .Console/write DEO
+
+RTN
+
+@op-byte
+	"byte $1
+	&docs "/_Send_a_raw_hexadecimal_byte $1
+	&func ( char -- ) 
+
+	POP
+	.head/addr LDZ2 STH2k
+	( hn ) INC2 ;get-port-right-value JSR2
+	( ln ) STH2r #0002 ++ ;get-port-right-value JSR2
+	( has bang ) ;get-bang JSR2 ,&is-bang JCN [ POP2 RTN ] &is-bang
+	#0f AND SWP #0f AND #40 SFT + .Console/write DEO
+
+RTN
+
+( helpers )
+
+@set-port-output ( value addr* -- )
+
+	( set lock ) DUP2 #01 ROT ROT SET-LOCK
+	( set type ) DUP2 OUTPUT-TYPE ROT ROT SET-TYPE
+	( set data ) SET-CELL
+
+RTN
+
+@set-port-raw ( value addr* -- )
+
+	( set lock ) DUP2 #01 ROT ROT SET-LOCK
+	( set type ) DUP2 #00 ROT ROT SET-TYPE
+	( set data ) SET-CELL
+
+RTN
+
+@get-port-left-raw ( addr* -- value )
+
+	( set type ) DUP2 PORTEL-TYPE ROT ROT SET-TYPE
+	( get data ) GET-CELL
+
+RTN
+
+@get-port-left-value ( addr* -- value )
+
+	,get-port-left-raw JSR GET-VALUE
+
+RTN
+
+@get-port-right-raw ( addr* -- value )
+
+	( set lock ) DUP2 #01 ROT ROT SET-LOCK
+	( set type ) DUP2 PORTER-TYPE ROT ROT SET-TYPE
+	( get data ) GET-CELL
+
+RTN
+
+@get-port-right-value ( addr* -- value )
+
+	,get-port-right-raw JSR GET-VALUE
+
+RTN
