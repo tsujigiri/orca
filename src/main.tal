@@ -298,8 +298,9 @@ BRK
 	[ LIT 'o ] !~ ,&no-open JCN ;load-file JSR2 &no-open
 	[ LIT 's ] !~ ,&no-save JCN ;save-file JSR2 &no-save
 	( select-all/insert )
-	[ LIT 'a ] !~ ,&no-expand JCN ;set-selection-all JSR2 &no-expand
-	[ LIT 'i ] !~ ,&no-insert JCN ;toggle-insert JSR2 &no-insert
+	[ LIT 'a ] !~ ,&no-a JCN ;set-selection-all JSR2 &no-a
+	[ LIT 'i ] !~ ,&no-i JCN ;toggle-insert JSR2 &no-i
+	[ LIT 'h ] !~ ,&no-h JCN ;toggle-guide JSR2 &no-h
 	( tempo )
 	[ LIT ', ] !~ ,&no-slow JCN .timer/speed LDZ #01 - ;set-speed JSR2 &no-slow
 	[ LIT '. ] !~ ,&no-fast JCN .timer/speed LDZ INC ;set-speed &no-fast
@@ -514,6 +515,13 @@ RTN
 	.timer/playing TOGGLE
 	RELEASE-MOUSE
 	;draw-toolbar JSR2
+
+RTN
+
+@toggle-guide ( -- )
+
+	.guide TOGGLE
+	;draw-grid JSR2
 
 RTN
 
@@ -808,14 +816,18 @@ RTN
 
 @draw-guide ( -- )
 
-	#0010 .Screen/x DEO2
-	#0010 .Screen/y DEO2
-
-	;&test #01 ;draw-str JSR2
+	#0020 #0000
+	&loop
+		( x ) DUP2 10// #0100 ** .grid/x1 LDZ2 ++ #0020 ++ .Screen/x DEO2
+		( y ) DUP2 #000f AND2 10** .grid/x1 LDZ2 ++ #0020 ++ .Screen/y DEO2
+		DUP2 2** ;op-table/docs ++ LDA2 
+		( glyph ) LDAk #08 ;draw-char JSR2 
+		( space ) 20 #00 ;draw-char JSR2
+		( text ) INC2 #01 ;draw-str JSR2
+		INC2 GTH2k ,&loop JCN
+	POP2 POP2
 
 RTN
-
-	&test "hello-there $1
 
 @draw-str ( str* color -- )
 

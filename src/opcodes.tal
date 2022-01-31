@@ -4,12 +4,14 @@
 	:op-a :op-b :op-c :op-d :op-e :op-f :op-g :op-h
 	:op-i :op-j :op-k :op-l :op-m :op-n :op-o :op-p
 	:op-q :op-r :op-s :op-t :op-u :op-v :op-w :op-x
-	:op-y :op-z
+	:op-y :op-z 
+	:op-bang :op-comment :op-synth :op-midi :op-pitch :op-byte
 	&docs
 	:op-a/docs :op-b/docs :op-c/docs :op-d/docs :op-e/docs :op-f/docs :op-g/docs :op-h/docs
 	:op-i/docs :op-j/docs :op-k/docs :op-l/docs :op-m/docs :op-n/docs :op-o/docs :op-p/docs
 	:op-q/docs :op-r/docs :op-s/docs :op-t/docs :op-u/docs :op-v/docs :op-w/docs :op-x/docs
 	:op-y/docs :op-z/docs
+	:op-bang/docs :op-comment/docs :op-synth/docs :op-midi/docs :op-pitch/docs :op-byte/docs
 	&func
 	:op-a/func :op-b/func :op-c/func :op-d/func :op-e/func :op-f/func :op-g/func :op-h/func
 	:op-i/func :op-j/func :op-k/func :op-l/func :op-m/func :op-n/func :op-o/func :op-p/func
@@ -18,7 +20,7 @@
 
 @op-a
 	"add $1
-	&docs "A_Outputs_sum_of_inputs $1
+	&docs 'A "Outputs 20 "sum 20 "of 20 "inputs $1
 	&func ( addr* -- ) 
 
 	STH2k
@@ -34,7 +36,7 @@ RTN
 
 @op-b
 	"subtract $1
-	&docs "B_Outputs_difference_of_inputs $1
+	&docs 'B "Outputs 20 "difference 20 "of 20 "inputs $1
 	&func ( addr* -- ) 
 
 	STH2k
@@ -50,7 +52,7 @@ RTN
 
 @op-c
 	"clock $1
-	&docs "C_Outputs_modulo_of_frame $1
+	&docs 'C "Outputs 20 "modulo 20 "of 20 "frame $1
 	&func ( addr* -- ) 
 
 	STH2k
@@ -66,7 +68,7 @@ RTN
 
 @op-d
 	"delay $1
-	&docs "D_Bangs_on_modulo_of_frame $1
+	&docs 'D "Bangs 20 "on 20 "modulo 20 "of 20 "frame $1
 	&func ( addr* -- ) 
 
 	STH2k
@@ -80,7 +82,7 @@ RTN
 
 @op-e
 	"east $1
-	&docs "E_Moves_eastward_or_bangs $1
+	&docs 'E "Moves 20 "eastward 20 "or 20 "bangs $1
 	&func ( addr* -- ) 
 
 	STH2k GET-CELL ,&self STR
@@ -96,7 +98,7 @@ RTN
 
 @op-f
 	"if $1
-	&docs "F_Bangs_if_inputs_are_equal $1
+	&docs 'F "Bangs 20 "if 20 "inputs 20 "are 20 "equal $1
 	&func ( addr* -- ) 
 
 	STH2k
@@ -109,7 +111,7 @@ RTN
 
 @op-g
 	"generator $1
-	&docs "G_Writes_operands_with_offset $1
+	&docs 'G "Writes 20 "operands 20 "with 20 "offset $1
 	&func ( addr* -- ) 
 
 	STH2k
@@ -131,7 +133,7 @@ RTN
 
 @op-h
 	"hold $1
-	&docs "H_Holds_southward_operand $1
+	&docs 'H "Holds 20 "southward 20 "operand $1
 	&func ( addr* -- ) 
 
 	BELOW
@@ -142,7 +144,7 @@ RTN
 
 @op-i
 	"increment $1
-	&docs "I_Increments_southward_operand $1
+	&docs 'I "Increments 20 "southward 20 "operand $1
 	&func ( addr* -- ) 
 
 	STH2k
@@ -158,7 +160,7 @@ RTN
 
 @op-j
 	"jumper $1
-	&docs "J_Outputs_northward_operand $1
+	&docs 'J "Outputs 20 "northward 20 "operand $1
 	&func ( addr* -- ) 
 
 	STH2k
@@ -169,7 +171,7 @@ RTN
 
 @op-k
 	"konkat $1
-	&docs "K_Reads_multiple_variables $1
+	&docs 'K "Reads 20 "multiple 20 "variables $1
 	&func ( addr* -- ) 
 
 	STH2k
@@ -190,7 +192,7 @@ RTN
 
 @op-l
 	"lesser $1
-	&docs "L_Outputs_smallest_of_inputs $1
+	&docs 'L "Outputs 20 "smallest 20 "of 20 "inputs $1
 	&func ( addr* -- ) 
 
 	STH2k
@@ -206,7 +208,7 @@ RTN
 
 @op-m
 	"multiply $1
-	&docs "M_Outputs_product_of_inputs $1
+	&docs 'M "Outputs 20 "product 20 "of 20 "inputs $1
 	&func ( addr* -- ) 
 
 	STH2k
@@ -222,7 +224,7 @@ RTN
 
 @op-n
 	"north $1
-	&docs "N_Moves_Northward_or_bangs $1
+	&docs 'N "Moves 20 "Northward 20 "or 20 "bangs $1
 	&func ( addr* -- ) 
 
 	STH2k GET-CELL ,&self STR
@@ -238,7 +240,7 @@ RTN
 
 @op-o
 	"read $1
-	&docs "O_Reads_operand_with_offset $1
+	&docs 'O "Reads 20 "operand 20 "with 20 "offset $1
 	&func ( addr* -- ) 
 
 	STH2k
@@ -251,7 +253,7 @@ RTN
 
 @op-p
 	"push $1
-	&docs "P_Writes_eastward_operand $1
+	&docs 'P "Writes 20 "eastward 20 "operand $1
 	&func ( addr* -- ) 
 
 	STH2k
@@ -271,7 +273,7 @@ RTN
 
 @op-q
 	"query $1
-	&docs "Q_Reads_operands_with_offset $1
+	&docs 'Q "Reads 20 "operands 20 "with 20 "offset $1
 	&func ( addr* -- ) 
 
 	STH2k
@@ -294,7 +296,7 @@ RTN
 
 @op-r
 	"random $1
-	&docs "R_Outputs_random_value $1
+	&docs 'R "Outputs 20 "random 20 "value $1
 	&func ( addr* -- ) 
 
 	STH2k
@@ -310,7 +312,7 @@ RTN
 
 @op-s
 	"south $1
-	&docs "S_Moves_southward_or_bangs $1
+	&docs 'S "Moves 20 "southward 20 "or 20 "bangs $1
 	&func ( addr* -- ) 
 
 	STH2k GET-CELL ,&self STR
@@ -326,7 +328,7 @@ RTN
 
 @op-t
 	"track $1
-	&docs "T_Reads_eastward_operand $1
+	&docs 'T "Reads 20 "eastward 20 "operand $1
 	&func ( addr* -- ) 
 
 	STH2k
@@ -346,7 +348,7 @@ RTN
 
 @op-u
 	"Uclid $1
-	&docs "U_Bangs_on_Euclidean_rhythm $1
+	&docs 'U "Bangs 20 "on 20 "Euclidean 20 "rhythm $1
 	&func ( addr* -- ) 
 
 	STH2k
@@ -364,7 +366,7 @@ RTN
 
 @op-v
 	"variable $1
-	&docs "V_Reads_and_writes_variable $1
+	&docs 'V "Reads 20 "and 20 "writes 20 "variable $1
 	&func ( addr* -- ) 
 
 	STH2k
@@ -383,7 +385,7 @@ RTN
 
 @op-w
 	"west $1
-	&docs "W_Moves_westward_or_bangs $1
+	&docs 'W "Moves 20 "westward 20 "or 20 "bangs $1
 	&func ( addr* -- ) 
 
 	STH2k GET-CELL ,&self STR
@@ -399,7 +401,7 @@ RTN
 
 @op-x
 	"write $1
-	&docs "X_Writes_operand_with_offset $1
+	&docs 'X "Writes 20 "operand 20 "with 20 "offset $1
 	&func ( addr* -- ) 
 
 	STH2k
@@ -412,7 +414,7 @@ RTN
 
 @op-y
 	"yumper $1
-	&docs "Y_Outputs_westward_operand $1
+	&docs 'Y "Outputs 20 "westward 20 "operand $1
 	&func ( addr* -- ) 
 
 	STH2k
@@ -423,7 +425,7 @@ RTN
 
 @op-z
 	"lerp $1
-	&docs "Z_Transitions_operand_to_input $1
+	&docs 'Z "Transitions 20 "operand 20 "to 20 "input $1
 	&func ( addr* -- ) 
 
 	STH2k
@@ -442,7 +444,7 @@ RTN
 
 @op-bang
 	"bang $1
-	&docs "*_Bangs_neighboring_operands $1
+	&docs '* "Bangs 20 "neighboring 20 "operands $1
 	&func ( char -- ) 
 
 	POP
@@ -452,7 +454,7 @@ RTN
 
 @op-comment
 	"comment $1
-	&docs "#_Comments_a_line $1
+	&docs '# "Comments 20 "a 20 "line $1
 	&func
  ( char -- ) 
 	POP
@@ -472,7 +474,7 @@ RTN
 
 @op-synth
 	"synth $1
-	&docs "=_Play_note_with_uxn_synth $1
+	&docs '= "Play 20 "note 20 "with 20 "uxn 20 "synth $1
 	&func
  ( char -- ) 
 	POP
@@ -489,7 +491,7 @@ RTN
 
 @op-midi
 	"midi $1
-	&docs ":_Send_a_midi_note $1
+	&docs ': "Send 20 "a 20 "midi 20 "note $1
 	&func ( char -- ) 
 
 	POP
@@ -514,7 +516,7 @@ RTN
 
 @op-pitch
 	"pitch $1
-	&docs "/_Send_a_raw_pitch_byte $1
+	&docs '; "Send 20 "a 20 "raw 20 "pitch 20 "byte $1
 	&func ( char -- ) 
 
 	POP
@@ -529,7 +531,7 @@ RTN
 
 @op-byte
 	"byte $1
-	&docs "/_Send_a_raw_hexadecimal_byte $1
+	&docs '/ "Send 20 "a 20 "raw 20 "hexadecimal 20 "byte $1
 	&func ( char -- ) 
 
 	POP
