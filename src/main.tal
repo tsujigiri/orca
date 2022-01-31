@@ -560,22 +560,21 @@ BRK
 	DATA-LOCKS STH2kr ;mclr JSR2
 	DATA-TYPES STH2r ;mclr JSR2
 	;variables #0024 ;mclr JSR2
-	( reset head )
-	#0000 .head/addr STZ2
-	( do )
+	( reset head ) LIT2r 0000
 	.grid/height LDZ #00
 	&ver
 		DUP .head/y STZ
 		.grid/width LDZ #00
 		&hor
 			DUP .head/x STZ
-			.head/addr LDZ2
-				DUP2 GET-CELL ,run-char JSR
-				INC2 .head/addr STZ2
+			STH2kr .head/addr STZ2
+			STH2kr GET-CELL ,run-char JSR
+			INC2r
 			INC GTHk ,&hor JCN
 		POP2
 		INC GTHk ,&ver JCN
 	POP2
+	POP2r
 	;draw-grid JSR2
 	;draw-timer JSR2
 
@@ -752,9 +751,7 @@ RTN
 
 @draw-grid ( -- )
 
-	( reset head )
-	#0000 .head/addr STZ2
-	( do )
+	( reset head ) LIT2r 0000
 	.grid/height LDZ #00
 	&ver
 		DUP .head/y STZ
@@ -763,13 +760,14 @@ RTN
 		.grid/width LDZ #00
 		&hor
 			DUP .head/x STZ
+			STH2kr .head/addr STZ2
 			,get-char JSR ,get-color JSR ;draw-char JSR2
-			.head/addr LDZ2k INC2 ROT STZ2
+			INC2r 
 			INC GTHk ,&hor JCN
 		POP2
 		INC GTHk ,&ver JCN
 	POP2
-
+	POP2r
 	( draw guide overlay )
 	.guide LDZ #00 = ,&no-guide JCN
 		;draw-guide JSR2
