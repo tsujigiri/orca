@@ -818,11 +818,11 @@ RTN
 
 	#0020 #0000
 	&loop
-		( x ) DUP2 10// #0100 ** .grid/x1 LDZ2 ++ #0020 ++ .Screen/x DEO2
+		( x ) DUP2 #84 SFT2 .grid/x1 LDZ2 ++ #0020 ++ .Screen/x DEO2
 		( y ) DUP2 #000f AND2 10** .grid/x1 LDZ2 ++ #0020 ++ .Screen/y DEO2
 		DUP2 2** ;op-table/docs ++ LDA2
 		( glyph ) LDAk #08 ;draw-char JSR2
-		( space ) 20 #00 ;draw-char JSR2
+		( space ) #20 #00 ;draw-char JSR2
 		( text ) INC2 #01 ;draw-str JSR2
 		INC2 GTH2k ,&loop JCN
 	POP2 POP2
