@@ -17,7 +17,7 @@
 
 %SET-STATE   { #01 .state/changed STZ ;draw-state JSR2 }
 %RESET-STATE { #00 .state/changed STZ ;draw-state JSR2 }
-%RESET-SELECTION { .selection/x1 LDZ2 ;set-selection-from JSR2 }
+%RESET-SELECTION { .selection/from LDZ2 ;set-selection-from JSR2 }
 %RESET-INSERT { #00 .selection/insert STZ }
 
 ( helpers )
@@ -57,19 +57,17 @@
 @state
 	&timer $1 &changed $1
 @filepath $40
+@grid
+	&x1 $2 &y1 $2
+	&x2 $2 &y2 $2
+	&size &width $1 &height $1
 @selection
-	&from
-	&x1 $1 &y1 $1
-	&to
-	&x2 $1 &y2 $1
+	&from &x1 $1 &y1 $1
+	&to   &x2 $1 &y2 $1
 	&insert $1
 @cursor
 	&x $2 &y $2
 	&last $1
-@grid
-	&x1 $2 &y1 $2
-	&x2 $2 &y2 $2
-	&width $1 &height $1
 @toolbar
 	&x1 $2 &y1 $2
 	&x2 $2 &y2 $2
@@ -398,51 +396,32 @@ BRK
 
 @set-selection-all ( -- )
 
-	#0000 .grid/width LDZ2 ;set-selection JSR2
+	#0000 .selection/from STZ2
+	.grid/size LDZ2 .selection/to STZ2
+	;draw-grid JSR2
+	;draw-position JSR2
 
 RTN
 
 @set-selection-from ( x y -- )
 
-	DUP2 ,set-selection JSR
+	DUP2 .selection/from STZ2
+	.selection/to STZ2
+	;draw-grid JSR2
+	;draw-position JSR2
 
 RTN
 
 @set-selection-to ( x y -- )
 
-	.selection/y1 LDZ MAX STH
-	.selection/x1 LDZ MAX STHr
+	.selection/y1 LDZ MAX .grid/height LDZ DEC MIN STH
+	.selection/x1 LDZ MAX .grid/width LDZ DEC MIN STHr
 	DUP2 .selection/to LDZ2 == ,&no-change JCN
 		DUP2 .selection/to STZ2
 		;draw-grid JSR2
 		;draw-position JSR2
 		&no-change
 	POP2
-
-RTN
-
-@set-selection ( x y x2 y2 -- )
-
-	( keep to over from )
-	OVR2 OVR2 ROT MAX ROT ROT MAX SWP NIP2
-	( changed ) LITr 00
-	,clamp-position JSR
-		DUP2 .selection/x2 LDZ2 !! JMP INCr
-		.selection/x2 STZ2
-	,clamp-position JSR
-		DUP2 .selection/x1 LDZ2 !! JMP INCr
-		.selection/x1 STZ2
-	STHr #00 = ,&no-redraw JCN
-		#aa DEBUG
-		;draw-grid JSR2
-		;draw-position JSR2
-		&no-redraw
-
-RTN
-
-@clamp-position ( x y -- x y )
-
-	.grid/height LDZ #01 - MIN SWP .grid/width LDZ #01 - MIN SWP
 
 RTN
 
@@ -493,7 +472,7 @@ RTN
 			.selection/x2 LDZ STHkr + .selection/x2 STZ
 		&no-hor POPr
 	( clamp result )
-	.selection/x1 LDZ2 .selection/x2 LDZ2 ;set-selection JSR2
+	.selection/to LDZ2 ;set-selection-to JSR2
 	( drag )
 	,&drag LDR #00 = ,&no-drag-end JCN
 		;paste-snarf JSR2
@@ -1184,7 +1163,7 @@ RTN
 	.selection/y1 LDZ #01 ;draw-byte JSR2
 
 	;font/selector .selection/insert LDZ TOS 10** ++
-		#02 .selection/x1 LDZ2 .selection/x2 LDZ2 == +
+		#02 .selection/from LDZ2 .selection/to LDZ2 == +
 		;draw-sprite JSR2
 
 RTN
