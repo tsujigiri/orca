@@ -48,7 +48,7 @@ To display the list of operators inside of Orca, use `CmdOrCtrl+G`.
 - `V` **variable**(*write* read): Reads and writes variable.
 - `W` **west**: Moves westward, or bangs.
 - `X` **write**(*x* *y* val): Writes operand with offset.
-- `Y` **jymper**(*val*): Outputs westward operand.
+- `Y` **yumper**(*val*): Outputs westward operand.
 - `Z` **lerp**(*rate* target): Transitions operand to input.
 - `*` **bang**: Bangs neighboring operands.
 - `#` **comment**: Halts a line.
@@ -90,6 +90,9 @@ Orca listens to stdin events and inputs the byte values as keyboard inputs. The 
 - `ctrl+c` copy
 - `ctrl+v` paste
 - `ctrl+x` cut
+- `ctrl+h` toggle guide
+- `ctrl+i` toggle insert
+- `ctrl+a` select all
 
 ### Misc
 

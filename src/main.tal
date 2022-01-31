@@ -25,11 +25,11 @@
 %GET-CHAR  { #24 MOD #00 SWP ;b36clc ++ LDA } ( b36 -- char )
 %GET-VALUE { #20 - #00 SWP ;values ++ LDA } ( char -- b36 )
 %GET-NOTE  { DUP GET-VALUE SWP IS-UC #24 * + TOS ;lc-notes ++ LDA } ( char -- midi )
-%GET-CELL  { DATA-CELLS ++ LDA } ( cell* -- type ) 
+%GET-CELL  { DATA-CELLS ++ LDA } ( cell* -- type )
 %SET-CELL  { DATA-CELLS ++ STA } ( type cell* -- )
-%GET-LOCK  { DATA-LOCKS ++ LDA } ( cell* -- type ) 
+%GET-LOCK  { DATA-LOCKS ++ LDA } ( cell* -- type )
 %SET-LOCK  { DATA-LOCKS ++ STA } ( type cell* -- )
-%GET-TYPE  { DATA-TYPES ++ LDA } ( cell* -- type ) 
+%GET-TYPE  { DATA-TYPES ++ LDA } ( cell* -- type )
 %SET-TYPE  { DATA-TYPES ++ STA } ( type cell* -- )
 
 ( devices )
@@ -631,7 +631,7 @@ RTN
 
 @get-index ( x y -- addr* )
 
-	#00 SWP #00 .grid/width LDZ ** ROT #00 SWP ++ 
+	#00 SWP #00 .grid/width LDZ ** ROT #00 SWP ++
 
 RTN
 
@@ -820,8 +820,8 @@ RTN
 	&loop
 		( x ) DUP2 10// #0100 ** .grid/x1 LDZ2 ++ #0020 ++ .Screen/x DEO2
 		( y ) DUP2 #000f AND2 10** .grid/x1 LDZ2 ++ #0020 ++ .Screen/y DEO2
-		DUP2 2** ;op-table/docs ++ LDA2 
-		( glyph ) LDAk #08 ;draw-char JSR2 
+		DUP2 2** ;op-table/docs ++ LDA2
+		( glyph ) LDAk #08 ;draw-char JSR2
 		( space ) 20 #00 ;draw-char JSR2
 		( text ) INC2 #01 ;draw-str JSR2
 		INC2 GTH2k ,&loop JCN
