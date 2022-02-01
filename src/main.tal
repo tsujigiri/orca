@@ -302,8 +302,8 @@ BRK
 	[ LIT 'i ] !~ ,&no-i JCN ;toggle-insert JSR2 &no-i
 	[ LIT 'h ] !~ ,&no-h JCN ;toggle-guide JSR2 &no-h
 	( tempo )
-	[ LIT ', ] !~ ,&no-slow JCN .timer/speed LDZ #01 - ;set-speed JSR2 &no-slow
-	[ LIT '. ] !~ ,&no-fast JCN .timer/speed LDZ INC ;set-speed &no-fast
+	[ LIT ', ] !~ ,&no-slow JCN #ff ;mod-speed JSR2 &no-slow
+	[ LIT '. ] !~ ,&no-fast JCN #01 ;mod-speed &no-fast
 	POP
 
 BRK
@@ -328,26 +328,22 @@ BRK
 	.cursor/x LDZ2 .Screen/x DEO2
 	.cursor/y LDZ2 .Screen/y DEO2
 	#40 .Screen/sprite DEO
-
 	( draw new cursor )
 	.Mouse/x DEI2 DUP2 .cursor/x STZ2 .Screen/x DEO2
 	.Mouse/y DEI2 DUP2 .cursor/y STZ2 .Screen/y DEO2
 	;cursor-icn .Screen/addr DEO2
 	#41 [ .Mouse/state DEI #00 ! 2* ] + .Screen/sprite DEO
-
 	( route )
 	.Mouse/y DEI2 .toolbar/y1 LDZ2 -- 10// #0000 ==
 		;on-mouse-toolbar JCN2
 	.Mouse/x DEI2 .Mouse/y DEI2 .grid ;within-rect JSR2
 		;on-mouse-grid JCN2
 
-	( release-record ) #0000 .Mouse/state DEO .cursor/last STZ
-
 BRK
 
 @on-mouse-grid ( -> )
 
-	.Mouse/state DEI DUP .cursor/last LDZ
+	.Mouse/state DEI [ LIT &last $1 ]
 		DUP2 #0000 == ,&end JCN
 		( on down )
 		DUP2 #0100 !! ,&no-down JCN
@@ -361,8 +357,7 @@ BRK
 		.Mouse/y DEI2 .grid/y1 LDZ2 -- 10// NIP
 			;set-selection-to JSR2
 	&end
-	POP2
-	.cursor/last STZ
+	POP ,&last STR 
 
 BRK
 
@@ -372,22 +367,14 @@ BRK
 
 	( left-side )
 	.Mouse/x DEI2 .grid/x1 LDZ2 -- 8// NIP
-	DUP #05 > ,&no-insert JCN ;toggle-insert JSR2 POP BRK &no-insert
-	DUP #09 > ,&no-pause JCN ;toggle-play JSR2 POP BRK &no-pause
-	DUP #0d > ,&no-speed JCN
-		.timer/speed LDZ #01 +
-			[ .Mouse/state DEI #01 ! #02 *   - ] ;set-speed JSR2
-		RELEASE-MOUSE
-		POP BRK
-		&no-speed
-	DUP #0e > OVR .grid/width LDZ SWP - #05 > #0101 !! ,&no-rename JCN
-		;trap JSR2
-		&no-rename
+	[ #05 ] >~ ,&no-insert JCN ;toggle-insert JSR2 POP BRK &no-insert
+	[ #09 ] >~ ,&no-pause JCN ;toggle-play JSR2 POP BRK &no-pause
+	[ #0d ] >~ ,&no-speed JCN [ .Mouse/state DEI #01 = 2* #01 - ] ;mod-speed JSR2 RELEASE-MOUSE POP BRK &no-speed
+	[ #0e ] >~ OVR .grid/width LDZ SWP - #05 > #0101 !! ,&no-rename JCN ;trap JSR2 &no-rename
 	POP
-
 	( right-side )
 	.grid/x2 LDZ2 .Mouse/x DEI2 -- 8// NIP
-	[ #01 ] !~ ,&no-save JCN ;save-file JSR2 &no-save
+	[ #00 ] !~ ,&no-save JCN ;save-file JSR2 &no-save
 	[ #02 ] !~ ,&no-load JCN ;load-file JSR2 &no-load
 	[ #03 ] !~ ,&no-name JCN ;new-file JSR2 &no-name
 	POP
@@ -396,40 +383,39 @@ BRK
 
 BRK
 
-( general )
+( selection )
 
 @set-selection-all ( -- )
 
-	#0000 .selection/from STZ2
-	.grid/size LDZ2 .selection/to STZ2
-	;draw-grid JSR2
-	;draw-position JSR2
+	#0000 .grid/size LDZ2 ,set-selection-range JSR
 
 RTN
 
 @set-selection-from ( x y -- )
 
-	DUP2 .selection/from STZ2
-	.selection/to STZ2
-
-	( hide guide )
-	.guide LDZ #00 = ,&no-guide JCN #00 .guide STZ &no-guide
-
-	;draw-grid JSR2
-	;draw-position JSR2
+	DUP2 ,set-selection-range JSR
 
 RTN
 
 @set-selection-to ( x y -- )
 
+	.selection/from LDZ2 SWP2
+
+@set-selection-range ( from* to* -- )
+
+	( from )
+	SWP2 DUP2 .selection/from LDZ2 !! STH .selection/from STZ2
+	( to )
 	.selection/y1 LDZ MAX .grid/height LDZ DEC MIN STH
 	.selection/x1 LDZ MAX .grid/width LDZ DEC MIN STHr
-	DUP2 .selection/to LDZ2 == ,&no-change JCN
-		DUP2 .selection/to STZ2
-		;draw-grid JSR2
-		;draw-position JSR2
-		&no-change
-	POP2
+	DUP2 .selection/to LDZ2 !! STH .selection/to STZ2
+	( skip redraw when unchanged )
+	ADDr STHr #01 JCN RTN
+	( redraw )
+	;draw-grid JSR2
+	;draw-position JSR2
+	( hide guide )
+	.guide LDZ #00 = ,&no-guide JCN #00 .guide STZ &no-guide
 
 RTN
 
@@ -460,8 +446,7 @@ RTN
 		#04 AND #00 ! 2* ;&scale STA
 	STH2
 	;&drag LDA #00 = ,&no-drag-start JCN
-		;copy-snarf JSR2
-		CHAR-DOT ;fill-selection JSR2
+		;cut-snarf JSR2
 		&no-drag-start
 	( y )
 	STHkr #00 = ,&no-ver JCN
@@ -492,11 +477,13 @@ RTN
 	&drag $1
 	&scale $1
 
+@mod-speed ( mod -- )
+
+	.timer/speed LDZ +
+
 @set-speed ( speed -- )
 
-	( clamp )
 	#1f AND [ #04 MAX ] .timer/speed STZ
-	( reset timer )
 	#00 .timer/beat STZ
 	;draw-speed JSR2
 
@@ -536,7 +523,7 @@ RTN
 	&end ( button* -> )
 		POP
 		.dpad LDZ #7f > ,&save JCN
-		.selection LDZ2 .dpad LDZ ;set-cell JSR2
+		.dpad LDZ ;fill-selection JSR2
 		SET-STATE
 		RESET-SELECTION
 		#00 .dpad STZ
@@ -548,7 +535,7 @@ RTN
 		,&save JMP
 	&save ( -> )
 		.dpad/last STZ
-		;draw-toolbar JSR2
+		;draw-dpad JSR2
 	BRK
 
 BRK
@@ -669,18 +656,6 @@ RTN
 	;draw-position JSR2
 	;draw-timer JSR2
 
-	( d-pad )
-	.toolbar/y1 LDZ2 .Screen/y DEO2
-	.dpad LDZ DUP #20 < ,&no-dpad JCN
-		.grid/x1 LDZ2 #0050 ++ STH2k .Screen/x DEO2
-		DUP #04 ;draw-byte JSR2
-		STH2kr #0010 ++ .Screen/x DEO2
-		;font #00 ;draw-sprite JSR2
-		STH2r #0018 ++ .Screen/x DEO2
-		.dpad LDZ #01 ;draw-char JSR2
-		&no-dpad
-	POP
-
 	( File )
 	.grid/x2 LDZ2 STH2k #0018 -- .Screen/x DEO2
 	;font/load #01 ;draw-sprite JSR2
@@ -692,16 +667,26 @@ RTN
 
 RTN
 
+@draw-dpad ( -- )
+
+	.grid/x1 LDZ2 #0050 ++ .Screen/x DEO2
+	.toolbar/y1 LDZ2 .Screen/y DEO2
+	( number ) .dpad LDZ #04 ;draw-byte JSR2
+	( space ) ;font #00 ;draw-sprite JSR2
+	( icon ) .dpad LDZ #01 ;draw-char JSR2
+	
+RTN
+
 @draw-position ( -- )
 
 	.grid/x1 LDZ2 .Screen/x DEO2
 	.toolbar/y1 LDZ2 .Screen/y DEO2
-
+	( number )
 	.selection/x1 LDZ #01 ;draw-byte JSR2
 	.selection/y1 LDZ #01 ;draw-byte JSR2
-
+	( icon )
 	;font/selector .selection/insert LDZ TOS 10** ++
-		#02 .selection/from LDZ2 .selection/to LDZ2 == +
+	#02 .selection/from LDZ2 .selection/to LDZ2 == +
 		;draw-sprite JSR2
 
 RTN
@@ -762,7 +747,7 @@ RTN
 			DUP .head/x STZ
 			STH2kr .head/addr STZ2
 			,get-char JSR ,get-color JSR ;draw-char JSR2
-			INC2r 
+			INC2r
 			INC GTHk ,&hor JCN
 		POP2
 		INC GTHk ,&ver JCN
@@ -817,10 +802,10 @@ RTN
 	#0020 #0000
 	&loop
 		( x ) DUP2 #84 SFT2 .grid/x1 LDZ2 ++ #0020 ++ .Screen/x DEO2
-		( y ) DUP2 #000f AND2 10** .grid/x1 LDZ2 ++ #0020 ++ .Screen/y DEO2
+		( y ) DUP2 #000f AND2 10** .grid/y1 LDZ2 ++ #0020 ++ .Screen/y DEO2
 		DUP2 2** ;op-table/docs ++ LDA2
 		( glyph ) LDAk #08 ;draw-char JSR2
-		( space ) #20 #00 ;draw-char JSR2
+		( space ) ;font #00 ;draw-sprite JSR2
 		( text ) INC2 #01 ;draw-str JSR2
 		INC2 GTH2k ,&loop JCN
 	POP2 POP2
