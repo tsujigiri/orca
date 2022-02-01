@@ -6,7 +6,7 @@ sources:
     - https://git.sr.ht/~rabbits/orca-toy
 tasks:
     - prepare: |
-        curl -fsS https://rabbits.srht.site/uxn/uxn-linux-amd64.tar.gz | tar -zx
+        curl -fsS https://rabbits.srht.site/uxn/uxn-essentials-lin64.tar.gz | tar -zx
     - build: |
         cd orca-toy
         ../uxn/uxnasm src/main.tal ../orca.rom
