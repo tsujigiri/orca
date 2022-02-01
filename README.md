@@ -12,6 +12,8 @@ You must have the [Uxn](https://git.sr.ht/~rabbits/uxn/) assembler and emulator.
 uxnasm orca.tal orca.rom && uxnemu orca.rom
 ```
 
+If do not wish to assemble it yourself, you can download [orca.rom](https://rabbits.srht.site/orca/orca.rom).
+
 ### I/O
 
 The `:` operator is used to send note values to other applications, to convert the signal to midi, use the [shim](https://git.sr.ht/~rabbits/shim/).
