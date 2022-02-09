@@ -378,7 +378,6 @@ BRK
 	[ #02 ] !~ ,&no-load JCN ;load-file JSR2 &no-load
 	[ #03 ] !~ ,&no-name JCN ;new-file JSR2 &no-name
 	[ #05 ] !~ ,&no-guide JCN ;toggle-guide JSR2 &no-guide
-	DUP DEBUG
 	POP
 
 	RELEASE-MOUSE
