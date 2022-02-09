@@ -87,7 +87,7 @@
 	AUTO-YADDR
 
 	( size )
-	#0320 .Screen/width DEO2
+	#02ca .Screen/width DEO2
 	#01c0 .Screen/height DEO2
 
 	( synths )
