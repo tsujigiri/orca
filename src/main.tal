@@ -121,7 +121,7 @@
 	.toolbar/y1 LDZ2 #0008 ++ .toolbar/y2 STZ2
 
 	( display guide )
-	#01 .guide STZ
+	;toggle-guide JSR2
 	( init random )
 	;prng-init JSR2
 	( blank file )
@@ -370,13 +370,15 @@ BRK
 	[ #05 ] >~ ,&no-insert JCN ;toggle-insert JSR2 POP BRK &no-insert
 	[ #09 ] >~ ,&no-pause JCN ;toggle-play JSR2 POP BRK &no-pause
 	[ #0d ] >~ ,&no-speed JCN [ .Mouse/state DEI #01 = 2* #01 - ] ;mod-speed JSR2 RELEASE-MOUSE POP BRK &no-speed
-	[ #0e ] >~ OVR .grid/width LDZ SWP - #05 > #0101 !! ,&no-rename JCN ;trap JSR2 &no-rename
+	[ #0e ] >~ OVR .grid/width LDZ SWP - #06 > #0101 !! ,&no-rename JCN ;trap JSR2 &no-rename
 	POP
 	( right-side )
 	.grid/x2 LDZ2 .Mouse/x DEI2 -- 8// NIP
 	[ #00 ] !~ ,&no-save JCN ;save-file JSR2 &no-save
 	[ #02 ] !~ ,&no-load JCN ;load-file JSR2 &no-load
 	[ #03 ] !~ ,&no-name JCN ;new-file JSR2 &no-name
+	[ #05 ] !~ ,&no-guide JCN ;toggle-guide JSR2 &no-guide
+	DUP DEBUG
 	POP
 
 	RELEASE-MOUSE
@@ -415,7 +417,7 @@ RTN
 	;draw-grid JSR2
 	;draw-position JSR2
 	( hide guide )
-	.guide LDZ #00 = ,&no-guide JCN #00 .guide STZ &no-guide
+	.guide LDZ #00 = ,&no-guide JCN ;toggle-guide JSR2 &no-guide
 
 RTN
 
@@ -509,6 +511,10 @@ RTN
 
 	.guide TOGGLE
 	;draw-grid JSR2
+
+	.toolbar/y1 LDZ2 .Screen/y DEO2
+	.grid/x2 LDZ2 #0030 -- .Screen/x DEO2
+	;font/help [ #00 .guide LDZ 10** ] ++ #01 ;draw-sprite JSR2
 
 RTN
 
@@ -657,9 +663,9 @@ RTN
 	;draw-timer JSR2
 
 	( File )
-	.grid/x2 LDZ2 STH2k #0018 -- .Screen/x DEO2
+	.grid/x2 LDZ2 #0028 -- .Screen/x DEO2
+	.Screen/x DEI2k #0008 ++ ROT DEO2
 	;font/load #01 ;draw-sprite JSR2
-	STH2r #0020 -- .Screen/x DEO2
 	;font/make #01 ;draw-sprite JSR2
 
 	( filepath )
@@ -827,15 +833,11 @@ RTN
 
 	STH DUP
 	#04 SFT GET-CHAR STHkr ,draw-char JSR
-	#0f AND GET-CHAR STHr ,draw-char JSR
-
-RTN
+	#0f AND GET-CHAR STHr 
 
 @draw-char ( char color -- )
 
-	STH #20 - TOS 10** ;font ++ STHr ,draw-sprite JSR
-
-RTN
+	STH #20 - TOS 10** ;font ++ STHr 
 
 @draw-sprite ( addr* color -- )
 	
