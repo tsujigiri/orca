@@ -12,6 +12,7 @@
 
 %ABOVE { #00 .grid/width LDZ -- }
 %BELOW { #00 .grid/width LDZ ++ }
+%LENGTH { #00 .grid/height LDZ #00 .grid/width LDZ ** }
 
 %IS-CHAR-KEY { STHk #20 > STHr #7b < AND }
 
@@ -68,7 +69,6 @@
 	&insert $1
 @cursor
 	&x $2 &y $2
-	&last $1
 @toolbar
 	&x1 $2 &y1 $2
 	&x2 $2 &y2 $2
@@ -120,8 +120,6 @@
 	.grid/x2 LDZ2 .toolbar/x2 STZ2
 	.toolbar/y1 LDZ2 #0008 ++ .toolbar/y2 STZ2
 
-	( display guide )
-	;toggle-guide JSR2
 	( init random )
 	;prng-init JSR2
 	( blank file )
@@ -130,6 +128,10 @@
 	;load-theme JSR2
 	( default speed )
 	#08 ;set-speed JSR2
+	( select )
+	#0000 ;set-selection-from JSR2
+	( display guide )
+	;toggle-guide JSR2
 	( start )
 	.timer/playing TOGGLE
 
@@ -165,10 +167,10 @@ RTN
 @on-console ( -> )
 
 	.Console/read DEI
-	#11 !~ ,&no-u JCN #00ff #00 ;edit-selection JSR2 &no-u
-	#12 !~ ,&no-d JCN #0001 #00 ;edit-selection JSR2 &no-d
-	#13 !~ ,&no-l JCN #ff00 #00 ;edit-selection JSR2 &no-l
-	#14 !~ ,&no-r JCN #0100 #00 ;edit-selection JSR2 &no-r
+	[ #11 ] !~ ,&no-u JCN #00ff #00 ;edit-selection JSR2 &no-u
+	[ #12 ] !~ ,&no-d JCN #0001 #00 ;edit-selection JSR2 &no-d
+	[ #13 ] !~ ,&no-l JCN #ff00 #00 ;edit-selection JSR2 &no-l
+	[ #14 ] !~ ,&no-r JCN #0100 #00 ;edit-selection JSR2 &no-r
 	DUP IS-CHAR-KEY #00 = ,&no-key JCN
 		STHk .selection LDZ2 STHr ;set-cell JSR2
 		&no-key
@@ -211,8 +213,7 @@ RTN
 @on-mouse-trap ( -> )
 
 	( release trap on touch )
-	.Mouse/state DEI BRK?
-
+	.Mouse/state DEI #00 ! JMP BRK
 	;untrap JSR2
 
 BRK
@@ -221,14 +222,14 @@ BRK
 
 	( paused )
 	.timer/playing LDZ JMP BRK
-	( inc beat )
-	.timer/beat LDZk INC SWP STZ
 	( on beat )
 	.timer LDZ2 ! ,&skip JCN
 		;run JSR2
 		.timer/frame LDZ2k INC2 ROT STZ2
 		#00 .timer/beat STZ
 		&skip
+	( inc beat )
+	.timer/beat LDZk INC SWP STZ
 
 BRK
 
@@ -251,6 +252,11 @@ BRK
 	DUP #00 ! ,&no-null JCN
 		POP BRK
 		&no-null
+	DUP #1b ! ,&no-escape JCN
+		RESET-SELECTION
+		RESET-INSERT
+		POP BRK
+		&no-escape
 	DUP #20 ! ,&no-space JCN
 		( insert mode )
 		.selection/insert LDZ #00 = ,&no-space-insert JCN
@@ -267,11 +273,6 @@ BRK
 		CHAR-DOT ;fill-selection JSR2
 		POP BRK
 		&no-backspace
-	DUP #1b ! ,&no-escape JCN
-		RESET-SELECTION
-		RESET-INSERT
-		POP BRK
-		&no-escape
 	DUP IS-CHAR-KEY #00 = ,&no-key JCN
 		.Controller/key DEI ;fill-selection JSR2
 		( insert mode )
@@ -310,17 +311,15 @@ BRK
 
 @on-button-arrow ( -> )
 
+	( capture )
 	.Controller/button DEI
-	DUP #f0 AND #10 ! ,&no-u JCN #00ff ROT ,&move JMP &no-u
-	DUP #f0 AND #20 ! ,&no-d JCN #0001 ROT ,&move JMP &no-d
-	DUP #f0 AND #40 ! ,&no-l JCN #ff00 ROT ,&move JMP &no-l
-	DUP #f0 AND #80 ! ,&no-r JCN #0100 ROT ,&move JMP &no-r
-	POP BRK
-	&move
-	;edit-selection JSR2
-	;draw-grid JSR2
+	DUP #0f AND ,&mod STR
+	#04 SFT #00 OVR #03 AND ;&vec ++ LDA ,&y STR
+	#02 SFT #00 SWP #03 AND ;&vec ++ LDA ,&x STR
+	[ LIT &x $1 ] [ LIT &y $1 ] [ LIT &mod $1 ] ;edit-selection JSR2
 
 BRK
+	&vec 00 ff 01
 
 @on-mouse ( -> )
 
@@ -379,7 +378,6 @@ BRK
 	[ #03 ] !~ ,&no-name JCN ;new-file JSR2 &no-name
 	[ #05 ] !~ ,&no-guide JCN ;toggle-guide JSR2 &no-guide
 	POP
-
 	RELEASE-MOUSE
 
 BRK
@@ -410,8 +408,8 @@ RTN
 	.selection/y1 LDZ MAX .grid/height LDZ DEC MIN STH
 	.selection/x1 LDZ MAX .grid/width LDZ DEC MIN STHr
 	DUP2 .selection/to LDZ2 !! STH .selection/to STZ2
-	( skip redraw when unchanged )
-	ADDr STHr #01 JCN RTN
+	( TODO: skip redraw when unchanged )
+	POP2r ( ADDr STHr #01 JCN RTN )
 	( redraw )
 	;draw-grid JSR2
 	;draw-position JSR2
@@ -494,7 +492,7 @@ RTN
 
 	.selection/insert TOGGLE
 	RELEASE-MOUSE
-	;draw-toolbar JSR2
+	;draw-position JSR2
 
 RTN
 
@@ -502,7 +500,7 @@ RTN
 
 	.timer/playing TOGGLE
 	RELEASE-MOUSE
-	;draw-toolbar JSR2
+	;draw-timer JSR2
 
 RTN
 
@@ -510,7 +508,6 @@ RTN
 
 	.guide TOGGLE
 	;draw-grid JSR2
-
 	.toolbar/y1 LDZ2 .Screen/y DEO2
 	.grid/x2 LDZ2 #0030 -- .Screen/x DEO2
 	;font/help [ #00 .guide LDZ 10** ] ++ #01 ;draw-sprite JSR2
@@ -547,9 +544,8 @@ BRK
 
 @run ( -- )
 
-	( clear lock/types/variables )
-	#00 .grid/height LDZ #00 .grid/width LDZ ** STH2
-	DATA-LOCKS STH2kr ;mclr JSR2
+	( clear )
+	DATA-LOCKS LENGTH STH2k ;mclr JSR2
 	DATA-TYPES STH2r ;mclr JSR2
 	;variables #0024 ;mclr JSR2
 	( reset head ) LIT2r 0000
@@ -608,11 +604,13 @@ RTN
 	CHAR-EQUAL =~ ;op-synth/func JCN2
 	CHAR-COLON =~ ;op-midi/func JCN2
 	CHAR-SLASH =~ ;op-byte/func JCN2
-	( erase )
 	POP
+	( erase )
 	CHAR-DOT .head/addr LDZ2 SET-CELL
 
 RTN
+
+( operations )
 
 @set-cell ( x y c -- )
 
@@ -625,8 +623,6 @@ RTN
 	#00 SWP #00 .grid/width LDZ ** ROT #00 SWP ++
 
 RTN
-
-( operations )
 
 @get-bang ( -- bang )
 
@@ -654,22 +650,6 @@ RTN
 		&no-below
 	NIP STHr ADD
 	
-RTN
-
-@draw-toolbar ( -- )
-
-	;draw-position JSR2
-	;draw-timer JSR2
-
-	( File )
-	.grid/x2 LDZ2 #0028 -- .Screen/x DEO2
-	.Screen/x DEI2k #0008 ++ ROT DEO2
-	;font/load #01 ;draw-sprite JSR2
-	;font/make #01 ;draw-sprite JSR2
-
-	( filepath )
-	#03 ;draw-filepath JSR2
-
 RTN
 
 @draw-dpad ( -- )
@@ -700,7 +680,9 @@ RTN
 
 	.toolbar/y1 LDZ2 .Screen/y DEO2
 	.grid/x1 LDZ2 #0030 ++ .Screen/x DEO2
-	.timer/frame INC LDZ #01 ;draw-byte JSR2
+	( value )
+	.timer/frame INC LDZ #03 .timer/playing LDZ 2* - ;draw-byte JSR2
+	( icon )
 	;font/beat #03 .timer/frame INC LDZ #07 AND #00 = - ;draw-sprite JSR2
 
 RTN
@@ -735,7 +717,12 @@ RTN
 @redraw ( -- )
 
 	;draw-grid JSR2
-	;draw-toolbar JSR2
+
+	( File )
+	.grid/x2 LDZ2 #0020 -- .Screen/x DEO2
+	.toolbar/y1 LDZ2 .Screen/y DEO2
+	;font/load #01 ;draw-sprite JSR2
+	;font/make #01 ;draw-sprite JSR2
 
 RTN
 
@@ -856,15 +843,13 @@ RTN
 	( clear variables )
 	;variables #0024 ;mclr JSR2
 	( clear cells/locks/types )
-	#00 .grid/height LDZ #00 .grid/width LDZ ** STH2
-		DATA-CELLS STH2kr ;mclr JSR2
-		DATA-LOCKS STH2kr ;mclr JSR2
-		DATA-TYPES STH2r ;mclr JSR2
+	DATA-CELLS LENGTH STH2k ;mclr JSR2
+	DATA-LOCKS STH2kr ;mclr JSR2
+	DATA-TYPES STH2r ;mclr JSR2
 	( rename to untitled.txt )
 	;filepath #0020 ;mclr JSR2
 	;untitled-txt ;filepath #000d ;mcpy JSR2
 	;draw-grid JSR2
-	;draw-toolbar JSR2
 	#01 ;draw-filepath JSR2
 	RESET-STATE
 
@@ -889,7 +874,6 @@ RTN
 		.File/success DEI2 #0000 !! ,&stream JCN
 	POP2r
 	;draw-grid JSR2
-	;draw-toolbar JSR2
 	RESET-STATE
 
 RTN
@@ -909,7 +893,7 @@ RTN
 		( linebreak ) ;&lb .File/write DEO2
 		INC GTHk ,&ver JCN
 	POP2
-	;draw-toolbar JSR2
+	RESET-STATE
 
 RTN
 	&lb 0a
@@ -996,11 +980,9 @@ RTN
 	&stream
 		;&b .File/read DEO2
 		( write )
-		;&b LDA IS-CHAR-KEY #00 = ,&invalid JCN
-			.selection/x1 LDZ OVRr STHr +
-			.selection/y1 LDZ STHkr +
-				;&b LDA ;set-cell JSR2
-			&invalid
+		.selection/x1 LDZ OVRr STHr +
+		.selection/y1 LDZ STHkr +
+			;&b LDA ;set-cell JSR2
 		( incr-x ) SWPr INCr SWPr
 		( incr-y )
 		;&b LDA #0a ! ,&no-lb JCN
