@@ -481,9 +481,10 @@ RTN
 	.head/addr LDZ2 STH2k
 	( channel ) INC2 ;get-port-right-value JSR2 [ ,&ch STR ]
 	( octave ) STH2kr #0002 ++ ;get-port-right-value JSR2
-	( note ) STH2r #0003 ++ ;get-port-right-raw JSR2
-	( has note ) DUP CHAR-DOT ! ,&has-note JCN [ POP2 RTN ] &has-note
-	( has bang ) ;get-bang JSR2 ,&is-bang JCN [ POP2 RTN ] &is-bang
+	( note ) STH2kr #0003 ++ ;get-port-right-raw JSR2
+	( has note ) DUP CHAR-DOT ! ,&has-note JCN [ POP2 POP2r RTN ] &has-note
+	( has bang ) ;get-bang JSR2 ,&is-bang JCN [ POP2 POP2r RTN ] &is-bang
+	( animate ) IO-TYPE STH2r SET-TYPE
 	( get note ) GET-NOTE SWP [ #0c * ] +
 	( play ) .Audio0/pitch [ LIT &ch $1 ] 4MOD 10* + DEO
 
@@ -498,9 +499,10 @@ RTN
 	.head/addr LDZ2 STH2k
 	( channel ) INC2 ;get-port-right-value JSR2 [ ,&ch STR ]
 	( octave ) STH2kr #0002 ++ ;get-port-right-value JSR2
-	( note ) STH2r #0003 ++ ;get-port-right-raw JSR2
-	( has note ) DUP CHAR-DOT ! ,&has-note JCN [ POP2 RTN ] &has-note
-	( has bang ) ;get-bang JSR2 ,&is-bang JCN [ POP2 RTN ] &is-bang
+	( note ) STH2kr #0003 ++ ;get-port-right-raw JSR2
+	( has note ) DUP CHAR-DOT ! ,&has-note JCN [ POP2 POP2r RTN ] &has-note
+	( has bang ) ;get-bang JSR2 ,&is-bang JCN [ POP2 POP2r RTN ] &is-bang
+	( animate ) IO-TYPE STH2r SET-TYPE
 	( get note ) GET-NOTE SWP [ #0c * ] +
 	( get channel ) [ LIT &ch $1 ]
 	( note on )
@@ -522,9 +524,10 @@ RTN
 	POP
 	.head/addr LDZ2 STH2k
 	( octave ) INC2 ;get-port-right-value JSR2
-	( note ) STH2r #0002 ++ ;get-port-right-raw JSR2
-	( has note ) DUP CHAR-DOT ! ,&has-note JCN [ POP2 RTN ] &has-note
-	( has bang ) ;get-bang JSR2 ,&is-bang JCN [ POP2 RTN ] &is-bang
+	( note ) STH2kr #0002 ++ ;get-port-right-raw JSR2
+	( has note ) DUP CHAR-DOT ! ,&has-note JCN [ POP2 POP2r RTN ] &has-note
+	( has bang ) ;get-bang JSR2 ,&is-bang JCN [ POP2 POP2r RTN ] &is-bang
+	( animate ) IO-TYPE STH2r SET-TYPE
 	( get note ) GET-NOTE SWP [ #0c * ] + .Console/write DEO
 
 RTN
@@ -537,8 +540,9 @@ RTN
 	POP
 	.head/addr LDZ2 STH2k
 	( hn ) INC2 ;get-port-right-value JSR2
-	( ln ) STH2r #0002 ++ ;get-port-right-value JSR2
-	( has bang ) ;get-bang JSR2 ,&is-bang JCN [ POP2 RTN ] &is-bang
+	( ln ) STH2kr #0002 ++ ;get-port-right-value JSR2
+	( has bang ) ;get-bang JSR2 ,&is-bang JCN [ POP2 POP2r RTN ] &is-bang
+	( animate ) IO-TYPE STH2r SET-TYPE
 	#0f AND SWP #0f AND #40 SFT + .Console/write DEO
 
 RTN
