@@ -304,7 +304,7 @@ RTN
 	( b-max ) STH2kr INC2 ;get-port-right-raw JSR2
 		( get case ) DUP IS-UC ,&case STR
 		( to value ) GET-VALUE 1MIN
-	( mod ) OVR - ;prng JSR2 + SWP MOD +
+	( mod ) OVR - ;prng JSR2 + SWP 1MIN MOD +
 	( set case ) GET-CHAR DUP #60 > [ LIT &case $1 ] AND 20* -
 	( output ) STH2r BELOW ;set-port-output JSR2
 
