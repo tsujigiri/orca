@@ -32,6 +32,7 @@
 %SET-LOCK  { DATA-LOCKS ++ STA } ( type cell* -- )
 %GET-TYPE  { DATA-TYPES ++ LDA } ( cell* -- type )
 %SET-TYPE  { DATA-TYPES ++ STA } ( type cell* -- )
+%ADDPOS { ROT ADD STH ADD STHr } ( x y x2 y2 -- x y )
 
 ( devices )
 
@@ -167,10 +168,10 @@ RTN
 @on-console ( -> )
 
 	.Console/read DEI
-	[ #11 ] !~ ,&no-u JCN #00ff #00 ;edit-selection JSR2 &no-u
-	[ #12 ] !~ ,&no-d JCN #0001 #00 ;edit-selection JSR2 &no-d
-	[ #13 ] !~ ,&no-l JCN #ff00 #00 ;edit-selection JSR2 &no-l
-	[ #14 ] !~ ,&no-r JCN #0100 #00 ;edit-selection JSR2 &no-r
+	[ #11 ] !~ ,&no-u JCN #00ff #00 ;set-selection-mod JSR2 &no-u
+	[ #12 ] !~ ,&no-d JCN #0001 #00 ;set-selection-mod JSR2 &no-d
+	[ #13 ] !~ ,&no-l JCN #ff00 #00 ;set-selection-mod JSR2 &no-l
+	[ #14 ] !~ ,&no-r JCN #0100 #00 ;set-selection-mod JSR2 &no-r
 	DUP IS-CHAR-KEY #00 = ,&no-key JCN
 		STHk .selection LDZ2 STHr ;set-cell JSR2
 		&no-key
@@ -260,7 +261,7 @@ BRK
 	DUP #20 ! ,&no-space JCN
 		( insert mode )
 		.selection/insert LDZ #00 = ,&no-space-insert JCN
-			#01 #00 #00 ;edit-selection JSR2 POP BRK
+			#01 #00 #00 ;set-selection-mod JSR2 POP BRK
 			&no-space-insert
 		;toggle-play JSR2
 		POP BRK
@@ -268,7 +269,7 @@ BRK
 	DUP #08 ! OVR #7f ! AND ,&no-backspace JCN
 		( insert mode )
 		.selection/insert LDZ #00 = ,&no-backspace-insert JCN
-			#ff #00 #00 ;edit-selection JSR2
+			#ff #00 #00 ;set-selection-mod JSR2
 			&no-backspace-insert
 		CHAR-DOT ;fill-selection JSR2
 		POP BRK
@@ -277,7 +278,7 @@ BRK
 		.Controller/key DEI ;fill-selection JSR2
 		( insert mode )
 		.selection/insert LDZ #00 = ,&no-key-insert JCN
-			#01 #00 #00 ;edit-selection JSR2
+			#01 #00 #00 ;set-selection-mod JSR2
 			&no-key-insert
 		SET-STATE
 		POP BRK
@@ -316,7 +317,7 @@ BRK
 	DUP #0f AND ,&mod STR
 	#04 SFT #00 OVR #03 AND ;&vec ++ LDA ,&y STR
 	#02 SFT #00 SWP #03 AND ;&vec ++ LDA ,&x STR
-	[ LIT &x $1 ] [ LIT &y $1 ] [ LIT &mod $1 ] ;edit-selection JSR2
+	[ LIT &x $1 ] [ LIT &y $1 ] [ LIT &mod $1 ] ;set-selection-mod JSR2
 
 BRK
 	&vec 00 ff 01 00
@@ -356,7 +357,7 @@ BRK
 		.Mouse/y DEI2 .grid/y1 LDZ2 -- 10// NIP
 			;set-selection-to JSR2
 	&end
-	POP ,&last STR 
+	POP ,&last STR
 
 BRK
 
@@ -384,6 +385,30 @@ BRK
 
 ( selection )
 
+@set-selection-mod ( x y mod -- )
+
+	DUP #04 ! ,&no-scale JCN
+		POP
+		.selection/to LDZ2 ADDPOS ;set-selection-to JSR2
+		RTN
+		&no-scale
+	DUP #01 ! ,&no-drag JCN
+		POP
+		;cut-snarf JSR2
+		STH2k .selection/from LDZ2 ADDPOS
+		STH2r .selection/to LDZ2 ADDPOS
+			;set-selection-range JSR2
+		;paste-snarf JSR2
+		RTN
+		&no-drag
+	POP
+	( default )
+	STH2k .selection/from LDZ2 ADDPOS
+	STH2r .selection/to LDZ2 ADDPOS
+		;set-selection-range JSR2
+
+RTN
+
 @set-selection-all ( -- )
 
 	#0000 .grid/size LDZ2 ,set-selection-range JSR
@@ -402,14 +427,22 @@ RTN
 
 @set-selection-range ( from* to* -- )
 
+	( clamp top-left )
+	OVR2 #ff ! SWP #ff ! #0101 == ,&no-tl JCN
+		POP2 POP2 RTN
+		&no-tl
+	( clamp bottom-right )
+	OVR2 .grid/height LDZ < SWP .grid/width LDZ < #0101 == ,&no-br JCN
+		POP2 POP2 RTN
+		&no-br
 	( from )
 	SWP2 DUP2 .selection/from LDZ2 !! STH .selection/from STZ2
 	( to )
 	.selection/y1 LDZ MAX .grid/height LDZ DEC MIN STH
 	.selection/x1 LDZ MAX .grid/width LDZ DEC MIN STHr
 	DUP2 .selection/to LDZ2 !! STH .selection/to STZ2
-	( TODO: skip redraw when unchanged )
-	POP2r ( ADDr STHr #01 JCN RTN )
+	( skip redraw when unchanged )
+	ADDr STHr #01 JCN RTN
 	( redraw )
 	;draw-grid JSR2
 	;draw-position JSR2
@@ -436,45 +469,6 @@ RTN
 	;draw-grid JSR2
 
 RTN
-
-@edit-selection ( x y mod -- )
-
-	( set modifiers )
-	DUP
-		#01 AND #00 ! ;&drag STA
-		#04 AND #00 ! 2* ;&scale STA
-	STH2
-	;&drag LDA #00 = ,&no-drag-start JCN
-		;cut-snarf JSR2
-		&no-drag-start
-	( y )
-	STHkr #00 = ,&no-ver JCN
-		( clamp ) STHkr #ff = .selection/y1 [ ,&scale LDR + ] LDZ #00 = AND ,&no-ver JCN
-		.selection/y1 [ ,&scale LDR + ] LDZ STHkr +
-			.selection/y1 [ ,&scale LDR + ] STZ
-		,&scale LDR ,&no-ver JCN
-			.selection/y2 LDZ STHkr + .selection/y2 STZ
-		&no-ver POPr
-	( x )
-	STHkr #00 = ,&no-hor JCN
-		( clamp ) STHkr #ff = .selection/x1 [ ,&scale LDR + ] LDZ #00 = AND ,&no-hor JCN
-		.selection/x1 [ ,&scale LDR + ] LDZ STHkr +
-			.selection/x1 [ ,&scale LDR + ] STZ
-		,&scale LDR ,&no-hor JCN
-			.selection/x2 LDZ STHkr + .selection/x2 STZ
-		&no-hor POPr
-	( clamp result )
-	.selection/to LDZ2 ;set-selection-to JSR2
-	( drag )
-	,&drag LDR #00 = ,&no-drag-end JCN
-		;paste-snarf JSR2
-		&no-drag-end
-	( hide guide )
-	.guide LDZ #00 = ,&no-guide JCN #00 .guide STZ &no-guide
-
-RTN
-	&drag $1
-	&scale $1
 
 @mod-speed ( mod -- )
 
@@ -821,11 +815,11 @@ RTN
 
 	STH DUP
 	#04 SFT GET-CHAR STHkr ,draw-char JSR
-	#0f AND GET-CHAR STHr 
+	#0f AND GET-CHAR STHr
 
 @draw-char ( char color -- )
 
-	STH #20 - TOS 10** ;font ++ STHr 
+	STH #20 - TOS 10** ;font ++ STHr
 
 @draw-sprite ( addr* color -- )
 	
