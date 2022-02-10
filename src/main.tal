@@ -529,7 +529,9 @@ RTN
 		SET-STATE
 		RESET-SELECTION
 		#00 .dpad STZ
+		.dpad/last STZ
 		;draw-speed JSR2
+		BRK
 		,&save JMP
 	&add ( button* -> )
 		#02 ! ,&save JCN
@@ -689,8 +691,8 @@ RTN
 
 @draw-speed ( -- )
 
-	.toolbar/y1 LDZ2 .Screen/y DEO2
 	.grid/x1 LDZ2 #0050 ++ .Screen/x DEO2
+	.toolbar/y1 LDZ2 .Screen/y DEO2
 	.timer/speed LDZ #01 ;draw-byte JSR2
 	( t ) LIT 't #03 ;draw-char JSR2
 	( h ) LIT 'h #03 ;draw-char JSR2
