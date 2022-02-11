@@ -666,8 +666,12 @@ RTN
 
 	.grid/x1 LDZ2 .Screen/x DEO2
 	.toolbar/y1 LDZ2 .Screen/y DEO2
+	( draw size )
+	.selection/from LDZ2 .selection/to LDZ2 EQU2k ,&normal JCN
+		SWP2 -- DUP2
+		&normal
 	( value )
-	.selection LDZ2 #01 ;draw-short JSR2
+	POP2 #01 ;draw-short JSR2
 	( icon )
 	;font/selector #00 .selection/insert LDZ 10** ++
 	#02 .selection/from LDZ2 .selection/to LDZ2 == +
@@ -733,7 +737,7 @@ RTN
 	&ver
 		DUP .head/y STZ
 		( x ) .grid/x1 LDZ2 .Screen/x DEO2
-		( y ) DUP #00 SWP 10** [ .grid/y1 LDZ2 ++ ] .Screen/y DEO2
+		( y ) #00 OVR 10** .grid/y1 LDZ2 ++ .Screen/y DEO2
 		.grid/width LDZ #00
 		&hor
 			DUP .head/x STZ
@@ -745,17 +749,15 @@ RTN
 		INC GTHk ,&ver JCN
 	POP2
 	POP2r
-	( draw guide overlay )
-	.guide LDZ #00 = ,&no-guide JCN
-		;draw-guide JSR2
-		&no-guide
+	( draw guide ) 
+	.guide LDZ JMP RTN ;draw-guide JSR2
 
 RTN
 
 @get-color ( -- type )
 
 	.head LDZ2 ;is-selected JSR2 ,&selected JCN
-		.head/addr LDZ2 GET-TYPE TOS ;cell-styles ++ LDA RTN
+		#00 .head/addr LDZ2 GET-TYPE ;cell-styles ++ LDA RTN
 	&selected
 		#09
 
@@ -779,10 +781,10 @@ RTN
 
 @is-selected ( x y -- bool )
 
-	OVR .selection/x1 LDZ < ,&end JCN
-	OVR .selection/x2 LDZ > ,&end JCN
 	DUP .selection/y1 LDZ < ,&end JCN
 	DUP .selection/y2 LDZ > ,&end JCN
+	OVR .selection/x1 LDZ < ,&end JCN
+	OVR .selection/x2 LDZ > ,&end JCN
 		POP2 #01 RTN
 	&end
 	POP2 #00
