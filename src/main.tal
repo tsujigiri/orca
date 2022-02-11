@@ -813,9 +813,11 @@ RTN
 
 @draw-byte ( byte color -- )
 
-	STH DUP
-	#04 SFT GET-CHAR STHkr ,draw-char JSR
-	#0f AND GET-CHAR STHr
+	STH DUP #04 SFT STHkr ,draw-hex JSR STHr
+
+@draw-hex ( byte color -- )
+
+	STH #0f AND GET-CHAR STHr
 
 @draw-char ( char color -- )
 
@@ -1063,15 +1065,11 @@ RTN
 
 RTN
 
-@print-hex ( value* -- )
-	
-	SWP ,&byte JSR
-	&byte ( byte -- )
-		STHk #04 SFT ,&parse JSR #18 DEO
-		STHr #0f AND ,&parse JSR #18 DEO
-	RTN
-	&parse ( byte -- char ) DUP #09 GTH ,&above JCN #30 + RTN
-	&above #57 + RTN
+@print ( short* -- )
+
+	&short ( short* -- ) SWP ,&byte JSR
+	&byte ( byte -- ) DUP #04 SFT ,&char JSR
+	&char ( char -- ) #0f AND DUP #09 GTH #27 MUL ADD #30 ADD EMIT
 
 RTN
 

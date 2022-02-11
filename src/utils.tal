@@ -28,9 +28,8 @@
 %MAX2 { GTH2k JMP SWP2 POP2 }
 
 %EMIT   { #18 DEO }
-%PRINT  { ;print-str JSR2 #0a EMIT }
-%DEBUG  { ;print-hex/byte JSR2 #0a EMIT }
-%DEBUG2 { ;print-hex JSR2 #0a EMIT }
+%DEBUG  { ;print/byte JSR2 #0a EMIT }
+%DEBUG2 { ;print/short JSR2 #0a EMIT }
 
 %TOS  { #00 SWP }
 
