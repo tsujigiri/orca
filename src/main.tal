@@ -55,7 +55,7 @@
 @dpad $1
 	&last $1
 @timer
-	&beat $1 &speed $1 &playing $1 &frame $2
+	&beat $1 &speed $1 &playing $1 &frame $1 &frame-lb $1
 @state
 	&timer $1 &changed $1
 @guide $1
@@ -121,18 +121,17 @@
 	.grid/x2 LDZ2 .toolbar/x2 STZ2
 	.toolbar/y1 LDZ2 #0008 ++ .toolbar/y2 STZ2
 
-	( init random )
-	;prng-init JSR2
-	( blank file )
-	;new-file JSR2
 	( theme support )
 	;load-theme JSR2
-	( default speed )
-	#08 ;set-speed JSR2
-	( select )
-	#0000 ;set-selection-from JSR2
+	;draw-once JSR2
+	( init random )
+	;init-prng JSR2
+	( blank file )
+	;init-file JSR2
 	( display guide )
 	;toggle-guide JSR2
+	( draw position )
+	;draw-position JSR2
 	( start )
 	.timer/playing TOGGLE
 
@@ -295,7 +294,7 @@ BRK
 	[ LIT 'v ] !~ ,&no-paste JCN ;paste-snarf JSR2 &no-paste
 	[ LIT 'x ] !~ ,&no-cut JCN ;cut-snarf JSR2 &no-cut
 	( new/rename/open/save )
-	[ LIT 'n ] !~ ,&no-new JCN ;new-file JSR2 &no-new
+	[ LIT 'n ] !~ ,&no-new JCN ;init-file JSR2 &no-new
 	[ LIT 'r ] !~ ,&no-name JCN ;trap JSR2 &no-name
 	[ LIT 'o ] !~ ,&no-open JCN ;load-file JSR2 &no-open
 	[ LIT 's ] !~ ,&no-save JCN ;save-file JSR2 &no-save
@@ -376,7 +375,7 @@ BRK
 	.grid/x2 LDZ2 .Mouse/x DEI2 -- 8// NIP
 	[ #00 ] !~ ,&no-save JCN ;save-file JSR2 &no-save
 	[ #02 ] !~ ,&no-load JCN ;load-file JSR2 &no-load
-	[ #03 ] !~ ,&no-name JCN ;new-file JSR2 &no-name
+	[ #03 ] !~ ,&no-name JCN ;init-file JSR2 &no-name
 	[ #05 ] !~ ,&no-guide JCN ;toggle-guide JSR2 &no-guide
 	POP
 	RELEASE-MOUSE
@@ -648,13 +647,18 @@ RTN
 	
 RTN
 
+( drawing )
+
 @draw-dpad ( -- )
 
 	.grid/x1 LDZ2 #0050 ++ .Screen/x DEO2
 	.toolbar/y1 LDZ2 .Screen/y DEO2
-	( number ) .dpad LDZ #04 ;draw-byte JSR2
-	( space ) ;font #00 ;draw-sprite JSR2
-	( icon ) .dpad LDZ #01 ;draw-char JSR2
+	( value )
+	.dpad LDZ #04 ;draw-byte JSR2
+	( space )
+	;draw-sprite/blank JSR2
+	( icon )
+	.dpad LDZ #01 ;draw-char JSR2
 	
 RTN
 
@@ -662,11 +666,10 @@ RTN
 
 	.grid/x1 LDZ2 .Screen/x DEO2
 	.toolbar/y1 LDZ2 .Screen/y DEO2
-	( number )
-	.selection/x1 LDZ #01 ;draw-byte JSR2
-	.selection/y1 LDZ #01 ;draw-byte JSR2
+	( value )
+	.selection LDZ2 #01 ;draw-short JSR2
 	( icon )
-	;font/selector .selection/insert LDZ TOS 10** ++
+	;font/selector #00 .selection/insert LDZ 10** ++
 	#02 .selection/from LDZ2 .selection/to LDZ2 == +
 		;draw-sprite JSR2
 
@@ -677,9 +680,9 @@ RTN
 	.toolbar/y1 LDZ2 .Screen/y DEO2
 	.grid/x1 LDZ2 #0030 ++ .Screen/x DEO2
 	( value )
-	.timer/frame INC LDZ #03 .timer/playing LDZ 2* - ;draw-byte JSR2
+	.timer/frame-lb LDZ STHk #03 .timer/playing LDZ 2* - ;draw-byte JSR2
 	( icon )
-	;font/beat #03 .timer/frame INC LDZ #07 AND #00 = - ;draw-sprite JSR2
+	;font/beat #03 STHr #07 AND #00 = - ;draw-sprite JSR2
 
 RTN
 
@@ -687,32 +690,33 @@ RTN
 
 	.grid/x1 LDZ2 #0050 ++ .Screen/x DEO2
 	.toolbar/y1 LDZ2 .Screen/y DEO2
+	( value )
 	.timer/speed LDZ #01 ;draw-byte JSR2
-	( t ) LIT 't #03 ;draw-char JSR2
-	( h ) LIT 'h #03 ;draw-char JSR2
+	( th )
+	;&th-txt #03 ;draw-str JSR2
 
 RTN
+	&th-txt "th $1
 
 @draw-state ( -- )
 
 	.toolbar/x2 LDZ2 #0008 -- .Screen/x DEO2
 	.toolbar/y1 LDZ2 .Screen/y DEO2
+	( icon )
 	;font/save #01 .state/changed LDZ + ;draw-sprite JSR2
 
 RTN
 
 @draw-filepath ( color -- )
 
-	STH
 	.toolbar/y1 LDZ2 .Screen/y DEO2
 	.toolbar/x1 LDZ2 #0078 ++ .Screen/x DEO2
-	;filepath STHr ;draw-str JSR2
+	( icon )
+	;filepath ROT ;draw-str JSR2
 
 RTN
 
-@redraw ( -- )
-
-	;draw-grid JSR2
+@draw-once ( -- )
 
 	( File )
 	.grid/x2 LDZ2 #0020 -- .Screen/x DEO2
@@ -793,7 +797,7 @@ RTN
 		( y ) DUP2 #000f AND2 10** .grid/y1 LDZ2 ++ #0020 ++ .Screen/y DEO2
 		DUP2 2** ;op-table/docs ++ LDA2
 		( glyph ) LDAk #08 ;draw-char JSR2
-		( space ) ;font #00 ;draw-sprite JSR2
+		( space ) ;draw-sprite/blank JSR2
 		( text ) INC2 #01 ;draw-str JSR2
 		INC2 GTH2k ,&loop JCN
 	POP2 POP2
@@ -810,6 +814,10 @@ RTN
 	POPr
 
 RTN
+
+@draw-short ( short* color -- )
+
+	STH SWP STHkr ,draw-byte JSR STHr
 
 @draw-byte ( byte color -- )
 
@@ -829,26 +837,30 @@ RTN
 	.Screen/y DEI2
 	STHr .Screen/sprite DEOk DEO
 	.Screen/y DEO2
+	&blank
 	.Screen/x DEI2k #0008 ++ ROT DEO2
 
 RTN
 
 ( file )
 
-@new-file ( default* -- )
+@init-file ( default* -- )
 
-	#00 ;draw-filepath JSR2
-	( clear variables )
-	;variables #0024 ;mclr JSR2
-	( clear cells/locks/types )
-	DATA-CELLS LENGTH STH2k ;mclr JSR2
-	DATA-LOCKS STH2kr ;mclr JSR2
-	DATA-TYPES STH2r ;mclr JSR2
+	( clear cells ) DATA-CELLS LENGTH STH2k ;mclr JSR2
+	( clear locks ) DATA-LOCKS STH2kr ;mclr JSR2
+	( clear types ) DATA-TYPES STH2r ;mclr JSR2
+	( clear variables ) ;variables #0024 ;mclr JSR2
+
 	( rename to untitled.txt )
-	;filepath #0020 ;mclr JSR2
+	#00 ;draw-filepath JSR2
+	;filepath #0040 ;mclr JSR2
 	;untitled-txt ;filepath #000d ;mcpy JSR2
-	;draw-grid JSR2
 	#01 ;draw-filepath JSR2
+
+	( default speed )
+	#08 ;set-speed JSR2
+
+	;draw-grid JSR2
 	RESET-STATE
 
 RTN
@@ -898,7 +910,7 @@ RTN
 
 ( random )
 
-@prng-init ( -- )
+@init-prng ( -- )
 
 	( seed )
 	#00 .DateTime/second DEI
@@ -936,7 +948,6 @@ RTN
 		#fffc LDA2 .System/g DEO2
 		#fffe LDA2 .System/b DEO2
 		&ignore
-	;redraw JSR2
 
 RTN
 
