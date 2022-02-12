@@ -26,7 +26,7 @@
 
 %GET-CHAR  { #24 MOD #00 SWP ;b36clc ++ LDA } ( b36 -- char )
 %GET-VALUE { #20 - #00 SWP ;values ++ LDA } ( char -- b36 )
-%GET-NOTE  { DUP GET-VALUE SWP IS-UC #24 * + TOS ;lc-notes ++ LDA } ( char -- midi )
+%GET-NOTE  { DUP GET-VALUE SWP IS-UC #24 * + TOS ;char-notes ++ LDA } ( char -- midi )
 %GET-CELL  { DATA-CELLS ++ LDA } ( cell* -- type )
 %SET-CELL  { DATA-CELLS ++ STA } ( type cell* -- )
 %GET-LOCK  { DATA-LOCKS ++ LDA } ( cell* -- type )
@@ -743,7 +743,7 @@ RTN
 		&hor
 			DUP .head/x STZ
 			STH2kr .head/addr STZ2
-			,get-char JSR ,get-color JSR ;draw-char JSR2
+			STH2kr ,get-char JSR ,get-color JSR ;draw-char JSR2
 			INC2r
 			INC GTHk ,&hor JCN
 		POP2
@@ -764,9 +764,9 @@ RTN
 
 RTN
 
-@get-char ( -- char )
+@get-char ( addr* -- char )
 
-	.head/addr LDZ2 GET-CELL
+	GET-CELL
 	DUP CHAR-DOT ! ,&no-bar JCN
 		POP .head LDZ2
 		DUP2 8MOD SWP 10MOD #0000 == ,&cross JCN
@@ -979,7 +979,6 @@ RTN
 		( linebreak ) ;&lb .File/write DEO2
 		INC GTHk ,&ver JCN
 	POP2
-	;draw-grid JSR2
 
 RTN
 	&lb 0a
