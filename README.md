@@ -61,6 +61,7 @@ To display the list of operators inside of Orca, use `CmdOrCtrl+G`.
 - `:` **midi**(channel octave note): Sends a midi note.
 - `;` **note**(octave note): Sends a single note.
 - `/` **byte**(hb lb): Sends a single byte.
+- `$` **self**(path): Inject file in grid.
 
 #### Advanced
 

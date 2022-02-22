@@ -5,13 +5,13 @@
 	:op-i :op-j :op-k :op-l :op-m :op-n :op-o :op-p
 	:op-q :op-r :op-s :op-t :op-u :op-v :op-w :op-x
 	:op-y :op-z
-	:op-bang :op-comment :op-synth :op-midi :op-pitch :op-byte
+	:op-bang :op-comment :op-synth :op-midi :op-pitch :op-byte :op-self
 	&docs
 	:op-a/docs :op-b/docs :op-c/docs :op-d/docs :op-e/docs :op-f/docs :op-g/docs :op-h/docs
 	:op-i/docs :op-j/docs :op-k/docs :op-l/docs :op-m/docs :op-n/docs :op-o/docs :op-p/docs
 	:op-q/docs :op-r/docs :op-s/docs :op-t/docs :op-u/docs :op-v/docs :op-w/docs :op-x/docs
 	:op-y/docs :op-z/docs
-	:op-bang/docs :op-comment/docs :op-synth/docs :op-midi/docs :op-pitch/docs :op-byte/docs
+	:op-bang/docs :op-comment/docs :op-synth/docs :op-midi/docs :op-pitch/docs :op-byte/docs :op-self/docs
 	&func
 	:op-a/func :op-b/func :op-c/func :op-d/func :op-e/func :op-f/func :op-g/func :op-h/func
 	:op-i/func :op-j/func :op-k/func :op-l/func :op-m/func :op-n/func :op-o/func :op-p/func
@@ -515,6 +515,21 @@ RTN
 	( has bang ) ;get-bang JSR2 ,&is-bang JCN [ POP2 POP2r RTN ] &is-bang
 	( animate ) IO-TYPE STH2r SET-TYPE
 	#0f AND SWP #0f AND #40 SFT + .Console/write DEO
+
+RTN
+
+@op-self "self $1
+	&docs '$ "Load 20 "orca 20 "file $1
+	&func ( char -- )
+
+	POP
+	.head/addr LDZ2 STH2k
+	&while
+		INC2 DUP2 ;get-port-right-raw JSR2 LIT '. ! ,&while JCN
+	POP2
+	( has bang ) ;get-bang JSR2 ,&is-bang JCN [ POP2r RTN ] &is-bang
+	.head LDZ2 INC STH2kr ;get-word JSR2 ;inject-file JSR2
+	( animate ) IO-TYPE STH2r SET-TYPE
 
 RTN
 
