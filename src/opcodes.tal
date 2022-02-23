@@ -1,6 +1,6 @@
 ( orca/opcodes )
 
-@op-table 
+@op-table
 	:op-a :op-b :op-c :op-d :op-e :op-f :op-g :op-h
 	:op-i :op-j :op-k :op-l :op-m :op-n :op-o :op-p
 	:op-q :op-r :op-s :op-t :op-u :op-v :op-w :op-x
@@ -155,7 +155,15 @@ RTN
 
 	STH2k
 	( get above ) ABOVE ;get-port-left-raw JSR2
-	( set below ) STH2r BELOW ;set-port-output JSR2
+	( ignore cable )
+	DUP GET-VALUE #13 ! ,&no-wire JCN
+		POP POP2r RTN &no-wire
+	( skip down )
+	STH2r
+	&while
+		BELOW DUP2 GET-CELL GET-VALUE #13 =
+		,&while JCN
+	( set below ) ;set-port-output JSR2
 
 RTN
 
@@ -393,8 +401,16 @@ RTN
 	&func ( addr* -- )
 
 	STH2k
-	( get left ) DEC2 ;get-port-left-raw JSR2
-	( set right ) STH2r INC2 ;set-port-output JSR2
+	( get above ) DEC2 ;get-port-left-raw JSR2
+	( ignore cable )
+	DUP GET-VALUE #22 ! ,&no-wire JCN
+		POP POP2r RTN &no-wire
+	( skip down )
+	STH2r
+	&while
+		INC2 DUP2 GET-CELL GET-VALUE #22 =
+		,&while JCN
+	( set below ) ;set-port-output JSR2
 
 RTN
 
