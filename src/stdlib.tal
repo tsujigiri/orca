@@ -59,15 +59,6 @@ RTN
 
 RTN
 
-@print-str ( string* -- )
-
-	#0001 SUB2 
-	&while
-		INC2 LDAk DUP #18 DEO ,&while JCN 
-	POP2
-
-JMP2r
-
 ( generics )
 
 @within-rect ( x* y* rect -- flag )
