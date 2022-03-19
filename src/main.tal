@@ -1,11 +1,42 @@
-
 ( Orca )
 
-~src/utils.tal
+%+  { ADD }  %-  { SUB }  %*  { MUL }  %/  { DIV }
+%<  { LTH }  %>  { GTH }  %=  { EQU }  %!  { NEQ }
+%++ { ADD2 } %-- { SUB2 } %** { MUL2 } %// { DIV2 }
+%<< { LTH2 } %>> { GTH2 } %== { EQU2 } %!! { NEQ2 }
 
-%DATA-CELLS { #b000 }
-%DATA-LOCKS { #c000 }
-%DATA-TYPES { #d000 }
+%2*  { #10 SFT } %2/  { #01 SFT } %2**  { #10 SFT2 } %2//  { #01 SFT2 }
+%4*  { #20 SFT } %4/  { #02 SFT } %4**  { #20 SFT2 } %4//  { #02 SFT2 }
+%8*  { #30 SFT } %8/  { #03 SFT } %8**  { #30 SFT2 } %8//  { #03 SFT2 }
+%10* { #40 SFT } %10/ { #04 SFT } %10** { #40 SFT2 } %10// { #04 SFT2 }
+%20* { #50 SFT } %20/ { #05 SFT } %20** { #50 SFT2 } %20// { #05 SFT2 }
+
+%2MOD  { #01 AND } %2MOD2  { #0001 AND2 }
+%4MOD  { #03 AND } %4MOD2  { #0003 AND2 }
+%8MOD  { #07 AND } %8MOD2  { #0007 AND2 }
+%10MOD { #0f AND } %10MOD2 { #000f AND2 }
+
+%DIF { GTHk JMP SWP SUB }
+%MOD  { DIVk MUL SUB }
+%MOD2 { DIV2k MUL2 SUB2 }
+%MIN { LTHk JMP SWP POP }
+%MAX { GTHk JMP SWP POP }
+%MIN2 { LTH2k JMP SWP2 POP2 }
+%MAX2 { GTH2k JMP SWP2 POP2 }
+
+%IS-UC { DUP #40 > SWP #5b < AND }
+%IS-LC { DUP #60 > SWP #7b < AND }
+%IS-NUM { DUP #2f > SWP #3a < AND }
+%IS-VALID { DUP #1f > SWP #7f < AND }
+%STANDARD-LB { DUP #0d = #03 * - }
+
+%CHAR-NULL  { #00 } %CHAR-LINE  { #0a }
+%CHAR-HASH  { #23 } %CHAR-BANG  { #2a }
+%CHAR-DOT   { #2e } %CHAR-SLASH { #2f }
+%CHAR-COLON { #3a } %CHAR-EQUAL { #3d }
+%CHAR-SEMI  { #3b }
+
+%RELEASE-MOUSE { #0096 DEO }
 
 %LOCKED-TYPE   { #01 } %PORTEL-TYPE   { #02 }
 %OPERATOR-TYPE { #03 } %PORTER-TYPE   { #04 }
@@ -26,14 +57,13 @@
 
 %GET-CHAR  { #24 MOD #00 SWP ;b36clc ++ LDA } ( b36 -- char )
 %GET-VALUE { #20 - #00 SWP ;values ++ LDA } ( char -- b36 )
-%GET-NOTE  { DUP GET-VALUE SWP IS-UC #24 * + TOS ;char-notes ++ LDA } ( char -- midi )
-%GET-CELL  { DATA-CELLS ++ LDA } ( cell* -- type )
-%SET-CELL  { DATA-CELLS ++ STA } ( type cell* -- )
-%GET-LOCK  { DATA-LOCKS ++ LDA } ( cell* -- type )
-%SET-LOCK  { DATA-LOCKS ++ STA } ( type cell* -- )
-%GET-TYPE  { DATA-TYPES ++ LDA } ( cell* -- type )
-%SET-TYPE  { DATA-TYPES ++ STA } ( type cell* -- )
-%ADDPOS { ROT ADD STH ADD STHr } ( x y x2 y2 -- x y )
+%GET-NOTE  { DUP GET-VALUE SWP IS-UC #24 * + #00 SWP ;char-notes ++ LDA } ( char -- midi )
+%GET-CELL  { ;data/cells ++ LDA } ( cell* -- type )
+%SET-CELL  { ;data/cells ++ STA } ( type cell* -- )
+%GET-LOCK  { ;data/locks ++ LDA } ( cell* -- type )
+%SET-LOCK  { ;data/locks ++ STA } ( type cell* -- )
+%GET-TYPE  { ;data/types ++ LDA } ( cell* -- type )
+%SET-TYPE  { ;data/types ++ STA } ( type cell* -- )
 
 ( devices )
 
@@ -85,11 +115,11 @@
 	#0fc8 .System/g DEO2
 	#0f98 .System/b DEO2
 
-	( gobal yaddr )
-	AUTO-YADDR
+	( drawing mode )
+	#15 .Screen/auto DEO
 
 	( size )
-	#02ca .Screen/width DEO2
+	#0320 .Screen/width DEO2
 	#01c0 .Screen/height DEO2
 
 	( synths )
@@ -109,12 +139,12 @@
 	( set grid size )
 	.Screen/width DEI2
 		DUP2 8// NIP #03 - .grid/width STZ
-		DUP2 2// .grid/width LDZ 2/ INC TOS 8** -- #0004 ++ .grid/x1 STZ2
-		2// .grid/width LDZ 2/ TOS 8** ++ #0004 ++ .grid/x2 STZ2
+		DUP2 2// .grid/width LDZ 2/ INC #00 SWP 8** -- #0004 ++ .grid/x1 STZ2
+		2// .grid/width LDZ 2/ #00 SWP 8** ++ #0004 ++ .grid/x2 STZ2
 	.Screen/height DEI2
 		DUP2 10// NIP #03 - .grid/height STZ
-		DUP2 2// .grid/height LDZ 2/ INC TOS 10** -- #0004 -- .grid/y1 STZ2
-		2// .grid/height LDZ 2/ TOS 10** ++ #0008 -- .grid/y2 STZ2
+		DUP2 2// .grid/height LDZ 2/ INC #00 SWP 10** -- #0004 -- .grid/y1 STZ2
+		2// .grid/height LDZ 2/ #00 SWP 10** ++ #0008 -- .grid/y2 STZ2
 
 	( set toolbar size )
 	.grid/x1 LDZ2 .toolbar/x1 STZ2
@@ -134,7 +164,7 @@
 	( draw position )
 	;draw-position JSR2
 	( start )
-	.timer/playing TOGGLE
+	.timer/playing LDZk #00 = SWP STZ
 
 BRK
 
@@ -148,7 +178,7 @@ BRK
 	#01 ;draw-filepath JSR2
 	RELEASE-MOUSE
 
-RTN
+JMP2r
 
 @trap ( -- )
 
@@ -163,15 +193,15 @@ RTN
 	.cursor/y LDZ2 .Screen/y DEO2
 	#40 .Screen/sprite DEO
 
-RTN
+JMP2r
 
 @on-console ( -> )
 
 	.Console/read DEI
-	[ #11 ] !~ ,&no-u JCN #00ff #00 ;set-selection-mod JSR2 &no-u
-	[ #12 ] !~ ,&no-d JCN #0001 #00 ;set-selection-mod JSR2 &no-d
-	[ #13 ] !~ ,&no-l JCN #ff00 #00 ;set-selection-mod JSR2 &no-l
-	[ #14 ] !~ ,&no-r JCN #0100 #00 ;set-selection-mod JSR2 &no-r
+	[ #11 ] NEQk NIP ,&no-u JCN #00ff #00 ;set-selection-mod JSR2 &no-u
+	[ #12 ] NEQk NIP ,&no-d JCN #0001 #00 ;set-selection-mod JSR2 &no-d
+	[ #13 ] NEQk NIP ,&no-l JCN #ff00 #00 ;set-selection-mod JSR2 &no-l
+	[ #14 ] NEQk NIP ,&no-r JCN #0100 #00 ;set-selection-mod JSR2 &no-r
 	DUP IS-CHAR-KEY #00 = ,&no-key JCN
 		STHk .selection LDZ2 STHr ;set-cell JSR2
 		&no-key
@@ -199,17 +229,17 @@ BRK
 
 @capture-trap ( button -- )
 
-	DUP ,&no-null JCN POP RTN &no-null
-	[ #08 ] !~ ,&no-pop JCN ;filepath ;spop JSR2 POP RTN &no-pop
-	[ #0a ] !~ ,&no-load JCN ;load-file JSR2 &no-load
-	[ #7f ] !~ ,&no-delete JCN ;filepath #0040 ;mclr JSR2 POP RTN &no-delete
-	[ #20 ] >~ ,&no-special JCN ;untrap JSR2 POP RTN &no-special
+	DUP ,&no-null JCN POP JMP2r &no-null
+	[ #08 ] NEQk NIP ,&no-pop JCN ;filepath ;spop JSR2 POP JMP2r &no-pop
+	[ #0a ] NEQk NIP ,&no-load JCN ;load-file JSR2 &no-load
+	[ #7f ] NEQk NIP ,&no-delete JCN ;filepath #0040 ;mclr JSR2 POP JMP2r &no-delete
+	[ #20 ] GTHk NIP ,&no-special JCN ;untrap JSR2 POP JMP2r &no-special
 	;filepath ;slen JSR2 NIP #3f = ,&no-push JCN
 		DUP ;filepath ROT ;sput JSR2
 		&no-push
 	POP
 
-RTN
+JMP2r
 
 @on-mouse-trap ( -> )
 
@@ -291,21 +321,21 @@ BRK
 
 	.Controller/key DEI
 	( copy/paste/cut )
-	[ LIT 'c ] !~ ,&no-copy JCN ;copy-snarf JSR2 &no-copy
-	[ LIT 'v ] !~ ,&no-paste JCN ;paste-snarf JSR2 &no-paste
-	[ LIT 'x ] !~ ,&no-cut JCN ;cut-snarf JSR2 &no-cut
+	[ LIT 'c ] NEQk NIP ,&no-copy JCN ;copy-snarf JSR2 &no-copy
+	[ LIT 'v ] NEQk NIP ,&no-paste JCN ;paste-snarf JSR2 &no-paste
+	[ LIT 'x ] NEQk NIP ,&no-cut JCN ;cut-snarf JSR2 &no-cut
 	( new/rename/open/save )
-	[ LIT 'n ] !~ ,&no-new JCN ;init-file JSR2 &no-new
-	[ LIT 'r ] !~ ,&no-name JCN ;trap JSR2 &no-name
-	[ LIT 'o ] !~ ,&no-open JCN ;load-file JSR2 &no-open
-	[ LIT 's ] !~ ,&no-save JCN ;save-file JSR2 &no-save
+	[ LIT 'n ] NEQk NIP ,&no-new JCN ;init-file JSR2 &no-new
+	[ LIT 'r ] NEQk NIP ,&no-name JCN ;trap JSR2 &no-name
+	[ LIT 'o ] NEQk NIP ,&no-open JCN ;load-file JSR2 &no-open
+	[ LIT 's ] NEQk NIP ,&no-save JCN ;save-file JSR2 &no-save
 	( select-all/insert )
-	[ LIT 'a ] !~ ,&no-a JCN ;set-selection-all JSR2 &no-a
-	[ LIT 'i ] !~ ,&no-i JCN ;toggle-insert JSR2 &no-i
-	[ LIT 'h ] !~ ,&no-h JCN ;toggle-guide JSR2 &no-h
+	[ LIT 'a ] NEQk NIP ,&no-a JCN ;set-selection-all JSR2 &no-a
+	[ LIT 'i ] NEQk NIP ,&no-i JCN ;toggle-insert JSR2 &no-i
+	[ LIT 'h ] NEQk NIP ,&no-h JCN ;toggle-guide JSR2 &no-h
 	( tempo )
-	[ LIT ', ] !~ ,&no-slow JCN #ff ;mod-speed JSR2 &no-slow
-	[ LIT '. ] !~ ,&no-fast JCN #01 ;mod-speed &no-fast
+	[ LIT ', ] NEQk NIP ,&no-slow JCN #ff ;mod-speed JSR2 &no-slow
+	[ LIT '. ] NEQk NIP ,&no-fast JCN #01 ;mod-speed &no-fast
 	POP
 
 BRK
@@ -363,21 +393,21 @@ BRK
 
 @on-mouse-toolbar ( -> )
 
-	( skip ) .Mouse/state DEI BRK?
+	( skip ) .Mouse/state DEI #01 JCN BRK
 
 	( left-side )
 	.Mouse/x DEI2 .grid/x1 LDZ2 -- 8// NIP
-	[ #05 ] >~ ,&no-insert JCN ;toggle-insert JSR2 POP BRK &no-insert
-	[ #09 ] >~ ,&no-pause JCN ;toggle-play JSR2 POP BRK &no-pause
-	[ #0d ] >~ ,&no-speed JCN [ .Mouse/state DEI #01 = 2* #01 - ] ;mod-speed JSR2 RELEASE-MOUSE POP BRK &no-speed
-	[ #0e ] >~ OVR .grid/width LDZ SWP - #06 > #0101 !! ,&no-rename JCN ;trap JSR2 &no-rename
+	[ #05 ] GTHk NIP ,&no-insert JCN ;toggle-insert JSR2 POP BRK &no-insert
+	[ #09 ] GTHk NIP ,&no-pause JCN ;toggle-play JSR2 POP BRK &no-pause
+	[ #0d ] GTHk NIP ,&no-speed JCN [ .Mouse/state DEI #01 = 2* #01 - ] ;mod-speed JSR2 RELEASE-MOUSE POP BRK &no-speed
+	[ #0e ] GTHk NIP OVR .grid/width LDZ SWP - #06 > #0101 !! ,&no-rename JCN ;trap JSR2 &no-rename
 	POP
 	( right-side )
 	.grid/x2 LDZ2 .Mouse/x DEI2 -- 8// NIP
-	[ #00 ] !~ ,&no-save JCN ;save-file JSR2 &no-save
-	[ #02 ] !~ ,&no-load JCN ;load-file JSR2 &no-load
-	[ #03 ] !~ ,&no-name JCN ;init-file JSR2 &no-name
-	[ #05 ] !~ ,&no-guide JCN ;toggle-guide JSR2 &no-guide
+	[ #00 ] NEQk NIP ,&no-save JCN ;save-file JSR2 &no-save
+	[ #02 ] NEQk NIP ,&no-load JCN ;load-file JSR2 &no-load
+	[ #03 ] NEQk NIP ,&no-name JCN ;init-file JSR2 &no-name
+	[ #05 ] NEQk NIP ,&no-guide JCN ;toggle-guide JSR2 &no-guide
 	POP
 	RELEASE-MOUSE
 
@@ -389,37 +419,38 @@ BRK
 
 	DUP #04 ! ,&no-scale JCN
 		POP
-		.selection/to LDZ2 ADDPOS ;set-selection-to JSR2
-		RTN
+		.selection/to LDZ2 ,&add-pos JSR ;set-selection-to JSR2
+		JMP2r
 		&no-scale
 	DUP #01 ! ,&no-drag JCN
 		POP
 		;cut-snarf JSR2
-		STH2k .selection/from LDZ2 ADDPOS
-		STH2r .selection/to LDZ2 ADDPOS
+		STH2k .selection/from LDZ2 ,&add-pos JSR
+		STH2r .selection/to LDZ2 ,&add-pos JSR
 			;set-selection-range JSR2
 		;paste-snarf JSR2
-		RTN
+		JMP2r
 		&no-drag
 	POP
 	( default )
-	STH2k .selection/from LDZ2 ADDPOS
-	STH2r .selection/to LDZ2 ADDPOS
+	STH2k .selection/from LDZ2 ,&add-pos JSR
+	STH2r .selection/to LDZ2 ,&add-pos JSR
 		;set-selection-range JSR2
 
-RTN
+JMP2r
+	&add-pos ROT ADD STH ADD STHr JMP2r
 
 @set-selection-all ( -- )
 
 	#0000 .grid/size LDZ2 ,set-selection-range JSR
 
-RTN
+JMP2r
 
 @set-selection-from ( x y -- )
 
 	DUP2 ,set-selection-range JSR
 
-RTN
+JMP2r
 
 @set-selection-to ( x y -- )
 
@@ -429,27 +460,27 @@ RTN
 
 	( clamp top-left )
 	OVR2 #ff ! SWP #ff ! #0101 == ,&no-tl JCN
-		POP2 POP2 RTN
+		POP2 POP2 JMP2r
 		&no-tl
 	( clamp bottom-right )
 	OVR2 .grid/height LDZ < SWP .grid/width LDZ < #0101 == ,&no-br JCN
-		POP2 POP2 RTN
+		POP2 POP2 JMP2r
 		&no-br
 	( from )
 	SWP2 DUP2 .selection/from LDZ2 !! STH .selection/from STZ2
 	( to )
-	.selection/y1 LDZ MAX .grid/height LDZ DEC MIN STH
-	.selection/x1 LDZ MAX .grid/width LDZ DEC MIN STHr
+	.selection/y1 LDZ MAX .grid/height LDZ #01 - MIN STH
+	.selection/x1 LDZ MAX .grid/width LDZ #01 - MIN STHr
 	DUP2 .selection/to LDZ2 !! STH .selection/to STZ2
 	( skip redraw when unchanged )
-	ADDr STHr #01 JCN RTN
+	ADDr STHr #01 JCN JMP2r
 	( redraw )
 	;draw-grid JSR2
 	;draw-position JSR2
 	( hide guide )
 	.guide LDZ #00 = ,&no-guide JCN ;toggle-guide JSR2 &no-guide
 
-RTN
+JMP2r
 
 @fill-selection ( char -- )
 
@@ -458,7 +489,7 @@ RTN
 	&ver
 		.selection/x2 LDZ INC .selection/x1 LDZ
 		&hor
-			( get ) GET-ITER ;get-index JSR2
+			( get ) OVR2 NIP OVR SWP ;get-index JSR2
 			( set ) STHkr ROT ROT SET-CELL
 			INC GTHk ,&hor JCN
 		POP2
@@ -468,7 +499,7 @@ RTN
 	SET-STATE
 	;draw-grid JSR2
 
-RTN
+JMP2r
 
 @mod-speed ( mod -- )
 
@@ -480,33 +511,33 @@ RTN
 	#00 .timer/beat STZ
 	;draw-speed JSR2
 
-RTN
+JMP2r
 
 @toggle-insert ( -- )
 
-	.selection/insert TOGGLE
+	.selection/insert LDZk #00 = SWP STZ
 	RELEASE-MOUSE
 	;draw-position JSR2
 
-RTN
+JMP2r
 
 @toggle-play ( -- )
 
-	.timer/playing TOGGLE
+	.timer/playing LDZk #00 = SWP STZ
 	RELEASE-MOUSE
 	;draw-timer JSR2
 
-RTN
+JMP2r
 
 @toggle-guide ( -- )
 
-	.guide TOGGLE
+	.guide LDZk #00 = SWP STZ
 	;draw-grid JSR2
 	.toolbar/y1 LDZ2 .Screen/y DEO2
 	.grid/x2 LDZ2 #0030 -- .Screen/x DEO2
 	;font/help [ #00 .guide LDZ 10** ] ++ #01 ;draw-sprite JSR2
 
-RTN
+JMP2r
 
 ( special )
 
@@ -541,8 +572,8 @@ BRK
 @run ( -- )
 
 	( clear )
-	DATA-LOCKS LENGTH STH2k ;mclr JSR2
-	DATA-TYPES STH2r ;mclr JSR2
+	;data/locks LENGTH STH2k ;mclr JSR2
+	;data/types STH2r ;mclr JSR2
 	;variables #0024 ;mclr JSR2
 	( reset head ) LIT2r 0000
 	.grid/height LDZ #00
@@ -562,28 +593,28 @@ BRK
 	;draw-grid JSR2
 	;draw-timer JSR2
 
-RTN
+JMP2r
 
 @run-char ( x y char -- )
 
 	( skip dot )
 	DUP CHAR-DOT ! ,&no-dot JCN
-		POP RTN
+		POP JMP2r
 		&no-dot
 	( skip numbers )
 	DUP #30 < ,&no-num JCN
 	DUP #39 > ,&no-num JCN
-		POP RTN
+		POP JMP2r
 		&no-num
 	( skip locked )
 	.head/addr LDZ2 GET-LOCK #00 = ,&no-locked JCN
-		POP RTN
+		POP JMP2r
 		&no-locked
 	( lowercase )
 	DUP #61 < ,&no-lc JCN
 	DUP #7a > ,&no-lc JCN
 		;get-bang JSR2 ,&run JCN
-		POP RTN
+		POP JMP2r
 		&no-lc
 	( uppercase )
 	DUP #41 < ,&no-uc JCN
@@ -591,21 +622,21 @@ RTN
 		&run
 		.head/addr LDZ2 STH2k
 		( set type ) OPERATOR-TYPE STH2r SET-TYPE
-		( run ) ROT GET-VALUE #0a - 2* TOS ;op-table/func ++ LDA2 JMP2
+		( run ) ROT GET-VALUE #0a - 2* #00 SWP ;op-table/func ++ LDA2 JMP2
 		&no-uc
 	( special )
-	[ LIT '* ] =~ ;op-bang/func JCN2
-	[ LIT '# ] =~ ;op-comment/func JCN2
-	[ LIT '= ] =~ ;op-synth/func JCN2
-	[ LIT '; ] =~ ;op-pitch/func JCN2
-	[ LIT ': ] =~ ;op-midi/func JCN2
-	[ LIT '/ ] =~ ;op-byte/func JCN2
-	[ LIT '$ ] =~ ;op-self/func JCN2
+	[ LIT '* ] EQUk NIP ;op-bang/func JCN2
+	[ LIT '# ] EQUk NIP ;op-comment/func JCN2
+	[ LIT '= ] EQUk NIP ;op-synth/func JCN2
+	[ LIT '; ] EQUk NIP ;op-pitch/func JCN2
+	[ LIT ': ] EQUk NIP ;op-midi/func JCN2
+	[ LIT '/ ] EQUk NIP ;op-byte/func JCN2
+	[ LIT '$ ] EQUk NIP ;op-self/func JCN2
 	POP
 	( erase )
 	CHAR-DOT .head/addr LDZ2 SET-CELL
 
-RTN
+JMP2r
 
 ( operations )
 
@@ -613,41 +644,41 @@ RTN
 
 	ROT ROT ,get-index JSR SET-CELL
 
-RTN
+JMP2r
 
 @get-index ( x y -- addr* )
 
 	#00 SWP #00 .grid/width LDZ ** ROT #00 SWP ++
 
-RTN
+JMP2r
 
 @get-bang ( -- bang )
 
-	.head/addr LDZ2 DATA-CELLS ++ STH2
-	STH2kr DEC2 LDA CHAR-BANG = ,&bang JCN
+	.head/addr LDZ2 ;data/cells ++ STH2
+	STH2kr #0001 -- LDA CHAR-BANG = ,&bang JCN
 	STH2kr INC2 LDA CHAR-BANG = ,&bang JCN
 	STH2kr ABOVE LDA CHAR-BANG = ,&bang JCN
 	STH2kr BELOW LDA CHAR-BANG = ,&bang JCN
-	POP2r #00 RTN
+	POP2r #00 JMP2r
 	&bang POP2r #01
 
-RTN
+JMP2r
 
 @lerp ( rate target val -- val )
 
 	DUP2 DIF STH
 	( if rate > target )
 	ROT DUP STHr < ,&skip JCN
-		POP2 RTN
+		POP2 JMP2r
 		&skip
 	( target val rate )
 	STH
 	GTHk ,&no-below JCN
-		NIP STHr SUB RTN
+		NIP STHr SUB JMP2r
 		&no-below
 	NIP STHr ADD
 	
-RTN
+JMP2r
 
 ( drawing )
 
@@ -662,7 +693,7 @@ RTN
 	( icon )
 	.dpad LDZ #01 ;draw-char JSR2
 	
-RTN
+JMP2r
 
 @draw-position ( -- )
 
@@ -679,7 +710,7 @@ RTN
 	#02 .selection/from LDZ2 .selection/to LDZ2 == +
 		;draw-sprite JSR2
 
-RTN
+JMP2r
 
 @draw-timer ( -- )
 
@@ -690,7 +721,7 @@ RTN
 	( icon )
 	;font/beat #03 STHr #07 AND #00 = - ;draw-sprite JSR2
 
-RTN
+JMP2r
 
 @draw-speed ( -- )
 
@@ -701,7 +732,7 @@ RTN
 	( th )
 	;&th-txt #03 ;draw-str JSR2
 
-RTN
+JMP2r
 	&th-txt "th $1
 
 @draw-state ( -- )
@@ -711,7 +742,7 @@ RTN
 	( icon )
 	;font/save #01 .state/changed LDZ + ;draw-sprite JSR2
 
-RTN
+JMP2r
 
 @draw-filepath ( color -- )
 
@@ -720,7 +751,7 @@ RTN
 	( icon )
 	;filepath ROT ;draw-str JSR2
 
-RTN
+JMP2r
 
 @draw-once ( -- )
 
@@ -730,7 +761,7 @@ RTN
 	;font/load #01 ;draw-sprite JSR2
 	;font/make #01 ;draw-sprite JSR2
 
-RTN
+JMP2r
 
 @draw-grid ( -- )
 
@@ -752,18 +783,18 @@ RTN
 	POP2
 	POP2r
 	( draw guide ) 
-	.guide LDZ JMP RTN ;draw-guide JSR2
+	.guide LDZ JMP JMP2r ;draw-guide JSR2
 
-RTN
+JMP2r
 
 @get-color ( -- type )
 
 	.head LDZ2 ;is-selected JSR2 ,&selected JCN
-		#00 .head/addr LDZ2 GET-TYPE ;cell-styles ++ LDA RTN
+		#00 .head/addr LDZ2 GET-TYPE ;cell-styles ++ LDA JMP2r
 	&selected
 		#09
 
-RTN
+JMP2r
 
 @get-char ( addr* -- char )
 
@@ -777,9 +808,9 @@ RTN
 		POP2 #20
 	&no-bar
 	
-RTN
-	&cross POP2 LIT '+ RTN
-	&dot POP2 LIT '. RTN
+JMP2r
+	&cross POP2 LIT '+ JMP2r
+	&dot POP2 LIT '. JMP2r
 
 @get-word ( addr* -- word* )
 
@@ -793,7 +824,7 @@ RTN
 	POP2
 	;&word
 
-RTN
+JMP2r
 	&word $20
 
 @is-selected ( x y -- bool )
@@ -802,11 +833,11 @@ RTN
 	DUP .selection/y2 LDZ > ,&end JCN
 	OVR .selection/x1 LDZ < ,&end JCN
 	OVR .selection/x2 LDZ > ,&end JCN
-		POP2 #01 RTN
+		POP2 #01 JMP2r
 	&end
 	POP2 #00
 
-RTN
+JMP2r
 
 @draw-guide ( -- )
 
@@ -817,11 +848,11 @@ RTN
 		DUP2 2** ;op-table/docs ++ LDA2
 		( glyph ) LDAk #08 ;draw-char JSR2
 		( space ) ;draw-sprite/blank JSR2
-		( text ) INC2 #01 ;draw-str JSR2
+		( text ) INC2 #01 ,draw-str JSR
 		INC2 GTH2k ,&loop JCN
 	POP2 POP2
 
-RTN
+JMP2r
 
 @draw-str ( str* color -- )
 
@@ -832,7 +863,7 @@ RTN
 	POP2
 	POPr
 
-RTN
+JMP2r
 
 @draw-short ( short* color -- )
 
@@ -848,26 +879,23 @@ RTN
 
 @draw-char ( char color -- )
 
-	STH #20 - TOS 10** ;font ++ STHr
+	STH #20 - #00 SWP 10** ;font ++ STHr
 
 @draw-sprite ( addr* color -- )
 	
 	STH .Screen/addr DEO2
-	.Screen/y DEI2
-	STHr .Screen/sprite DEOk DEO
-	.Screen/y DEO2
-	&blank
-	.Screen/x DEI2k #0008 ++ ROT DEO2
+	STHr .Screen/sprite DEO
 
-RTN
+JMP2r
+	&blank #00 .Screen/sprite DEO JMP2r
 
 ( file )
 
 @init-file ( default* -- )
 
-	( clear cells ) DATA-CELLS LENGTH STH2k ;mclr JSR2
-	( clear locks ) DATA-LOCKS STH2kr ;mclr JSR2
-	( clear types ) DATA-TYPES STH2r ;mclr JSR2
+	( clear cells ) ;data/cells LENGTH STH2k ;mclr JSR2
+	( clear locks ) ;data/locks STH2kr ;mclr JSR2
+	( clear types ) ;data/types STH2r ;mclr JSR2
 	( clear variables ) ;variables #0024 ;mclr JSR2
 
 	( rename to untitled.txt )
@@ -882,7 +910,7 @@ RTN
 	;draw-grid JSR2
 	RESET-STATE
 
-RTN
+JMP2r
 
 @load-file ( -- )
 
@@ -890,7 +918,7 @@ RTN
 	;draw-grid JSR2
 	RESET-STATE
 
-RTN
+JMP2r
 
 @inject-file ( x y path* -- )
 
@@ -911,7 +939,7 @@ RTN
 		.File/success DEI2 #0000 !! ,&stream JCN
 	POP2
 
-RTN
+JMP2r
 	&b $1
 
 @save-file ( -- )
@@ -922,7 +950,7 @@ RTN
 	&ver
 		.grid/width LDZ #00
 		&hor
-			GET-ITER ;get-index JSR2 DATA-CELLS ++ .File/write DEO2
+			OVR2 NIP OVR SWP ;get-index JSR2 ;data/cells ++ .File/write DEO2
 			INC GTHk ,&hor JCN
 		POP2
 		( linebreak ) ;&lb .File/write DEO2
@@ -930,7 +958,7 @@ RTN
 	POP2
 	RESET-STATE
 
-RTN
+JMP2r
 	&lb 0a
 
 ( random )
@@ -946,7 +974,7 @@ RTN
 	#00 .DateTime/month  DEI #60 SFT2 EOR2
 		.DateTime/year  DEI2 #a0 SFT2 EOR2 ,prng/y STR2
 
-RTN
+JMP2r
 
 @prng ( -- number* )
 
@@ -957,7 +985,7 @@ RTN
 	DUP2 #01 SFT2 EOR2 EOR2
 	,&y STR2k POP
 
-RTN
+JMP2r
 
 ( theme )
 
@@ -974,7 +1002,7 @@ RTN
 		#fffe LDA2 .System/b DEO2
 		&ignore
 
-RTN
+JMP2r
 
 ( snarf )
 
@@ -985,7 +1013,7 @@ RTN
 	,copy-snarf JSR
 	CHAR-DOT ;fill-selection JSR2
 	
-RTN
+JMP2r
 
 @copy-snarf ( -- )
 
@@ -995,14 +1023,14 @@ RTN
 	&ver
 		.selection/x2 LDZ INC .selection/x1 LDZ
 		&hor
-			GET-ITER ;get-index JSR2 DATA-CELLS ++ .File/write DEO2
+			OVR2 NIP OVR SWP ;get-index JSR2 ;data/cells ++ .File/write DEO2
 			INC GTHk ,&hor JCN
 		POP2
 		( linebreak ) ;&lb .File/write DEO2
 		INC GTHk ,&ver JCN
 	POP2
 
-RTN
+JMP2r
 	&lb 0a
 
 @paste-snarf ( -- )
@@ -1010,8 +1038,916 @@ RTN
 	.selection LDZ2 ;snarf-txt ;inject-file JSR2
 	;draw-grid JSR2
 
-RTN
+JMP2r
 
-~src/stdlib.tal
-~src/opcodes.tal
-~src/assets.tal
+( orca/opcodes )
+
+@op-table
+	:op-a :op-b :op-c :op-d :op-e :op-f :op-g :op-h
+	:op-i :op-j :op-k :op-l :op-m :op-n :op-o :op-p
+	:op-q :op-r :op-s :op-t :op-u :op-v :op-w :op-x
+	:op-y :op-z
+	:op-bang :op-comment :op-synth :op-midi :op-pitch :op-byte :op-self
+	&docs
+	:op-a/docs :op-b/docs :op-c/docs :op-d/docs :op-e/docs :op-f/docs :op-g/docs :op-h/docs
+	:op-i/docs :op-j/docs :op-k/docs :op-l/docs :op-m/docs :op-n/docs :op-o/docs :op-p/docs
+	:op-q/docs :op-r/docs :op-s/docs :op-t/docs :op-u/docs :op-v/docs :op-w/docs :op-x/docs
+	:op-y/docs :op-z/docs
+	:op-bang/docs :op-comment/docs :op-synth/docs :op-midi/docs :op-pitch/docs :op-byte/docs :op-self/docs
+	&func
+	:op-a/func :op-b/func :op-c/func :op-d/func :op-e/func :op-f/func :op-g/func :op-h/func
+	:op-i/func :op-j/func :op-k/func :op-l/func :op-m/func :op-n/func :op-o/func :op-p/func
+	:op-q/func :op-r/func :op-s/func :op-t/func :op-u/func :op-v/func :op-w/func :op-x/func
+	:op-y/func :op-z/func
+
+@op-a "add $1
+	&docs 'A "Outputs 20 "sum 20 "of 20 "inputs $1
+	&func ( addr* -- )
+
+	STH2k
+	( a-val ) #0001 -- ;get-port-left-value JSR2
+	( b-raw ) STH2kr INC2 ;get-port-right-raw JSR2
+		( get case ) DUP IS-UC ,&case STR
+		( to value ) GET-VALUE
+	( res ) +
+	( set case ) GET-CHAR DUP #60 > [ LIT &case $1 ] AND 20* -
+	( output ) STH2r BELOW ;set-port-output JSR2
+
+JMP2r
+
+@op-b "subtract $1
+	&docs 'B "Outputs 20 "difference 20 "of 20 "inputs $1
+	&func ( addr* -- )
+
+	STH2k
+	( get a ) #0001 -- ;get-port-left-value JSR2
+	( get b ) STH2kr INC2 ;get-port-right-raw JSR2
+		( get case ) DUP IS-UC ,&case STR
+		( to value ) GET-VALUE
+	( res ) - DUP #80 < ,&bounce JCN #24 SWP - &bounce
+	( set case ) GET-CHAR DUP #60 > [ LIT &case $1 ] AND 20* -
+	( output ) STH2r BELOW ;set-port-output JSR2
+
+JMP2r
+
+@op-c "clock $1
+	&docs 'C "Outputs 20 "modulo 20 "of 20 "frame $1
+	&func ( addr* -- )
+
+	STH2k
+	( get rate ) #0001 -- ;get-port-left-value JSR2 DUP #00 = +
+	( get mod ) STH2kr INC2 ;get-port-right-raw JSR2
+		( get case ) DUP IS-UC ,&case STR
+		( to value ) GET-VALUE DUP #00 = +
+	( res ) #00 SWP ROT #00 SWP .timer/frame LDZ2 SWP2 // SWP2 MOD2 NIP
+	( set case ) GET-CHAR DUP #60 > [ LIT &case $1 ] AND 20* -
+	( output ) STH2r BELOW ;set-port-output JSR2
+
+JMP2r
+
+@op-d "delay $1
+	&docs 'D "Bangs 20 "on 20 "modulo 20 "of 20 "frame $1
+	&func ( addr* -- )
+
+	STH2k
+	( get rate ) #0001 -- ;get-port-left-value JSR2 DUP #00 = +
+	( get mod ) STH2kr INC2 ;get-port-right-value JSR2 DUP #00 = +
+	( res ) * #00 SWP .timer/frame LDZ2 SWP2 MOD2 #0000 ==
+	( bang on equal ) #fc * CHAR-DOT +
+	( output ) STH2r BELOW ;set-port-output JSR2
+
+JMP2r
+
+@op-e "east $1
+	&docs 'E "Moves 20 "eastward 20 "or 20 "bangs $1
+	&func ( addr* -- )
+
+	STH2k GET-CELL ,&self STR
+	( wall ) .head/x LDZ INC .grid/width LDZ = ,&collide JCN
+	( cell ) STH2kr INC2 GET-CELL CHAR-DOT ! ,&collide JCN
+	( write new ) [ LIT &self $1 ] STH2kr INC2 ;set-port-raw JSR2
+	( erase old ) CHAR-DOT STH2r ;set-port-raw JSR2
+	JMP2r
+	&collide
+	( output ) CHAR-BANG STH2r ;set-port-output JSR2
+
+JMP2r
+
+@op-f "if $1
+	&docs 'F "Bangs 20 "if 20 "inputs 20 "are 20 "equal $1
+	&func ( addr* -- )
+
+	STH2k
+	( get a ) #0001 -- ;get-port-left-raw JSR2
+	( get b ) STH2kr INC2 ;get-port-right-raw JSR2
+	( bang on equal ) = [ #fc * CHAR-DOT +  ]
+	( output ) STH2r BELOW ;set-port-output JSR2
+
+JMP2r
+
+@op-g "generator $1
+	&docs 'G "Writes 20 "operands 20 "with 20 "offset $1
+	&func ( addr* -- )
+
+	STH2k
+	( x ) STH2kr #0003 -- ;get-port-left-value JSR2
+		( load ) #00 SWP ++
+	( y ) STH2kr #0002 -- ;get-port-left-value JSR2
+		( load ) #00 SWP INC2 [ #00 .grid/width LDZ ** ] ++
+	,&save STR2
+	( len ) STH2kr #0001 -- ;get-port-left-value JSR2 DUP #00 = +
+	#00
+	&loop
+		( load ) DUP #00 SWP STH2kr INC2 ++ ;get-port-right-raw JSR2
+		( save ) OVR #00 SWP [ LIT2 &save $2 ] ++ ;set-port-output JSR2
+		INC GTHk ,&loop JCN
+	POP2
+	POP2r
+
+JMP2r
+
+@op-h "hold $1
+	&docs 'H "Holds 20 "southward 20 "operand $1
+	&func ( addr* -- )
+
+	BELOW
+	( set lock ) DUP2 #01 ROT ROT SET-LOCK
+	( set type ) OUTPUT-TYPE ROT ROT SET-TYPE
+
+JMP2r
+
+@op-i "increment $1
+	&docs 'I "Increments 20 "southward 20 "operand $1
+	&func ( addr* -- )
+
+	STH2k
+	( step ) #0001 -- ;get-port-left-value JSR2
+	( mod ) STH2kr INC2 ;get-port-right-raw JSR2
+		( get case ) DUP IS-UC ,&case STR
+		( to value ) GET-VALUE DUP #00 = +
+	( res ) SWP STH2kr BELOW [ GET-CELL GET-VALUE ] + SWP MOD
+	( set case ) GET-CHAR DUP #60 > [ LIT &case $1 ] AND 20* -
+	( output ) STH2r BELOW ;set-port-output JSR2
+
+JMP2r
+
+@op-j "jumper $1
+	&docs 'J "Outputs 20 "northward 20 "operand $1
+	&func ( addr* -- )
+
+	STH2k
+	( get above ) ABOVE ;get-port-left-raw JSR2
+	( ignore cable )
+	DUP GET-VALUE #13 ! ,&no-wire JCN
+		POP POP2r JMP2r &no-wire
+	( skip down )
+	STH2r
+	&while
+		BELOW DUP2 GET-CELL GET-VALUE #13 =
+		,&while JCN
+	( set below ) ;set-port-output JSR2
+
+JMP2r
+
+@op-k "konkat $1
+	&docs 'K "Reads 20 "multiple 20 "variables $1
+	&func ( addr* -- )
+
+	STH2k
+	#0001 -- ;get-port-left-value JSR2 #00
+	&loop
+		DUP #00 SWP STH2kr INC2 ++ STH2k ;get-port-right-raw JSR2
+		DUP CHAR-DOT = ,&skip JCN
+			( load ) DUP GET-VALUE .variables + LDZ
+			( save ) STH2kr BELOW ;set-port-output JSR2
+			&skip
+		POP
+		POP2r
+		INC GTHk ;&loop JCN2
+	POP2
+	POP2r
+
+JMP2r
+
+@op-l "lesser $1
+	&docs 'L "Outputs 20 "smallest 20 "of 20 "inputs $1
+	&func ( addr* -- )
+
+	STH2k
+	( get a ) #0001 -- ;get-port-left-value JSR2
+	( get b ) STH2kr INC2 ;get-port-right-raw JSR2
+		( get case ) DUP IS-UC ,&case STR
+		( to value ) GET-VALUE
+	( res ) LTHk JMP SWP POP
+	( set case ) GET-CHAR DUP #60 > [ LIT &case $1 ] AND 20* -
+	( output ) STH2r BELOW ;set-port-output JSR2
+
+JMP2r
+
+@op-m "multiply $1
+	&docs 'M "Outputs 20 "product 20 "of 20 "inputs $1
+	&func ( addr* -- )
+
+	STH2k
+	( get a ) #0001 -- ;get-port-left-value JSR2
+	( get b ) STH2kr INC2 ;get-port-right-raw JSR2
+		( get case ) DUP IS-UC ,&case STR
+		( to value ) GET-VALUE
+	( res ) *
+	( set case ) GET-CHAR DUP #60 > [ LIT &case $1 ] AND 20* -
+	( output ) STH2r BELOW ;set-port-output JSR2
+
+JMP2r
+
+@op-n "north $1
+	&docs 'N "Moves 20 "Northward 20 "or 20 "bangs $1
+	&func ( addr* -- )
+
+	STH2k GET-CELL ,&self STR
+	( wall ) .head/y LDZ #01 - #ff = ,&collide JCN
+	( cell ) STH2kr ABOVE GET-CELL CHAR-DOT ! ,&collide JCN
+	( write new ) [ LIT &self $1 ] STH2kr ABOVE ;set-port-raw JSR2
+	( erase old ) CHAR-DOT STH2r ;set-port-raw JSR2
+	JMP2r
+	&collide
+	( output ) CHAR-BANG STH2r ;set-port-output JSR2
+
+JMP2r
+
+@op-o "read $1
+	&docs 'O "Reads 20 "operand 20 "with 20 "offset $1
+	&func ( addr* -- )
+
+	STH2k
+	( x ) STH2kr #0002 -- ;get-port-left-value JSR2 INC #00 SWP ++
+	( y ) STH2kr #0001 -- ;get-port-left-value JSR2 #00 SWP #00 .grid/width LDZ ** ++
+	( val ) ;get-port-right-raw JSR2
+	( output ) STH2r BELOW ;set-port-output JSR2
+
+JMP2r
+
+@op-p "push $1
+	&docs 'P "Writes 20 "eastward 20 "operand $1
+	&func ( addr* -- )
+
+	STH2k
+	( key ) #0002 -- ;get-port-left-value JSR2
+	( len ) STH2kr #0001 -- ;get-port-left-value JSR2 DUP #00 = +
+	#00
+	&loop
+		#00 OVR STH2kr BELOW ++ STH2
+		( lock ) #01 STH2kr SET-LOCK
+		( type ) LOCKED-TYPE STH2r SET-TYPE
+		INC GTHk ,&loop JCN
+	POP
+	( read ) STH2kr INC2 ;get-port-right-raw JSR2
+	( output ) ROT ROT MOD #00 SWP STH2r BELOW ++ ;set-port-output JSR2
+
+JMP2r
+
+@op-q "query $1
+	&docs 'Q "Reads 20 "operands 20 "with 20 "offset $1
+	&func ( addr* -- )
+
+	STH2k
+	( x ) STH2kr #0003 -- ;get-port-left-value JSR2
+		( load ) #00 SWP INC2 ++
+	( y ) STH2kr #0002 -- ;get-port-left-value JSR2
+		( load ) #00 SWP [ #00 .grid/width LDZ ** ] ++
+	,&load STR2
+	( len ) STH2kr #0001 -- ;get-port-left-value JSR2 DUP #00 = +
+		( save ) DUP #00 SWP STH2kr BELOW SWP2 -- INC2 ,&save STR2
+	#00
+	&loop
+		( load ) DUP #00 SWP [ LIT2 &load $2 ] ++ ;get-port-right-raw JSR2
+		( save ) OVR #00 SWP [ LIT2 &save $2 ] ++ ;set-port-output JSR2
+		INC GTHk ,&loop JCN
+	POP2
+	POP2r
+
+JMP2r
+
+@op-r "random $1
+	&docs 'R "Outputs 20 "random 20 "value $1
+	&func ( addr* -- )
+
+	STH2k
+	( a-min ) #0001 -- ;get-port-left-value JSR2
+	( b-max ) STH2kr INC2 ;get-port-right-raw JSR2
+		( get case ) DUP IS-UC ,&case STR
+		( to value ) GET-VALUE DUP #00 = +
+	( mod ) OVR - ;prng JSR2 + SWP DUP #00 = + MOD +
+	( set case ) GET-CHAR DUP #60 > [ LIT &case $1 ] AND 20* -
+	( output ) STH2r BELOW ;set-port-output JSR2
+
+JMP2r
+
+@op-s "south $1
+	&docs 'S "Moves 20 "southward 20 "or 20 "bangs $1
+	&func ( addr* -- )
+
+	STH2k GET-CELL ,&self STR
+	( wall ) .head/y LDZ INC .grid/height LDZ = ,&collide JCN
+	( cell ) STH2kr BELOW GET-CELL CHAR-DOT ! ,&collide JCN
+	( write new ) [ LIT &self $1 ] STH2kr BELOW ;set-port-raw JSR2
+	( erase old ) CHAR-DOT STH2r ;set-port-raw JSR2
+	JMP2r
+	&collide
+	( output ) CHAR-BANG STH2r ;set-port-output JSR2
+
+JMP2r
+
+@op-t "track $1
+	&docs 'T "Reads 20 "eastward 20 "operand $1
+	&func ( addr* -- )
+
+	STH2k
+	( key ) #0002 -- ;get-port-left-value JSR2
+	( len ) STH2kr #0001 -- ;get-port-left-value JSR2 DUP #00 = +
+	#00
+	&loop
+		#00 OVR STH2kr INC2 ++ STH2
+		( lock ) #01 STH2kr SET-LOCK
+		( type ) LOCKED-TYPE STH2r SET-TYPE
+		INC GTHk ,&loop JCN
+	POP
+	( read ) MOD #00 SWP STH2kr INC2 ++ ;get-port-right-raw JSR2
+	STH2r BELOW ;set-port-output JSR2
+
+JMP2r
+
+@op-u "Uclid $1
+	&docs 'U "Bangs 20 "on 20 "Euclidean 20 "rhythm $1
+	&func ( addr* -- )
+
+	STH2k
+	( step ) #0001 -- ;get-port-left-value JSR2
+	( max ) STH2kr INC2 ;get-port-right-value JSR2 DUP #00 = + STH2
+	( frame + max - 1 ) .timer/frame LDZ2 STHkr #00 SWP ++ #0001 --
+	( * step ) OVRr STHr #00 SWP **
+	( % max ) STHkr #00 SWP MOD2
+	( + step ) SWPr STHr #00 SWP ++
+	( bucket >= max ) STHr #00 SWP << #01 !
+	( bang if equal ) #fc * CHAR-DOT +
+	STH2r BELOW ;set-port-output JSR2
+
+JMP2r
+
+@op-v "variable $1
+	&docs 'V "Reads 20 "and 20 "writes 20 "variable $1
+	&func ( addr* -- )
+
+	STH2k
+	( key ) #0001 -- ;get-port-left-raw JSR2
+	( val ) STH2kr INC2 ;get-port-right-raw JSR2
+	DUP CHAR-DOT = ,&idle JCN
+	OVR GET-VALUE ,&save JCN
+	( load )
+		NIP GET-VALUE .variables + LDZ STH2r BELOW ;set-port-output JSR2 JMP2r
+	&save
+		SWP GET-VALUE .variables + STZ POP2r JMP2r
+	&idle
+		POP2 POP2r
+
+JMP2r
+
+@op-w "west $1
+	&docs 'W "Moves 20 "westward 20 "or 20 "bangs $1
+	&func ( addr* -- )
+
+	STH2k GET-CELL ,&self STR
+	( wall ) .head/x LDZ #01 - #ff = ,&collide JCN
+	( cell ) STH2kr #0001 -- GET-CELL CHAR-DOT ! ,&collide JCN
+	( write new ) [ LIT &self $1 ] STH2kr #0001 -- ;set-port-raw JSR2
+	( erase old ) CHAR-DOT STH2r ;set-port-raw JSR2
+	JMP2r
+	&collide
+	( output ) CHAR-BANG STH2r ;set-port-output JSR2
+
+JMP2r
+
+@op-x "write $1
+	&docs 'X "Writes 20 "operand 20 "with 20 "offset $1
+	&func ( addr* -- )
+
+	STH2k
+	( x ) STH2kr #0002 -- ;get-port-left-value JSR2 #00 SWP ++
+	( y ) STH2kr #0001 -- ;get-port-left-value JSR2 INC #00 SWP #00 .grid/width LDZ ** ++
+	( val ) STH2r INC2 ;get-port-right-raw JSR2
+	( output ) ROT ROT ;set-port-output JSR2
+
+JMP2r
+
+@op-y "yumper $1
+	&docs 'Y "Outputs 20 "westward 20 "operand $1
+	&func ( addr* -- )
+
+	STH2k
+	( get above ) #0001 -- ;get-port-left-raw JSR2
+	( ignore cable )
+	DUP GET-VALUE #22 ! ,&no-wire JCN
+		POP POP2r JMP2r &no-wire
+	( skip down )
+	STH2r
+	&while
+		INC2 DUP2 GET-CELL GET-VALUE #22 =
+		,&while JCN
+	( set below ) ;set-port-output JSR2
+
+JMP2r
+
+@op-z "lerp $1
+	&docs 'Z "Transitions 20 "operand 20 "to 20 "input $1
+	&func ( addr* -- )
+
+	STH2k
+	( rate ) #0001 -- ;get-port-left-value JSR2
+	( target ) STH2kr INC2 ;get-port-right-raw JSR2
+		( get case ) DUP IS-UC ,&case STR
+		( to value ) GET-VALUE
+	( val ) STH2kr BELOW [ GET-CELL GET-VALUE ]
+	( res ) ;lerp JSR2
+	( set case ) GET-CHAR DUP #60 > [ LIT &case $1 ] AND 20* -
+	( output ) STH2r BELOW ;set-port-output JSR2
+
+JMP2r
+
+( special )
+
+@op-bang "bang $1
+	&docs '* "Bangs 20 "neighboring 20 "operands $1
+	&func ( char -- )
+
+	POP
+	CHAR-DOT .head/addr LDZ2 SET-CELL
+
+JMP2r
+
+@op-comment "comment $1
+	&docs '# "Comments 20 "a 20 "line $1
+	&func ( char -- )
+
+	POP
+	.head/addr LDZ2 STH2k
+	( bounds )
+	#00 .grid/width LDZ .head/x LDZ - ++
+	STH2r INC2
+	&loop
+		( set lock ) DUP2 #01 ROT ROT SET-LOCK
+		( set type if unset )
+		DUP2 GET-TYPE ,&skip JCN
+			( set type ) DUP2 LOCKED-TYPE ROT ROT SET-TYPE
+			&skip
+		( stop at hash ) DUP2 GET-CELL CHAR-HASH = ,&end JCN
+		INC2 GTH2k ,&loop JCN
+	&end
+	POP2 POP2
+
+JMP2r
+
+@op-synth "synth $1
+	&docs '= "Play 20 "note 20 "with 20 "uxn 20 "synth $1
+	&func ( char -- )
+
+	POP
+	.head/addr LDZ2 STH2k
+	( channel ) INC2 ;get-port-right-value JSR2 [ ,&ch STR ]
+	( octave ) STH2kr #0002 ++ ;get-port-right-value JSR2
+	( note ) STH2kr #0003 ++ ;get-port-right-raw JSR2
+	( has note ) DUP CHAR-DOT ! ,&has-note JCN [ POP2 POP2r JMP2r ] &has-note
+	( has bang ) ;get-bang JSR2 ,&is-bang JCN [ POP2 POP2r JMP2r ] &is-bang
+	( animate ) IO-TYPE STH2r SET-TYPE
+	( get note ) GET-NOTE SWP [ #0c * ] +
+	( play ) .Audio0/pitch [ LIT &ch $1 ] 4MOD 10* + DEO
+
+JMP2r
+
+@op-midi "midi $1
+	&docs ': "Send 20 "a 20 "midi 20 "note $1
+	&func ( char -- )
+
+	POP
+	.head/addr LDZ2 STH2k
+	( channel ) INC2 ;get-port-right-value JSR2 [ ,&ch STR ]
+	( octave ) STH2kr #0002 ++ ;get-port-right-value JSR2
+	( note ) STH2kr #0003 ++ ;get-port-right-raw JSR2
+	( has note ) DUP CHAR-DOT ! ,&has-note JCN [ POP2 POP2r JMP2r ] &has-note
+	( has bang ) ;get-bang JSR2 ,&is-bang JCN [ POP2 POP2r JMP2r ] &is-bang
+	( animate ) IO-TYPE STH2r SET-TYPE
+	( get note ) GET-NOTE SWP [ #0c * ] +
+	( get channel ) [ LIT &ch $1 ]
+	( note on )
+	DUP .Console/write DEO
+	OVR .Console/write DEO
+	#7f .Console/write DEO
+	( note off )
+	.Console/write DEO
+	.Console/write DEO
+	#00 .Console/write DEO
+
+JMP2r
+
+@op-pitch "pitch $1
+	&docs '; "Send 20 "a 20 "raw 20 "pitch 20 "byte $1
+	&func ( char -- )
+
+	POP
+	.head/addr LDZ2 STH2k
+	( octave ) INC2 ;get-port-right-value JSR2
+	( note ) STH2kr #0002 ++ ;get-port-right-raw JSR2
+	( has note ) DUP CHAR-DOT ! ,&has-note JCN [ POP2 POP2r JMP2r ] &has-note
+	( has bang ) ;get-bang JSR2 ,&is-bang JCN [ POP2 POP2r JMP2r ] &is-bang
+	( animate ) IO-TYPE STH2r SET-TYPE
+	( get note ) GET-NOTE SWP [ #0c * ] + .Console/write DEO
+
+JMP2r
+
+@op-byte "byte $1
+	&docs '/ "Send 20 "a 20 "raw 20 "hexadecimal 20 "byte $1
+	&func ( char -- )
+
+	POP
+	.head/addr LDZ2 STH2k
+	( hn ) INC2 ;get-port-right-value JSR2
+	( ln ) STH2kr #0002 ++ ;get-port-right-value JSR2
+	( has bang ) ;get-bang JSR2 ,&is-bang JCN [ POP2 POP2r JMP2r ] &is-bang
+	( animate ) IO-TYPE STH2r SET-TYPE
+	#0f AND SWP #0f AND #40 SFT + .Console/write DEO
+
+JMP2r
+
+@op-self "self $1
+	&docs '$ "Load 20 "orca 20 "file $1
+	&func ( char -- )
+
+	POP
+	.head/addr LDZ2 STH2k
+	&while
+		INC2 DUP2 ;get-port-right-raw JSR2 LIT '. ! ,&while JCN
+	POP2
+	( has bang ) ;get-bang JSR2 ,&is-bang JCN [ POP2r JMP2r ] &is-bang
+	.head LDZ2 INC STH2kr ;get-word JSR2 ;inject-file JSR2
+	( animate ) IO-TYPE STH2r SET-TYPE
+
+JMP2r
+
+( helpers )
+
+@set-port-output ( value addr* -- )
+
+	( set lock ) DUP2 #01 ROT ROT SET-LOCK
+	( set type ) DUP2 OUTPUT-TYPE ROT ROT SET-TYPE
+	( set data ) SET-CELL
+
+JMP2r
+
+@set-port-raw ( value addr* -- )
+
+	( set lock ) DUP2 #01 ROT ROT SET-LOCK
+	( set type ) DUP2 #00 ROT ROT SET-TYPE
+	( set data ) SET-CELL
+
+JMP2r
+
+@get-port-left-raw ( addr* -- value )
+
+	( set type ) DUP2 PORTEL-TYPE ROT ROT SET-TYPE
+	( get data ) GET-CELL
+
+JMP2r
+
+@get-port-left-value ( addr* -- value )
+
+	,get-port-left-raw JSR GET-VALUE
+
+JMP2r
+
+@get-port-right-raw ( addr* -- value )
+
+	( set lock ) DUP2 #01 ROT ROT SET-LOCK
+	( set type ) DUP2 PORTER-TYPE ROT ROT SET-TYPE
+	( get data ) GET-CELL
+
+JMP2r
+
+@get-port-right-value ( addr* -- value )
+
+	,get-port-right-raw JSR GET-VALUE
+
+JMP2r
+
+( standards )
+
+@slen ( str* -- len* )
+
+	DUP2 ,scap JSR SWP2 --
+
+JMP2r
+
+@scap ( str* -- str-end* )
+
+	LDAk #00 ! JMP JMP2r
+	&while INC2 LDAk ,&while JCN
+
+JMP2r
+
+@sput ( str* char -- )
+
+	ROT ROT ,scap JSR STA
+
+JMP2r
+
+@spop ( str* -- )
+
+	LDAk ,&no-null JCN
+		POP2 JMP2r &no-null
+	#00 ROT ROT ,scap JSR #0001 -- STA
+
+JMP2r
+
+( memory generics )
+
+@mclr ( addr* len* -- )
+
+	OVR2 ++ SWP2
+	&loop
+		STH2k #00 STH2r STA
+		INC2 GTH2k ,&loop JCN
+	POP2 POP2
+
+JMP2r
+
+@mcpy ( src* dst* len* -- )
+
+	SWP2 STH2
+	OVR2 ++ SWP2
+	&loop
+		LDAk STH2kr STA INC2r
+		INC2 GTH2k ,&loop JCN
+	POP2 POP2
+	POP2r
+
+JMP2r
+
+( generics )
+
+@within-rect ( x* y* rect -- flag )
+
+	STH
+	( y < rect.y1 ) DUP2 STHkr #02 + LDZ2 << ,&skip JCN
+	( y > rect.y2 ) DUP2 STHkr #06 + LDZ2 >> ,&skip JCN
+	SWP2
+	( x < rect.x1 ) DUP2 STHkr LDZ2 << ,&skip JCN
+	( x > rect.x2 ) DUP2 STHkr #04 + LDZ2 >> ,&skip JCN
+	POP2 POP2 POPr
+	#01
+JMP2r
+	&skip
+	POP2 POP2 POPr
+	#00
+
+JMP2r
+
+( orca/assets )
+
+@untitled-txt  "untitled.orca $1
+
+@char-notes
+	( lc )
+	00 00 00 00 00 00 00 00
+	00 00
+	0a 0c 01 03 05 06 08 0a
+	0c 0d 0f 11 12 14 16 18
+	19 1b 1d 1e 20 22 24 25
+	27 29
+	( uc )
+	00 00 00 00 00 00 00 00
+	00 00
+	09 0b 00 02 04 05 07 09
+	0b 0c 0e 10 11 13 15 17
+	18 1a 1c 1d 1f 21 23 24
+	26 28
+
+@values ( char to b36 )
+	00 00 00 00 00 00 00 00
+	00 00 00 00 00 00 00 00
+	00 01 02 03 04 05 06 07
+	08 09 00 00 00 00 00 00
+	00 0a 0b 0c 0d 0e 0f 10
+	11 12 13 14 15 16 17 18
+	19 1a 1b 1c 1d 1e 1f 20
+	21 22 23 00 00 00 00 00
+	00 0a 0b 0c 0d 0e 0f 10
+	11 12 13 14 15 16 17 18
+	19 1a 1b 1c 1d 1e 1f 20
+	21 22 23 00 00 00 00 00
+
+@b36clc ( b36 to char-lc )
+	30 31 32 33 34 35 36 37
+	38 39 61 62 63 64 65 66
+	67 68 69 6a 6b 6c 6d 6e
+	6f 70 71 72 73 74 75 76
+	77 78 79 7a
+
+@cell-styles
+	03 ( 0 normal )
+	03 ( 1 locked )
+	01 ( 2 port-unlocked )
+	04 ( 3 operator )
+	02 ( 4 port-locked )
+	08 ( 5 port-output )
+	09 ( 6 selected )
+	0c ( 7 io )
+
+@cursor-icn
+	80c0 e0f0 f8e0 1000
+
+@font ( orca.816 )
+	0000 0000 0000 0000 0000 0000 0000 0000
+	0010 1010 1010 1010 1010 1010 0010 0000
+	0028 2800 0000 0000 0000 0000 0000 0000
+	0024 247e 2424 2424 2424 247e 2424 0000
+	0010 3854 5050 5038 1414 1454 3810 0000
+	0022 5222 0404 0808 1010 2024 4a44 0000
+	0010 2828 2828 1030 504a 4a44 443a 0000
+	0000 1020 0000 0000 0000 0000 0000 0000
+	0008 1010 1010 1010 1010 1010 1008 0000
+	0010 0808 0808 0808 0808 0808 0810 0000
+	0000 0010 5454 5438 5454 5410 0000 0000
+	0000 0000 0010 107c 1010 0000 0000 0000
+	0000 0000 0000 0000 0000 0000 1010 0000
+	0000 0000 0000 007c 0000 0000 0000 0000
+	0000 0000 0000 0000 0000 0000 0010 0000
+	0002 0202 0404 0808 1010 2020 4040 0000
+	0018 2442 4242 4242 4242 4242 2418 0000
+	0030 5010 1010 1010 1010 1010 1010 0000
+	0018 2442 4202 0408 1020 2040 407e 0000
+	0018 2442 4202 0418 0402 4242 2418 0000
+	0006 0a0a 1212 2222 427e 0202 0202 0000
+	007e 4040 4038 0402 0202 4242 2418 0000
+	0018 2442 4240 4058 6442 4242 2418 0000
+	003e 4242 0204 0404 0808 0810 1010 0000
+	0018 2442 4242 2418 2442 4242 2418 0000
+	0018 2442 4242 261a 0202 0202 0202 0000
+	0000 0000 0000 1000 0010 0000 0000 0000
+	0000 0000 0000 1000 0010 1010 2000 0000
+	0000 0204 0810 2040 2010 0804 0200 0000
+	0000 0000 0000 7c00 007c 0000 0000 0000
+	0000 4020 1008 0402 0408 1020 4000 0000
+	0018 2442 4202 0204 0408 1010 0010 0000
+	0018 2442 4a56 5252 5252 524c 201c 0000
+	0018 2442 4242 427e 4242 4242 4242 0000
+	0078 4442 4242 4478 4442 4242 4478 0000
+	0018 2442 4240 4040 4040 4242 2418 0000
+	0078 4442 4242 4242 4242 4242 4478 0000
+	007e 4040 4040 4078 4040 4040 407e 0000
+	007e 4040 4040 4078 4040 4040 4040 0000
+	0018 2442 4040 404e 4242 4242 2418 0000
+	0042 4242 4242 427e 4242 4242 4242 0000
+	007c 1010 1010 1010 1010 1010 107c 0000
+	001e 0202 0202 0202 0202 0242 2418 0000
+	0042 4244 4448 4870 4848 4444 4242 0000
+	0040 4040 4040 4040 4040 4040 407e 0000
+	0074 4a4a 4a4a 4a4a 4a4a 4a4a 4a4a 0000
+	0062 5252 5252 5252 4a4a 4a4a 4a46 0000
+	0018 2442 4242 4242 4242 4242 2418 0000
+	0078 4442 4242 4478 4040 4040 4040 0000
+	0018 2442 4242 4242 4242 425a 241a 0000
+	0078 4442 4242 4478 4442 4242 4242 0000
+	0018 2442 4240 2018 0402 4242 2418 0000
+	007c 1010 1010 1010 1010 1010 1010 0000
+	0042 4242 4242 4242 4242 4242 241a 0000
+	0042 4242 4242 4242 2424 2424 2418 0000
+	004a 4a4a 4a4a 4a4a 4a4a 4a4a 4a76 0000
+	0042 4242 2424 2418 2424 2442 4242 0000
+	0042 4242 4242 261a 0202 4242 2418 0000
+	007e 0204 0408 0810 1020 2040 407e 0000
+	0018 1010 1010 1010 1010 1010 1018 0000
+	aa55 aa55 aa55 aa55 aa55 aa55 aa55 aa55
+	0018 0808 0808 0808 0808 0808 0818 0000
+	0010 2844 0000 0000 0000 0000 0000 0000
+	0000 0000 0000 0000 0000 0000 007e 0000
+	0010 1008 0000 0000 0000 0000 0000 0000
+	0000 0000 0000 003c 4202 3e42 463a 0000
+	0000 0040 4040 4078 4442 4242 4478 0000
+	0000 0000 0000 003c 4240 4040 423c 0000
+	0000 0002 0202 021e 2242 4242 261a 0000
+	0000 0000 0000 003c 4242 7c40 423c 0000
+	0000 0c12 1010 1038 1010 1010 1020 0000
+	0000 0000 0000 003e 4242 3c40 3c42 3c00
+	0000 0040 4040 4058 6442 4242 4242 0000
+	0000 0000 0010 0010 3010 1010 1038 0000
+	0000 0000 0008 0008 0808 0808 0848 3000
+	0000 0040 4040 4042 4244 7844 4242 0000
+	0000 0010 1010 1010 1010 1010 100c 0000
+	0000 0000 0000 0074 4a4a 4a4a 4a4a 0000
+	0000 0000 0000 0058 6442 4242 4242 0000
+	0000 0000 0000 0018 2442 4242 2418 0000
+	0000 0000 0000 007c 4242 427c 4040 4000
+	0000 0000 0000 003e 4242 463a 0202 0200
+	0000 0000 0000 005c 6240 4040 4040 0000
+	0000 0000 0000 003c 4240 3c02 423c 0000
+	0000 0010 1010 1038 1010 1010 120c 0000
+	0000 0000 0000 0042 4242 4242 463a 0000
+	0000 0000 0000 0042 4224 2424 2418 0000
+	0000 0000 0000 004a 4a4a 4a4a 4a74 0000
+	0000 0000 0000 0042 4224 1824 4242 0000
+	0000 0000 0000 0042 4246 3a02 0242 3c00
+	0000 0000 0000 007e 0204 1820 407e 0000
+	0008 1010 1010 1010 2010 1010 1008 0000
+	0010 1010 1010 1010 1010 1010 1010 1000
+	0010 0808 0808 0808 0408 0808 0810 0000
+	007e 0000 0000 0000 0000 0000 0000 0000
+	0000 0000 0000 183c 3c18 0000 0000 0000
+	aa55 aa55 aa55 aa55 aa55 aa55 aa55 aa55
+&selector
+	0000 0010 1010 1010 ee10 1010 1010 0000
+	0000 006c 1010 1010 1010 1010 106c 0000
+&beat
+	0010 1028 2844 4482 8244 4428 2810 1000
+&make
+	00fe 8282 8282 8282 8282 8282 848a f400
+&load
+	00fe d6aa d6aa d6aa d6aa d6aa d4aa f400
+&save
+	0010 1092 9254 5428 d628 5454 9292 1000
+&help
+	0000 0000 0000 0000	8244 3800 0000 0000
+	0000 0000 0000 3844 9228 1000 0000 0000
+
+@sin-pcm
+	8083 8689 8c8f 9295 989b 9ea1 a4a7 aaad
+	b0b3 b6b9 bbbe c1c3 c6c9 cbce d0d2 d5d7
+	d9db dee0 e2e4 e6e7 e9eb ecee f0f1 f2f4
+	f5f6 f7f8 f9fa fbfb fcfd fdfe fefe fefe
+	fffe fefe fefe fdfd fcfb fbfa f9f8 f7f6
+	f5f4 f2f1 f0ee eceb e9e7 e6e4 e2e0 dedb
+	d9d7 d5d2 d0ce cbc9 c6c3 c1be bbb9 b6b3
+	b0ad aaa7 a4a1 9e9b 9895 928f 8c89 8683
+	807d 7a77 7471 6e6b 6865 625f 5c59 5653
+	504d 4a47 4542 3f3d 3a37 3532 302e 2b29
+	2725 2220 1e1c 1a19 1715 1412 100f 0e0c
+	0b0a 0908 0706 0505 0403 0302 0202 0202
+	0102 0202 0202 0303 0405 0506 0708 090a
+	0b0c 0e0f 1012 1415 1719 1a1c 1e20 2225
+	2729 2b2e 3032 3537 3a3d 3f42 4547 4a4d
+	5053 5659 5c5f 6265 686b 6e71 7477 7a7d
+
+@tri-pcm
+	8082 8486 888a 8c8e 9092 9496 989a 9c9e
+	a0a2 a4a6 a8aa acae b0b2 b4b6 b8ba bcbe
+	c0c2 c4c6 c8ca ccce d0d2 d4d6 d8da dcde
+	e0e2 e4e6 e8ea ecee f0f2 f4f6 f8fa fcfe
+	fffd fbf9 f7f5 f3f1 efed ebe9 e7e5 e3e1
+	dfdd dbd9 d7d5 d3d1 cfcd cbc9 c7c5 c3c1
+	bfbd bbb9 b7b5 b3b1 afad aba9 a7a5 a3a1
+	9f9d 9b99 9795 9391 8f8d 8b89 8785 8381
+	7f7d 7b79 7775 7371 6f6d 6b69 6765 6361
+	5f5d 5b59 5755 5351 4f4d 4b49 4745 4341
+	3f3d 3b39 3735 3331 2f2d 2b29 2725 2321
+	1f1d 1b19 1715 1311 0f0d 0b09 0705 0301
+	0103 0507 090b 0d0f 1113 1517 191b 1d1f
+	2123 2527 292b 2d2f 3133 3537 393b 3d3f
+	4143 4547 494b 4d4f 5153 5557 595b 5d5f
+	6163 6567 696b 6d6f 7173 7577 797b 7d7f
+
+@saw-pcm
+	8282 8183 8384 8685 8888 8889 8a8b 8c8c
+	8e8e 8f90 9092 9193 9494 9596 9699 9899
+	9b9a 9c9c 9c9d 9ea0 a1a0 a2a2 a3a5 a4a6
+	a7a7 a9a8 a9aa aaac adad aeae b0b0 b1b3
+	b2b4 b5b5 b6b7 b9b8 b9bb babc bdbc bdbe
+	bfc1 bfc1 c3c1 c4c5 c5c6 c6c7 c9c7 cbca
+	cbcc cdcd cfcf d2d0 d2d2 d2d5 d4d5 d6d7
+	d8d8 d9dc d9df dadf dce1 dde5 dce6 dceb
+	cb1f 1b1e 1c21 1c21 1f23 2025 2127 2329
+	2529 2829 2a2b 2b2e 2d2f 302f 3231 3234
+	3334 3536 3836 3939 3a3b 3b3d 3e3d 3f40
+	4042 4242 4444 4646 4748 474a 4a4b 4d4c
+	4e4e 4f50 5052 5252 5554 5557 5759 5959
+	5b5b 5c5d 5d5f 5e60 6160 6264 6365 6566
+	6867 6969 6a6c 6c6d 6d6e 706f 7071 7174
+	7475 7576 7777 797a 7a7c 7b7c 7e7d 7f7f
+
+@sqr-pcm
+	ffff ffff ffff ffff ffff ffff ffff ffff
+	ffff ffff ffff ffff ffff ffff ffff ffff
+	ffff ffff ffff ffff ffff ffff ffff ffff
+	ffff ffff ffff ffff ffff ffff ffff ffff
+	ffff ffff ffff ffff ffff ffff ffff ffff
+	ffff ffff ffff ffff ffff ffff ffff ffff
+	ffff ffff ffff ffff ffff ffff ffff ffff
+	ffff ffff ffff ffff ffff ffff ffff ffff
+	0000 0000 0000 0000 0000 0000 0000 0000
+	0000 0000 0000 0000 0000 0000 0000 0000
+	0000 0000 0000 0000 0000 0000 0000 0000
+	0000 0000 0000 0000 0000 0000 0000 0000
+	0000 0000 0000 0000 0000 0000 0000 0000
+	0000 0000 0000 0000 0000 0000 0000 0000
+	0000 0000 0000 0000 0000 0000 0000 0000
+	0000 0000 0000 0000 0000 0000 0000 0000
+
+@data
+	&cells $1000
+	&locks $1000
+	&types $1000
