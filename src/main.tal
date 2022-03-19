@@ -1,9 +1,7 @@
 ( Orca )
 
-%+  { ADD }  %-  { SUB }  %*  { MUL }  %/  { DIV }
-%<  { LTH }  %>  { GTH }  %=  { EQU }  %!  { NEQ }
-%++ { ADD2 } %-- { SUB2 } %** { MUL2 } %// { DIV2 }
-%<< { LTH2 } %>> { GTH2 } %== { EQU2 } %!! { NEQ2 }
+%-  { SUB } 
+%-- { SUB2 } 
 
 %CHAR-NULL  { #00 } %CHAR-LINE  { #0a }
 %CHAR-HASH  { #23 } %CHAR-BANG  { #2a }
@@ -37,7 +35,7 @@
 @guide $1
 @filepath $40
 @grid &x1 $2 &y1 $2 &x2 $2 &y2 $2 &size &width $1 &height $1 &length $2
-@selection &from &x1 $1 &y1 $1 &to &x2 $1 &y2 $1 &insert $1
+@selection &from &x1 $1 &y1 $1 &to &x2 $1 &y2 $1
 @cursor &x $2 &y $2
 @toolbar &x1 $2 &y1 $2 &x2 $2 &y2 $2
 @head &x $1 &y $1 &addr $2
@@ -80,7 +78,7 @@
 		DUP2 #04 SFT2 NIP #03 - .grid/height STZ
 		DUP2 #01 SFT2 .grid/height LDZ #01 SFT INC #00 SWP #40 SFT2 -- #0004 -- .grid/y1 STZ2
 		#01 SFT2 .grid/height LDZ #01 SFT #00 SWP #40 SFT2 ADD2 #0008 -- .grid/y2 STZ2
-	#00 .grid/height LDZ #00 .grid/width LDZ ** .grid/length STZ2
+	#00 .grid/height LDZ #00 .grid/width LDZ MUL2 .grid/length STZ2
 
 	( set toolbar size )
 	.grid/x1 LDZ2 .toolbar/x1 STZ2
@@ -138,10 +136,10 @@ JMP2r
 @on-console ( -> )
 
 	.Console/read DEI
-	[ #11 ] NEQk NIP ,&no-u JCN #00ff #00 ;set-selection-mod JSR2 &no-u
-	[ #12 ] NEQk NIP ,&no-d JCN #0001 #00 ;set-selection-mod JSR2 &no-d
-	[ #13 ] NEQk NIP ,&no-l JCN #ff00 #00 ;set-selection-mod JSR2 &no-l
-	[ #14 ] NEQk NIP ,&no-r JCN #0100 #00 ;set-selection-mod JSR2 &no-r
+	[ #11 ] NEQk NIP ,&no-u JCN #00ff #00 ;mod-sel JSR2 &no-u
+	[ #12 ] NEQk NIP ,&no-d JCN #0001 #00 ;mod-sel JSR2 &no-d
+	[ #13 ] NEQk NIP ,&no-l JCN #ff00 #00 ;mod-sel JSR2 &no-l
+	[ #14 ] NEQk NIP ,&no-r JCN #0100 #00 ;mod-sel JSR2 &no-r
 	DUP ;ci-key JSR2 #00 EQU ,&no-key JCN
 		STHk .selection LDZ2 STHr ;set-cell JSR2
 		&no-key
@@ -162,7 +160,7 @@ BRK
 @on-button-trap ( -> )
 
 	#00 ;draw-filepath JSR2
-	.Controller/key DEI DUP #0d EQU #03 * - ,capture-trap JSR
+	.Controller/key DEI DUP #0d EQU #03 MUL - ,capture-trap JSR
 	#01 ;draw-filepath JSR2
 
 BRK
@@ -220,39 +218,25 @@ BRK
 
 	( default )
 	.Controller/key DEI
-	DUP #00 NEQ ,&no-null JCN
-		POP BRK
-		&no-null
-	DUP #1b NEQ ,&no-escape JCN
-		.selection/from LDZ2 ;set-selection-from JSR2
-		#00 .selection/insert STZ
-		POP BRK
-		&no-escape
-	DUP #20 NEQ ,&no-space JCN
-		( insert mode )
-		.selection/insert LDZ #00 EQU ,&no-space-insert JCN
-			#01 #00 #00 ;set-selection-mod JSR2 POP BRK
-			&no-space-insert
-		;toggle-play JSR2
-		POP BRK
-		&no-space
-	DUP #08 NEQ OVR #7f NEQ AND ,&no-backspace JCN
-		( insert mode )
-		.selection/insert LDZ #00 EQU ,&no-backspace-insert JCN
-			#ff #00 #00 ;set-selection-mod JSR2
-			&no-backspace-insert
-		CHAR-DOT ;fill-selection JSR2
-		POP BRK
-		&no-backspace
-	DUP ;ci-key JSR2 #00 EQU ,&no-key JCN
-		.Controller/key DEI ;fill-selection JSR2
-		( insert mode )
-		.selection/insert LDZ #00 EQU ,&no-key-insert JCN
-			#01 #00 #00 ;set-selection-mod JSR2
-			&no-key-insert
-		#01 .state/changed STZ ;draw-state JSR2
-		POP BRK
-		&no-key
+	[ #00 ] EQUk NIP ,&end JCN
+	[ #1b ] NEQk NIP ,&no-esc JCN .selection/from LDZ2 ;set-sel-from JSR2 POP BRK &no-esc
+	[ #20 ] NEQk NIP ,&no-spc JCN ;toggle-play JSR2 POP BRK &no-spc
+	[ #08 ] NEQk NIP OVR #7f NEQ AND ,&no-bks JCN CHAR-DOT ;fill-sel JSR2 POP BRK &no-bks
+	DUP ;ci-key JSR2 #00 EQU ,&no-key JCN .Controller/key DEI ;fill-sel JSR2 &no-key
+	&end
+	POP
+
+BRK
+
+@on-button-insert ( -> )
+
+	.Controller/key DEI
+	[ #00 ] EQUk NIP ,&end JCN
+	[ #1b ] NEQk NIP ,&no-esc JCN ;unset-insert JSR2 POP BRK &no-esc
+	[ #20 ] NEQk NIP ,&no-spc JCN #01 #00 #00 ;mod-sel JSR2 POP BRK &no-spc
+	[ #08 ] NEQk NIP ,&no-bks JCN #ff #00 #00 ;mod-sel JSR2 CHAR-DOT ;fill-sel JSR2 POP BRK &no-bks
+	DUP ;ci-key JSR2 #00 EQU ,&no-key JCN .Controller/key DEI ;fill-sel JSR2 #01 #00 #00 ;mod-sel JSR2 &no-key
+	&end
 	POP
 
 BRK
@@ -270,8 +254,8 @@ BRK
 	[ LIT 'o ] NEQk NIP ,&no-open JCN ;load-file JSR2 &no-open
 	[ LIT 's ] NEQk NIP ,&no-save JCN ;save-file JSR2 &no-save
 	( select-all/insert )
-	[ LIT 'a ] NEQk NIP ,&no-a JCN ;set-selection-all JSR2 &no-a
-	[ LIT 'i ] NEQk NIP ,&no-i JCN ;toggle-insert JSR2 &no-i
+	[ LIT 'a ] NEQk NIP ,&no-a JCN ;set-sel-all JSR2 &no-a
+	[ LIT 'i ] NEQk NIP ,&no-i JCN ;set-insert JSR2 &no-i
 	[ LIT 'h ] NEQk NIP ,&no-h JCN ;toggle-guide JSR2 &no-h
 	( tempo )
 	[ LIT ', ] NEQk NIP ,&no-slow JCN #ff ;mod-speed JSR2 &no-slow
@@ -287,7 +271,7 @@ BRK
 	DUP #0f AND ,&mod STR
 	#04 SFT #00 OVR #03 AND ;&vec ADD2 LDA ,&y STR
 	#02 SFT #00 SWP #03 AND ;&vec ADD2 LDA ,&x STR
-	[ LIT &x $1 ] [ LIT &y $1 ] [ LIT &mod $1 ] ;set-selection-mod JSR2
+	[ LIT &x $1 ] [ LIT &y $1 ] [ LIT &mod $1 ] ;mod-sel JSR2
 
 BRK
 	&vec 00 ff 01 00
@@ -302,7 +286,7 @@ BRK
 	.Mouse/x DEI2 DUP2 .cursor/x STZ2 .Screen/x DEO2
 	.Mouse/y DEI2 DUP2 .cursor/y STZ2 .Screen/y DEO2
 	;cursor-icn .Screen/addr DEO2
-	#41 [ .Mouse/state DEI #00 NEQ #10 SFT ] + .Screen/sprite DEO
+	#41 [ .Mouse/state DEI #00 NEQ #10 SFT ] ADD .Screen/sprite DEO
 	( route )
 	.Mouse/y DEI2 .toolbar/y1 LDZ2 -- #04 SFT2 #0000 EQU2 ;on-mouse-toolbar JCN2
 	.Mouse/x DEI2 .Mouse/y DEI2 .grid ;within-rect JSR2 ,on-mouse-grid JCN
@@ -317,13 +301,13 @@ BRK
 		DUP2 #0100 NEQ2 ,&no-down JCN
 			.Mouse/x DEI2 .grid/x1 LDZ2 -- #03 SFT2 NIP
 			.Mouse/y DEI2 .grid/y1 LDZ2 -- #04 SFT2 NIP
-				;set-selection-from JSR2
+				;set-sel-from JSR2
 			,&end JMP
 			&no-down
 		( on release )
 		.Mouse/x DEI2 .grid/x1 LDZ2 -- #03 SFT2 NIP
 		.Mouse/y DEI2 .grid/y1 LDZ2 -- #04 SFT2 NIP
-			;set-selection-to JSR2
+			;set-sel-to JSR2
 	&end
 	POP ,&last STR
 
@@ -338,7 +322,7 @@ BRK
 	[ #05 ] GTHk NIP ,&no-insert JCN ;toggle-insert JSR2 POP BRK &no-insert
 	[ #09 ] GTHk NIP ,&no-pause JCN ;toggle-play JSR2 POP BRK &no-pause
 	[ #0d ] GTHk NIP ,&no-speed JCN [ .Mouse/state DEI #01 EQU #10 SFT #01 - ] ;mod-speed JSR2 #00 .Mouse/state DEO POP BRK &no-speed
-	[ #0e ] GTHk NIP OVR .grid/width LDZ SWP - #06 > #0101 NEQ2 ,&no-rename JCN ;trap JSR2 &no-rename
+	[ #0e ] GTHk NIP OVR .grid/width LDZ SWP - #06 GTH #0101 NEQ2 ,&no-rename JCN ;trap JSR2 &no-rename
 	POP
 	( right-side )
 	.grid/x2 LDZ2 .Mouse/x DEI2 -- #03 SFT2 NIP
@@ -353,11 +337,11 @@ BRK
 
 ( selection )
 
-@set-selection-mod ( x y mod -- )
+@mod-sel ( x y mod -- )
 
 	DUP #04 NEQ ,&no-scale JCN
 		POP
-		.selection/to LDZ2 ,&add-pos JSR ;set-selection-to JSR2
+		.selection/to LDZ2 ,&add-pos JSR ;set-sel-to JSR2
 		JMP2r
 		&no-scale
 	DUP #01 NEQ ,&no-drag JCN
@@ -365,7 +349,7 @@ BRK
 		;cut-snarf JSR2
 		STH2k .selection/from LDZ2 ,&add-pos JSR
 		STH2r .selection/to LDZ2 ,&add-pos JSR
-			;set-selection-range JSR2
+			;set-sel-range JSR2
 		;paste-snarf JSR2
 		JMP2r
 		&no-drag
@@ -373,35 +357,35 @@ BRK
 	( default )
 	STH2k .selection/from LDZ2 ,&add-pos JSR
 	STH2r .selection/to LDZ2 ,&add-pos JSR
-		;set-selection-range JSR2
+		;set-sel-range JSR2
 
 JMP2r
 	&add-pos ROT ADD STH ADD STHr JMP2r
 
-@set-selection-all ( -- )
+@set-sel-all ( -- )
 
-	#0000 .grid/size LDZ2 ,set-selection-range JSR
-
-JMP2r
-
-@set-selection-from ( x y -- )
-
-	DUP2 ,set-selection-range JSR
+	#0000 .grid/size LDZ2 ,set-sel-range JSR
 
 JMP2r
 
-@set-selection-to ( x y -- )
+@set-sel-from ( x y -- )
+
+	DUP2 ,set-sel-range JSR
+
+JMP2r
+
+@set-sel-to ( x y -- )
 
 	.selection/from LDZ2 SWP2
 
-@set-selection-range ( from* to* -- )
+@set-sel-range ( from* to* -- )
 
 	( clamp top-left )
 	OVR2 #ff NEQ SWP #ff NEQ AND ,&no-tl JCN
 		POP2 POP2 JMP2r
 		&no-tl
 	( clamp bottom-right )
-	OVR2 .grid/height LDZ < SWP .grid/width LDZ < AND ,&no-br JCN
+	OVR2 .grid/height LDZ LTH SWP .grid/width LDZ LTH AND ,&no-br JCN
 		POP2 POP2 JMP2r
 		&no-br
 	( from )
@@ -420,7 +404,7 @@ JMP2r
 
 JMP2r
 
-@fill-selection ( char -- )
+@fill-sel ( char -- )
 
 	,&c STR
 	.selection/y2 LDZ INC .selection/y1 LDZ
@@ -439,7 +423,7 @@ JMP2r
 
 @mod-speed ( mod -- )
 
-	.timer/speed LDZ +
+	.timer/speed LDZ ADD
 
 @set-speed ( speed -- )
 
@@ -451,9 +435,21 @@ JMP2r
 
 @toggle-insert ( -- )
 
-	.selection/insert LDZk #00 EQU SWP STZ
-	#00 .Mouse/state DEO
+	.Controller/vector DEI2 ;on-button-insert EQU2 ,unset-insert JCN
+
+@set-insert ( -- )
+
+	;on-button-insert .Controller/vector DEO2
 	;draw-position JSR2
+	#00 .Mouse/state DEO
+
+JMP2r
+
+@unset-insert ( -- )
+
+	;on-button .Controller/vector DEO2
+	;draw-position JSR2
+	#00 .Mouse/state DEO
 
 JMP2r
 
@@ -485,10 +481,9 @@ JMP2r
 		;&save JMP2
 	&end ( button* -> )
 		POP
-		.dpad LDZ #7f > ,&save JCN
-		.dpad LDZ ;fill-selection JSR2
-		#01 .state/changed STZ ;draw-state JSR2
-		.selection/from LDZ2 ;set-selection-from JSR2
+		.dpad LDZ #7f GTH ,&save JCN
+		.dpad LDZ ;fill-sel JSR2
+		.selection/from LDZ2 ;set-sel-from JSR2
 		#00 .dpad STZ
 		.dpad/last STZ
 		;draw-speed JSR2
@@ -496,7 +491,7 @@ JMP2r
 		,&save JMP
 	&add ( button* -> )
 		#02 NEQ ,&save JCN
-		DUP #04 SFT .dpad LDZ + #7f AND .dpad STZ
+		DUP #04 SFT .dpad LDZ ADD #7f AND .dpad STZ
 		,&save JMP
 	&save ( -> )
 		.dpad/last STZ
@@ -546,8 +541,8 @@ JMP2r
 		POP JMP2r
 		&no-dot
 	( skip numbers )
-	DUP #30 < ,&no-num JCN
-	DUP #39 > ,&no-num JCN
+	DUP #30 LTH ,&no-num JCN
+	DUP #39 GTH ,&no-num JCN
 		POP JMP2r
 		&no-num
 	( skip locked )
@@ -555,14 +550,14 @@ JMP2r
 		POP JMP2r
 		&no-locked
 	( lowercase )
-	DUP #61 < ,&no-lc JCN
-	DUP #7a > ,&no-lc JCN
+	DUP #61 LTH ,&no-lc JCN
+	DUP #7a GTH ,&no-lc JCN
 		;get-bang JSR2 ,&run JCN
 		POP JMP2r
 		&no-lc
 	( uppercase )
-	DUP #41 < ,&no-uc JCN
-	DUP #5a > ,&no-uc JCN
+	DUP #41 LTH ,&no-uc JCN
+	DUP #5a GTH ,&no-uc JCN
 		&run
 		.head/addr LDZ2 STH2k
 		( set type ) OPERATOR-TYPE STH2r ;data/types ADD2 STA
@@ -586,10 +581,10 @@ JMP2r
 
 @b36chr ( b36 -- char ) #24 DIVk MUL SUB #00 SWP ;b36clc ADD2 LDA JMP2r
 @chrb36 ( char -- b36 ) #20 - #00 SWP ;values ADD2 LDA JMP2r
-@chrmid ( char -- midi ) DUP ,chrb36 JSR SWP ;ciuc JSR2 #24 * + #00 SWP ;notes ADD2 LDA JMP2r
+@chrmid ( char -- midi ) DUP ,chrb36 JSR SWP ;ciuc JSR2 #24 MUL ADD #00 SWP ;notes ADD2 LDA JMP2r
 
 @set-cell ( x y c -- ) ROT ROT ,get-cell JSR ;data/cells ADD2 STA JMP2r
-@get-cell ( x y -- addr* ) #00 SWP #00 .grid/width LDZ ** ROT #00 SWP ADD2 JMP2r
+@get-cell ( x y -- addr* ) #00 SWP #00 .grid/width LDZ MUL2 ROT #00 SWP ADD2 JMP2r
 
 @get-bang ( -- bang )
 
@@ -606,8 +601,8 @@ JMP2r
 @lerp ( rate target val -- val )
 
 	DUP2 GTHk JMP SWP SUB STH
-	( if rate > target )
-	ROT DUP STHr < ,&skip JCN
+	( if rate GTH target )
+	ROT DUP STHr LTH ,&skip JCN
 		POP2 JMP2r
 		&skip
 	( target val rate )
@@ -645,8 +640,8 @@ JMP2r
 	( value )
 	POP2 #01 ;draw-short JSR2
 	( icon )
-	;font/selector #00 .selection/insert LDZ #40 SFT2 ++
-	#02 .selection/from LDZ2 .selection/to LDZ2 EQU2 +
+	;font/selector #00 [ .Controller/vector DEI2 ;on-button-insert EQU2 ] #40 SFT2 ADD2
+	#02 .selection/from LDZ2 .selection/to LDZ2 EQU2 ADD
 		;draw-sprite JSR2
 
 JMP2r
@@ -679,7 +674,7 @@ JMP2r
 	.toolbar/x2 LDZ2 #0008 -- .Screen/x DEO2
 	.toolbar/y1 LDZ2 .Screen/y DEO2
 	( icon )
-	;font/save #01 .state/changed LDZ + ;draw-sprite JSR2
+	;font/save #01 .state/changed LDZ ADD ;draw-sprite JSR2
 
 JMP2r
 
@@ -758,10 +753,10 @@ JMP2r
 
 @is-selected ( x y -- bool )
 
-	DUP .selection/y1 LDZ < ,&end JCN
-	DUP .selection/y2 LDZ > ,&end JCN
-	OVR .selection/x1 LDZ < ,&end JCN
-	OVR .selection/x2 LDZ > ,&end JCN
+	DUP .selection/y1 LDZ LTH ,&end JCN
+	DUP .selection/y2 LDZ GTH ,&end JCN
+	OVR .selection/x1 LDZ LTH ,&end JCN
+	OVR .selection/x2 LDZ GTH ,&end JCN
 		POP2 #01 JMP2r
 	&end
 	POP2 #00
@@ -937,7 +932,7 @@ JMP2r
 @cut-snarf ( -- )
 
 	,copy-snarf JSR
-	CHAR-DOT ;fill-selection JSR2
+	CHAR-DOT ;fill-sel JSR2
 	
 JMP2r
 
@@ -996,8 +991,8 @@ JMP2r
 	( b-raw ) STH2kr INC2 ;get-port-right-raw JSR2
 		( get case ) DUP ;ciuc JSR2 ,&case STR
 		( to value ) ;chrb36 JSR2
-	( res ) +
-	( set case ) ;b36chr JSR2 DUP #60 > [ LIT &case $1 ] AND #50 SFT -
+	( res ) ADD
+	( set case ) ;b36chr JSR2 DUP #60 GTH [ LIT &case $1 ] AND #50 SFT -
 	( output ) STH2r #00 .grid/width LDZ ADD2 ;set-port-output JSR2
 
 JMP2r
@@ -1011,8 +1006,8 @@ JMP2r
 	( get b ) STH2kr INC2 ;get-port-right-raw JSR2
 		( get case ) DUP ;ciuc JSR2 ,&case STR
 		( to value ) ;chrb36 JSR2
-	( res ) - DUP #80 < ,&bounce JCN #24 SWP - &bounce
-	( set case ) ;b36chr JSR2 DUP #60 > [ LIT &case $1 ] AND #50 SFT -
+	( res ) - DUP #80 LTH ,&bounce JCN #24 SWP - &bounce
+	( set case ) ;b36chr JSR2 DUP #60 GTH [ LIT &case $1 ] AND #50 SFT -
 	( output ) STH2r #00 .grid/width LDZ ADD2 ;set-port-output JSR2
 
 JMP2r
@@ -1022,12 +1017,12 @@ JMP2r
 	&func ( addr* -- )
 
 	STH2k
-	( get rate ) #0001 -- ;get-port-left-value JSR2 DUP #00 EQU +
+	( get rate ) #0001 -- ;get-port-left-value JSR2 DUP #00 EQU ADD
 	( get mod ) STH2kr INC2 ;get-port-right-raw JSR2
 		( get case ) DUP ;ciuc JSR2 ,&case STR
-		( to value ) ;chrb36 JSR2 DUP #00 EQU +
-	( res ) #00 SWP ROT #00 SWP .timer/frame LDZ2 SWP2 // SWP2 DIV2k MUL2 SUB2 NIP
-	( set case ) ;b36chr JSR2 DUP #60 > [ LIT &case $1 ] AND #50 SFT -
+		( to value ) ;chrb36 JSR2 DUP #00 EQU ADD
+	( res ) #00 SWP ROT #00 SWP .timer/frame LDZ2 SWP2 DIV2 SWP2 DIV2k MUL2 SUB2 NIP
+	( set case ) ;b36chr JSR2 DUP #60 GTH [ LIT &case $1 ] AND #50 SFT -
 	( output ) STH2r #00 .grid/width LDZ ADD2 ;set-port-output JSR2
 
 JMP2r
@@ -1037,10 +1032,10 @@ JMP2r
 	&func ( addr* -- )
 
 	STH2k
-	( get rate ) #0001 -- ;get-port-left-value JSR2 DUP #00 EQU +
-	( get mod ) STH2kr INC2 ;get-port-right-value JSR2 DUP #00 EQU +
-	( res ) * #00 SWP .timer/frame LDZ2 SWP2 DIV2k MUL2 SUB2 #0000 ==
-	( bang on equal ) #fc * CHAR-DOT +
+	( get rate ) #0001 -- ;get-port-left-value JSR2 DUP #00 EQU ADD
+	( get mod ) STH2kr INC2 ;get-port-right-value JSR2 DUP #00 EQU ADD
+	( res ) MUL #00 SWP .timer/frame LDZ2 SWP2 DIV2k MUL2 SUB2 #0000 EQU2
+	( bang on equal ) #fc MUL CHAR-DOT ADD
 	( output ) STH2r #00 .grid/width LDZ ADD2 ;set-port-output JSR2
 
 JMP2r
@@ -1067,7 +1062,7 @@ JMP2r
 	STH2k
 	( get a ) #0001 -- ;get-port-left-raw JSR2
 	( get b ) STH2kr INC2 ;get-port-right-raw JSR2
-	( bang on equal ) EQU [ #fc * CHAR-DOT +  ]
+	( bang on equal ) EQU [ #fc MUL CHAR-DOT ADD  ]
 	( output ) STH2r #00 .grid/width LDZ ADD2 ;set-port-output JSR2
 
 JMP2r
@@ -1078,11 +1073,11 @@ JMP2r
 
 	STH2k
 	( x ) STH2kr #0003 -- ;get-port-left-value JSR2
-		( load ) #00 SWP ++
+		( load ) #00 SWP ADD2
 	( y ) STH2kr #0002 -- ;get-port-left-value JSR2
-		( load ) #00 SWP INC2 [ #00 .grid/width LDZ ** ] ++
+		( load ) #00 SWP INC2 [ #00 .grid/width LDZ MUL2 ] ADD2
 	,&save STR2
-	( len ) STH2kr #0001 -- ;get-port-left-value JSR2 DUP #00 EQU +
+	( len ) STH2kr #0001 -- ;get-port-left-value JSR2 DUP #00 EQU ADD
 	#00
 	&loop
 		( load ) DUP #00 SWP STH2kr INC2 ADD2 ;get-port-right-raw JSR2
@@ -1111,9 +1106,9 @@ JMP2r
 	( step ) #0001 -- ;get-port-left-value JSR2
 	( mod ) STH2kr INC2 ;get-port-right-raw JSR2
 		( get case ) DUP ;ciuc JSR2 ,&case STR
-		( to value ) ;chrb36 JSR2 DUP #00 EQU +
-	( res ) SWP STH2kr #00 .grid/width LDZ ADD2 [ ;data/cells ADD2 LDA ;chrb36 JSR2 ] + SWP DIVk MUL SUB
-	( set case ) ;b36chr JSR2 DUP #60 > [ LIT &case $1 ] AND #50 SFT -
+		( to value ) ;chrb36 JSR2 DUP #00 EQU ADD
+	( res ) SWP STH2kr #00 .grid/width LDZ ADD2 [ ;data/cells ADD2 LDA ;chrb36 JSR2 ] ADD SWP DIVk MUL SUB
+	( set case ) ;b36chr JSR2 DUP #60 GTH [ LIT &case $1 ] AND #50 SFT -
 	( output ) STH2r #00 .grid/width LDZ ADD2 ;set-port-output JSR2
 
 JMP2r
@@ -1130,7 +1125,7 @@ JMP2r
 	( skip down )
 	STH2r
 	&while
-		#00 .grid/width LDZ ADD2 DUP2 ;data/cells ADD2 LDA ;chrb36 JSR2 #13 =
+		#00 .grid/width LDZ ADD2 DUP2 ;data/cells ADD2 LDA ;chrb36 JSR2 #13 EQU
 		,&while JCN
 	( set below ) ;set-port-output JSR2
 
@@ -1145,7 +1140,7 @@ JMP2r
 	&loop
 		DUP #00 SWP STH2kr INC2 ADD2 STH2k ;get-port-right-raw JSR2
 		DUP CHAR-DOT EQU ,&skip JCN
-			( load ) DUP ;chrb36 JSR2 .variables + LDZ
+			( load ) DUP ;chrb36 JSR2 .variables ADD LDZ
 			( save ) STH2kr #00 .grid/width LDZ ADD2 ;set-port-output JSR2
 			&skip
 		POP
@@ -1166,7 +1161,7 @@ JMP2r
 		( get case ) DUP ;ciuc JSR2 ,&case STR
 		( to value ) ;chrb36 JSR2
 	( res ) LTHk JMP SWP POP
-	( set case ) ;b36chr JSR2 DUP #60 > [ LIT &case $1 ] AND #50 SFT -
+	( set case ) ;b36chr JSR2 DUP #60 GTH [ LIT &case $1 ] AND #50 SFT -
 	( output ) STH2r #00 .grid/width LDZ ADD2 ;set-port-output JSR2
 
 JMP2r
@@ -1180,8 +1175,8 @@ JMP2r
 	( get b ) STH2kr INC2 ;get-port-right-raw JSR2
 		( get case ) DUP ;ciuc JSR2 ,&case STR
 		( to value ) ;chrb36 JSR2
-	( res ) *
-	( set case ) ;b36chr JSR2 DUP #60 > [ LIT &case $1 ] AND #50 SFT -
+	( res ) MUL
+	( set case ) ;b36chr JSR2 DUP #60 GTH [ LIT &case $1 ] AND #50 SFT -
 	( output ) STH2r #00 .grid/width LDZ ADD2 ;set-port-output JSR2
 
 JMP2r
@@ -1206,8 +1201,8 @@ JMP2r
 	&func ( addr* -- )
 
 	STH2k
-	( x ) STH2kr #0002 -- ;get-port-left-value JSR2 INC #00 SWP ++
-	( y ) STH2kr #0001 -- ;get-port-left-value JSR2 #00 SWP #00 .grid/width LDZ ** ++
+	( x ) STH2kr #0002 -- ;get-port-left-value JSR2 INC #00 SWP ADD2
+	( y ) STH2kr #0001 -- ;get-port-left-value JSR2 #00 SWP #00 .grid/width LDZ MUL2 ADD2
 	( val ) ;get-port-right-raw JSR2
 	( output ) STH2r #00 .grid/width LDZ ADD2 ;set-port-output JSR2
 
@@ -1219,7 +1214,7 @@ JMP2r
 
 	STH2k
 	( key ) #0002 -- ;get-port-left-value JSR2
-	( len ) STH2kr #0001 -- ;get-port-left-value JSR2 DUP #00 EQU +
+	( len ) STH2kr #0001 -- ;get-port-left-value JSR2 DUP #00 EQU ADD
 	#00
 	&loop
 		#00 OVR STH2kr #00 .grid/width LDZ ADD2 ADD2 STH2
@@ -1238,11 +1233,11 @@ JMP2r
 
 	STH2k
 	( x ) STH2kr #0003 -- ;get-port-left-value JSR2
-		( load ) #00 SWP INC2 ++
+		( load ) #00 SWP INC2 ADD2
 	( y ) STH2kr #0002 -- ;get-port-left-value JSR2
-		( load ) #00 SWP [ #00 .grid/width LDZ ** ] ++
+		( load ) #00 SWP [ #00 .grid/width LDZ MUL2 ] ADD2
 	,&load STR2
-	( len ) STH2kr #0001 -- ;get-port-left-value JSR2 DUP #00 EQU +
+	( len ) STH2kr #0001 -- ;get-port-left-value JSR2 DUP #00 EQU ADD
 		( save ) DUP #00 SWP STH2kr #00 .grid/width LDZ ADD2 SWP2 -- INC2 ,&save STR2
 	#00
 	&loop
@@ -1262,9 +1257,9 @@ JMP2r
 	( a-min ) #0001 -- ;get-port-left-value JSR2
 	( b-max ) STH2kr INC2 ;get-port-right-raw JSR2
 		( get case ) DUP ;ciuc JSR2 ,&case STR
-		( to value ) ;chrb36 JSR2 DUP #00 EQU +
-	( mod ) OVR - ;prng JSR2 + SWP DUP #00 EQU + DIVk MUL SUB +
-	( set case ) ;b36chr JSR2 DUP #60 > [ LIT &case $1 ] AND #50 SFT -
+		( to value ) ;chrb36 JSR2 DUP #00 EQU ADD
+	( mod ) OVR - ;prng JSR2 ADD SWP DUP #00 EQU ADD DIVk MUL SUB ADD
+	( set case ) ;b36chr JSR2 DUP #60 GTH [ LIT &case $1 ] AND #50 SFT -
 	( output ) STH2r #00 .grid/width LDZ ADD2 ;set-port-output JSR2
 
 JMP2r
@@ -1290,7 +1285,7 @@ JMP2r
 
 	STH2k
 	( key ) #0002 -- ;get-port-left-value JSR2
-	( len ) STH2kr #0001 -- ;get-port-left-value JSR2 DUP #00 EQU +
+	( len ) STH2kr #0001 -- ;get-port-left-value JSR2 DUP #00 EQU ADD
 	#00
 	&loop
 		#00 OVR STH2kr INC2 ADD2 STH2
@@ -1309,13 +1304,13 @@ JMP2r
 
 	STH2k
 	( step ) #0001 -- ;get-port-left-value JSR2
-	( max ) STH2kr INC2 ;get-port-right-value JSR2 DUP #00 EQU + STH2
-	( frame + max - 1 ) .timer/frame LDZ2 STHkr #00 SWP ADD2 #0001 --
-	( * step ) OVRr STHr #00 SWP **
+	( max ) STH2kr INC2 ;get-port-right-value JSR2 DUP #00 EQU ADD STH2
+	( frame ADD max - 1 ) .timer/frame LDZ2 STHkr #00 SWP ADD2 #0001 --
+	( MUL step ) OVRr STHr #00 SWP MUL2
 	( % max ) STHkr #00 SWP DIV2k MUL2 SUB2
-	( + step ) SWPr STHr #00 SWP ++
-	( bucket >= max ) STHr #00 SWP << #01 !
-	( bang if equal ) #fc * CHAR-DOT +
+	( ADD step ) SWPr STHr #00 SWP ADD2
+	( bucket GTH= max ) STHr #00 SWP LTH2 #01 NEQ
+	( bang if equal ) #fc MUL CHAR-DOT ADD
 	STH2r #00 .grid/width LDZ ADD2 ;set-port-output JSR2
 
 JMP2r
@@ -1330,9 +1325,9 @@ JMP2r
 	DUP CHAR-DOT EQU ,&idle JCN
 	OVR ;chrb36 JSR2 ,&save JCN
 	( load )
-		NIP ;chrb36 JSR2 .variables + LDZ STH2r #00 .grid/width LDZ ADD2 ;set-port-output JSR2 JMP2r
+		NIP ;chrb36 JSR2 .variables ADD LDZ STH2r #00 .grid/width LDZ ADD2 ;set-port-output JSR2 JMP2r
 	&save
-		SWP ;chrb36 JSR2 .variables + STZ POP2r JMP2r
+		SWP ;chrb36 JSR2 .variables ADD STZ POP2r JMP2r
 	&idle
 		POP2 POP2r
 
@@ -1358,8 +1353,8 @@ JMP2r
 	&func ( addr* -- )
 
 	STH2k
-	( x ) STH2kr #0002 -- ;get-port-left-value JSR2 #00 SWP ++
-	( y ) STH2kr #0001 -- ;get-port-left-value JSR2 INC #00 SWP #00 .grid/width LDZ ** ++
+	( x ) STH2kr #0002 -- ;get-port-left-value JSR2 #00 SWP ADD2
+	( y ) STH2kr #0001 -- ;get-port-left-value JSR2 INC #00 SWP #00 .grid/width LDZ MUL2 ADD2
 	( val ) STH2r INC2 ;get-port-right-raw JSR2
 	( output ) ROT ROT ;set-port-output JSR2
 
@@ -1377,7 +1372,7 @@ JMP2r
 	( skip down )
 	STH2r
 	&while
-		INC2 DUP2 ;data/cells ADD2 LDA ;chrb36 JSR2 #22 =
+		INC2 DUP2 ;data/cells ADD2 LDA ;chrb36 JSR2 #22 EQU
 		,&while JCN
 	( set below ) ;set-port-output JSR2
 
@@ -1394,7 +1389,7 @@ JMP2r
 		( to value ) ;chrb36 JSR2
 	( val ) STH2kr #00 .grid/width LDZ ADD2 [ ;data/cells ADD2 LDA ;chrb36 JSR2 ]
 	( res ) ;lerp JSR2
-	( set case ) ;b36chr JSR2 DUP #60 > [ LIT &case $1 ] AND #50 SFT -
+	( set case ) ;b36chr JSR2 DUP #60 GTH [ LIT &case $1 ] AND #50 SFT -
 	( output ) STH2r #00 .grid/width LDZ ADD2 ;set-port-output JSR2
 
 JMP2r
@@ -1417,7 +1412,7 @@ JMP2r
 	POP
 	.head/addr LDZ2 STH2k
 	( bounds )
-	#00 .grid/width LDZ .head/x LDZ - ++
+	#00 .grid/width LDZ .head/x LDZ - ADD2
 	STH2r INC2
 	&loop
 		( set lock ) DUP2 #01 ROT ROT ;data/locks ADD2 STA
@@ -1444,8 +1439,8 @@ JMP2r
 	( has note ) DUP CHAR-DOT NEQ ,&has-note JCN [ POP2 POP2r JMP2r ] &has-note
 	( has bang ) ;get-bang JSR2 ,&is-bang JCN [ POP2 POP2r JMP2r ] &is-bang
 	( animate ) IO-TYPE STH2r ;data/types ADD2 STA
-	( get note ) ;chrmid JSR2 SWP [ #0c * ] +
-	( play ) .Audio0/pitch [ LIT &ch $1 ] #03 AND #40 SFT + DEO
+	( get note ) ;chrmid JSR2 SWP [ #0c MUL ] ADD
+	( play ) .Audio0/pitch [ LIT &ch $1 ] #03 AND #40 SFT ADD DEO
 
 JMP2r
 
@@ -1461,7 +1456,7 @@ JMP2r
 	( has note ) DUP CHAR-DOT NEQ ,&has-note JCN [ POP2 POP2r JMP2r ] &has-note
 	( has bang ) ;get-bang JSR2 ,&is-bang JCN [ POP2 POP2r JMP2r ] &is-bang
 	( animate ) IO-TYPE STH2r ;data/types ADD2 STA
-	( get note ) ;chrmid JSR2 SWP [ #0c * ] +
+	( get note ) ;chrmid JSR2 SWP [ #0c MUL ] ADD
 	( get channel ) [ LIT &ch $1 ]
 	( note on )
 	DUP .Console/write DEO
@@ -1485,7 +1480,7 @@ JMP2r
 	( has note ) DUP CHAR-DOT NEQ ,&has-note JCN [ POP2 POP2r JMP2r ] &has-note
 	( has bang ) ;get-bang JSR2 ,&is-bang JCN [ POP2 POP2r JMP2r ] &is-bang
 	( animate ) IO-TYPE STH2r ;data/types ADD2 STA
-	( get note ) ;chrmid JSR2 SWP [ #0c * ] + .Console/write DEO
+	( get note ) ;chrmid JSR2 SWP [ #0c MUL ] ADD .Console/write DEO
 
 JMP2r
 
@@ -1499,7 +1494,7 @@ JMP2r
 	( ln ) STH2kr #0002 ADD2 ;get-port-right-value JSR2
 	( has bang ) ;get-bang JSR2 ,&is-bang JCN [ POP2 POP2r JMP2r ] &is-bang
 	( animate ) IO-TYPE STH2r ;data/types ADD2 STA
-	#0f AND SWP #0f AND #40 SFT + .Console/write DEO
+	#0f AND SWP #0f AND #40 SFT ADD .Console/write DEO
 
 JMP2r
 
@@ -1563,8 +1558,8 @@ JMP2r
 
 JMP2r
 
-@ciuc ( char -- bool ) DUP #40 > SWP #5b < AND JMP2r
-@ci-key ( char -- bool ) DUP #20 > SWP #7b < AND JMP2r
+@ciuc ( char -- bool ) DUP #40 GTH SWP #5b LTH AND JMP2r
+@ci-key ( char -- bool ) DUP #20 GTH SWP #7b LTH AND JMP2r
 
 ( standards )
 
@@ -1624,11 +1619,11 @@ JMP2r
 @within-rect ( x* y* rect -- flag )
 
 	STH
-	( y < rect.y1 ) DUP2 STHkr #02 + LDZ2 << ,&skip JCN
-	( y > rect.y2 ) DUP2 STHkr #06 + LDZ2 >> ,&skip JCN
+	( y LTH rect.y1 ) DUP2 STHkr #02 ADD LDZ2 LTH2 ,&skip JCN
+	( y GTH rect.y2 ) DUP2 STHkr #06 ADD LDZ2 GTH2 ,&skip JCN
 	SWP2
-	( x < rect.x1 ) DUP2 STHkr LDZ2 << ,&skip JCN
-	( x > rect.x2 ) DUP2 STHkr #04 + LDZ2 >> ,&skip JCN
+	( x LTH rect.x1 ) DUP2 STHkr LDZ2 LTH2 ,&skip JCN
+	( x GTH rect.x2 ) DUP2 STHkr #04 ADD LDZ2 GTH2 ,&skip JCN
 	POP2 POP2 POPr
 	#01
 JMP2r
