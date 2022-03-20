@@ -66,9 +66,6 @@
 	;saw-pcm .Audio2/addr DEO2
 	;sqr-pcm .Audio3/addr DEO2
 
-	( vectors )
-	;untrap JSR2
-
 	( set grid size )
 	.Screen/width DEI2
 		DUP2 #03 SFT2 NIP #03 - .grid/width STZ
@@ -85,6 +82,9 @@
 	.grid/y2 LDZ2 #0010 ADD2 .toolbar/y1 STZ2
 	.grid/x2 LDZ2 .toolbar/x2 STZ2
 	.toolbar/y1 LDZ2 #0008 ADD2 .toolbar/y2 STZ2
+
+	( vectors )
+	;untrap JSR2
 
 	( theme support )
 	;load-theme JSR2
