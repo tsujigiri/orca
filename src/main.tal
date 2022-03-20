@@ -503,11 +503,17 @@ BRK
 @init ( -- )
 	
 	;data/cells .grid/length LDZ2 ;mclr JSR2
-
 	&grid
 	;data/locks .grid/length LDZ2 STH2k ;mclr JSR2
 	;data/types STH2r ;mclr JSR2
-	;variables #0024 ;mclr JSR2
+
+@init-variables ( -- )
+
+	#2400
+	&loop
+		STHk #2e2e .variables STHr ADD STZ2
+		INC INC GTHk ,&loop JCN
+	POP2
 
 JMP2r
 
@@ -803,6 +809,7 @@ JMP2r
 
 @draw-char ( char color -- )
 
+	OVR #20 LTH ,draw-unknown JCN
 	STH #20 - #00 SWP #40 SFT2 ;font ADD2 STHr
 
 @draw-sprite ( addr* color -- )
@@ -812,6 +819,12 @@ JMP2r
 
 JMP2r
 	&blank #00 .Screen/sprite DEO JMP2r
+
+@draw-unknown ( char color -- )
+
+	NIP ;unknown-icn ROT ,draw-sprite JMP
+
+JMP2r
 
 ( file )
 
@@ -1685,7 +1698,9 @@ JMP2r
 	0c ( 7 io )
 
 @cursor-icn
-	80c0 e0f0 f8e0 1000
+	80c0 e0f0 f8e0 1000 0000 0000 0000 0000
+@unknown-icn
+	aa55 aa55 aa55 aa55 aa55 aa55 aa55 aa55
 
 @font ( orca.816 )
 	0000 0000 0000 0000 0000 0000 0000 0000
