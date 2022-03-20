@@ -40,6 +40,7 @@
 @toolbar &x1 $2 &y1 $2 &x2 $2 &y2 $2
 @head &x $1 &y $1 &addr $2
 @variables $24
+@signal &midi $1
 
 |0100
 
@@ -57,8 +58,8 @@
 
 	( synths )
 	#dd .Audio0/volume DEO  #0118 .Audio0/adsr DEO2 #0100 .Audio0/length DEO2
-	#ce .Audio1/volume DEO  #0334 .Audio1/adsr DEO2 #0100 .Audio1/length DEO2
-	#ec .Audio2/volume DEO  #1414 .Audio2/adsr DEO2 #0100 .Audio2/length DEO2
+	#ef .Audio1/volume DEO  #0334 .Audio1/adsr DEO2 #0100 .Audio1/length DEO2
+	#fe .Audio2/volume DEO  #1414 .Audio2/adsr DEO2 #0100 .Audio2/length DEO2
 	#dd .Audio3/volume DEO  #222c .Audio3/adsr DEO2 #0100 .Audio3/length DEO2
 
 	;sin-pcm .Audio0/addr DEO2
@@ -506,6 +507,7 @@ BRK
 	&grid
 	;data/locks .grid/length LDZ2 STH2k ;mclr JSR2
 	;data/types STH2r ;mclr JSR2
+	#00 .signal/midi STZ
 
 @init-variables ( -- )
 
@@ -712,6 +714,8 @@ JMP2r
 		INC GTHk ,&ver JCN
 	POP2
 	POP2r
+	( draw meter )
+	;draw-meter JSR2
 	( draw guide )
 	.guide LDZ JMP JMP2r ;draw-guide JSR2
 
@@ -766,6 +770,16 @@ JMP2r
 		POP2 #01 JMP2r
 	&end
 	POP2 #00
+
+JMP2r
+
+@draw-meter ( -- )
+
+	.toolbar/y1 LDZ2 .Screen/y DEO2
+	.grid/x2 LDZ2 #0040 -- .Screen/x DEO2
+	.signal/midi LDZ #07 LTHk JMP SWP POP STH
+	;meter-icn #00 STHkr #40 SFT2 ADD2 .Screen/addr DEO2
+	#01 STHr #07 EQU ADD .Screen/sprite DEO
 
 JMP2r
 
@@ -839,7 +853,7 @@ JMP2r
 	#01 ;draw-filepath JSR2
 
 	( default speed )
-	#08 ;set-speed JSR2
+	#0b ;set-speed JSR2
 
 	;run JSR2
 	#00 .state/changed STZ ;draw-state JSR2
@@ -1480,6 +1494,8 @@ JMP2r
 	.Console/write DEO
 	#00 .Console/write DEO
 
+	.signal/midi LDZk INC SWP STZ
+
 JMP2r
 
 @op-pitch "pitch $1
@@ -1701,6 +1717,16 @@ JMP2r
 	80c0 e0f0 f8e0 1000 0000 0000 0000 0000
 @unknown-icn
 	aa55 aa55 aa55 aa55 aa55 aa55 aa55 aa55
+@meter-icn
+	0000 0000 0000 0000 0000 0000 0000 0000
+	0000 0000 0000 0000 0000 0000 00ff 0000
+	0000 0000 0000 0000 0000 00ff 00ff 0000
+	0000 0000 0000 0000 00ff 00ff 00ff 0000
+	0000 0000 0000 00ff 00ff 00ff 00ff 0000
+	0000 0000 00ff 00ff 00ff 00ff 00ff 0000
+	0000 00ff 00ff 00ff 00ff 00ff 00ff 0000
+	00ff 00ff 00ff 00ff 00ff 00ff 00ff 0000
+	007c fefe feee c682 c6ee fefe fefe 7c00
 
 @font ( orca.816 )
 	0000 0000 0000 0000 0000 0000 0000 0000
