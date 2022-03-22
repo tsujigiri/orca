@@ -9,7 +9,7 @@ tasks:
         curl -fsS https://rabbits.srht.site/uxn/uxn-lin64.tar.gz | tar -zx
     - build: |
         cd orca-toy
-        ../uxn/uxnasm src/main.tal ../orca.rom
+        ../uxn/uxnasm src/orca.tal ../orca.rom
     - upload: |
         tar -czf out.tar.gz orca.rom
         acurl() {
