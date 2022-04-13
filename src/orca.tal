@@ -38,6 +38,7 @@
 @head &x $1 &y $1 &addr $2
 @variables $24
 @signal &midi $1
+@voices $20
 
 |0100 ( -> )
 
@@ -191,6 +192,7 @@ BRK
 	.timer/playing LDZ JMP BRK
 	( on beat )
 	.timer LDZ2 NEQ ,&skip JCN
+		;manage-voices JSR2
 		;run JSR2
 		.timer/frame LDZ2k INC2 ROT STZ2
 		#00 .timer/beat STZ
@@ -499,7 +501,7 @@ JMP2r
 BRK
 
 @init ( -- )
-	
+
 	;data/cells .grid/length LDZ2 ;mclr JSR2
 	&grid
 	;data/locks .grid/length LDZ2 STH2k ;mclr JSR2
@@ -515,6 +517,29 @@ BRK
 	POP2
 
 JMP2r
+
+@manage-voices ( -> )
+
+	( iterate thru channels )
+
+	#10 #00 &while EQUk ,&end JCN
+		( note ) DUP #10 SFT .voices ADD LDZk
+		( remaining length ) SWP INC LDZ
+		( next channel if already 0 ) DUP #00 EQU ,&next-chan JCN
+
+		( update remaining length ) #01 SUB ROTk #10 SFT .voices ADD INC STZ POP
+		( send note-off when length reaches 0 )
+		#00 NEQ ,&no-off JCN
+			( channel ) OVR .Console/write DEO
+			( note ) DUP .Console/write DEO
+			( off ) #00 .Console/write DEO
+		&no-off
+		POP
+		INC
+	,&while JMP &end POP2 JMP2r
+
+	&next-chan POP2 INC
+	,&while JMP
 
 @run ( -- )
 
@@ -1477,22 +1502,41 @@ JMP2r
 	( channel ) INC2 ;get-port-right-value JSR2 [ ,&ch STR ]
 	( octave ) STH2kr #0002 ADD2 ;get-port-right-value JSR2
 	( note ) STH2kr #0003 ADD2 ;get-port-right-raw JSR2
-	( has note ) DUP CHAR-DOT NEQ ,&has-note JCN [ POP2 POP2r JMP2r ] &has-note
-	( has bang ) ;get-bang JSR2 ,&is-bang JCN [ POP2 POP2r JMP2r ] &is-bang
+	( velocity ) STH2kr #0004 ADD2 ;get-port-right-raw JSR2 [ ,&vel STR ]
+	( length ) STH2kr #0005 ADD2 ;get-port-right-value JSR2
+
+	( has note ) OVR CHAR-DOT NEQ ,&has-note JCN [ POP POP2 POP2r JMP2r ] &has-note
+	( has bang ) ;get-bang JSR2 ,&is-bang JCN [ POP POP2 POP2r JMP2r ] &is-bang
+
+	( store length ) .voices ,&ch LDR #10 SFT ADD INC STZk POP [ ,&len STR ]
+
 	( animate ) IO-TYPE STH2r ;data/types ADD2 STA
+
 	( get note ) ;chrmid JSR2 SWP [ #0c MUL ] ADD
+	( store note ) DUP .voices ,&ch LDR #10 SFT ADD STZ
+	( get velocity ) [ LIT &vel $1 ]
+		DUP CHAR-DOT NEQ ,&normalize JCN
+			( default to max ) POP #7f ,&continue JMP
+		&normalize
+		;raw-to-b128 JSR2 &continue SWP
 	( get channel ) [ LIT &ch $1 ]
+
 	( note on )
-	DUP .Console/write DEO
-	OVR .Console/write DEO
-	#7f .Console/write DEO
-	( note off )
-	.Console/write DEO
-	.Console/write DEO
-	#00 .Console/write DEO
+	( channel ) DUP .Console/write DEO
+	( note ) OVR .Console/write DEO
+	( velocity ) ROT .Console/write DEO
 
 	.signal/midi LDZk INC SWP STZ
 
+	( note off immediately if 0 length )
+	[ LIT &len $1 ] #00 NEQ ,&done JCN
+		( channel ) .Console/write DEO
+		( note ) .Console/write DEO
+		( off ) #00 .Console/write DEO
+		JMP2r
+	&done
+	POP2
+	
 JMP2r
 
 @op-pitch "pitch $1
@@ -1540,6 +1584,13 @@ JMP2r
 JMP2r
 
 ( helpers )
+
+@raw-to-b128 ( raw -- b128 )
+
+	;chrb36 JSR2
+	#00 SWP #007f MUL2 #0023 DIV2 SWP POP
+
+JMP2r
 
 @set-port-output ( value addr* -- )
 
