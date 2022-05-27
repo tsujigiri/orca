@@ -4,6 +4,12 @@ echo "Cleaning.."
 rm -rf bin
 mkdir bin
 
+if [ -e "$HOME/roms/uxnlin.rom" ]
+then
+	echo "Linting.."
+	uxncli $HOME/roms/uxnlin.rom src/orca.tal
+fi
+
 echo "Assembling.."
 uxnasm src/orca.tal bin/orca.rom 
 

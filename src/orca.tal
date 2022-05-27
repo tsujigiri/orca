@@ -1483,7 +1483,7 @@ JMP2r
 	POP
 	.head/addr LDZ2 STH2k
 	( channel ) INC2 ;get-port-right-value JSR2 [ ,&ch STR ]
-	( octave ) STH2kr #0002 ADD2 ;get-port-right-value JSR2
+	( octave ) STH2kr INC2 INC2 ;get-port-right-value JSR2
 	( note ) STH2kr #0003 ADD2 ;get-port-right-raw JSR2
 	( has note ) DUP CHAR-DOT NEQ ,&has-note JCN [ POP2 POP2r JMP2r ] &has-note
 	( has bang ) ;get-bang JSR2 ,&is-bang JCN [ POP2 POP2r JMP2r ] &is-bang
@@ -1500,7 +1500,7 @@ JMP2r
 	POP
 	.head/addr LDZ2 STH2k
 	( channel ) INC2 ;get-port-right-value JSR2 [ ,&ch STR ]
-	( octave ) STH2kr #0002 ADD2 ;get-port-right-value JSR2
+	( octave ) STH2kr INC2 INC2 ;get-port-right-value JSR2
 	( note ) STH2kr #0003 ADD2 ;get-port-right-raw JSR2
 	( velocity ) STH2kr #0004 ADD2 ;get-port-right-raw JSR2 [ ,&vel STR ]
 	( length ) STH2kr #0005 ADD2 ;get-port-right-value JSR2
@@ -1546,7 +1546,7 @@ JMP2r
 	POP
 	.head/addr LDZ2 STH2k
 	( octave ) INC2 ;get-port-right-value JSR2
-	( note ) STH2kr #0002 ADD2 ;get-port-right-raw JSR2
+	( note ) STH2kr INC2 INC2 ;get-port-right-raw JSR2
 	( has note ) DUP CHAR-DOT NEQ ,&has-note JCN [ POP2 POP2r JMP2r ] &has-note
 	( has bang ) ;get-bang JSR2 ,&is-bang JCN [ POP2 POP2r JMP2r ] &is-bang
 	( animate ) IO-TYPE STH2r ;data/types ADD2 STA
@@ -1561,7 +1561,7 @@ JMP2r
 	POP
 	.head/addr LDZ2 STH2k
 	( hn ) INC2 ;get-port-right-value JSR2
-	( ln ) STH2kr #0002 ADD2 ;get-port-right-value JSR2
+	( ln ) STH2kr INC2 INC2 ;get-port-right-value JSR2
 	( has bang ) ;get-bang JSR2 ,&is-bang JCN [ POP2 POP2r JMP2r ] &is-bang
 	( animate ) IO-TYPE STH2r ;data/types ADD2 STA
 	#0f AND SWP #0f AND #40 SFT ADD .Console/write DEO
@@ -1588,7 +1588,7 @@ JMP2r
 @raw-to-b128 ( raw -- b128 )
 
 	;chrb36 JSR2
-	#00 SWP #007f MUL2 #0023 DIV2 SWP POP
+	#00 SWP #007f MUL2 #0023 DIV2 NIP
 
 JMP2r
 
@@ -1696,7 +1696,7 @@ JMP2r
 @within-rect ( x* y* rect -- flag )
 
 	STH
-	( y LTH rect.y1 ) DUP2 STHkr #02 ADD LDZ2 LTH2 ,&skip JCN
+	( y LTH rect.y1 ) DUP2 STHkr INC INC LDZ2 LTH2 ,&skip JCN
 	( y GTH rect.y2 ) DUP2 STHkr #06 ADD LDZ2 GTH2 ,&skip JCN
 	SWP2
 	( x LTH rect.x1 ) DUP2 STHkr LDZ2 LTH2 ,&skip JCN
