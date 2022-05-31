@@ -391,16 +391,16 @@ JMP2r
 	( from )
 	SWP2 DUP2 .selection/from LDZ2 NEQ2 STH .selection/from STZ2
 	( to )
-	.selection/y1 LDZ GTHk JMP SWP POP .grid/height LDZ #01 SUB LTHk JMP SWP POP STH
-	.selection/x1 LDZ GTHk JMP SWP POP .grid/width LDZ #01 SUB LTHk JMP SWP POP STHr
+	.selection/y1 LDZ [ GTHk JMP SWP POP ] .grid/height LDZ #01 SUB [ LTHk JMP SWP POP ] STH
+	.selection/x1 LDZ [ GTHk JMP SWP POP ] .grid/width LDZ #01 SUB [ LTHk JMP SWP POP ] STHr
 	DUP2 .selection/to LDZ2 NEQ2 STH .selection/to STZ2
 	( skip redraw when unchanged )
 	ADDr STHr #01 JCN JMP2r
+	( hide guide )
+	.guide LDZ #00 EQU ,&no-guide JCN ;toggle-guide JSR2 &no-guide
 	( redraw )
 	;draw-grid JSR2
 	;draw-position JSR2
-	( hide guide )
-	.guide LDZ #00 EQU ,&no-guide JCN ;toggle-guide JSR2 &no-guide
 
 JMP2r
 
@@ -496,7 +496,6 @@ JMP2r
 	&save ( -> )
 		.dpad/last STZ
 		;draw-dpad JSR2
-	BRK
 
 BRK
 
@@ -618,8 +617,8 @@ JMP2r
 
 @get-bang ( -- bang )
 
-	.head/addr LDZ2 ;data/cells ADD2 STH2
-	STH2kr #0001 SUB2 LDA CHAR-BANG EQU ,&bang JCN
+	.head/addr LDZ2 ;data/cells ADD2 STH2k
+	#0001 SUB2 LDA CHAR-BANG EQU ,&bang JCN
 	STH2kr INC2 LDA CHAR-BANG EQU ,&bang JCN
 	STH2kr #00 .grid/width LDZ SUB2 LDA CHAR-BANG EQU ,&bang JCN
 	STH2kr #00 .grid/width LDZ ADD2 LDA CHAR-BANG EQU ,&bang JCN
@@ -799,7 +798,7 @@ JMP2r
 
 	.toolbar/y1 LDZ2 .Screen/y DEO2
 	.grid/x2 LDZ2 #0040 SUB2 .Screen/x DEO2
-	.signal/midi LDZ #07 LTHk JMP SWP POP STH
+	.signal/midi LDZ #07 [ LTHk JMP SWP POP ] STH
 	;meter-icn #00 STHkr #40 SFT2 ADD2 .Screen/addr DEO2
 	#01 STHr #07 EQU ADD .Screen/sprite DEO
 
@@ -1209,7 +1208,7 @@ JMP2r
 	( get b ) STH2kr INC2 ;get-port-right-raw JSR2
 		( get case ) DUP ;ciuc JSR2 ,&case STR
 		( to value ) ;chrb36 JSR2
-	( res ) LTHk JMP SWP POP
+	( res ) [ LTHk JMP SWP POP ]
 	( set case ) ;b36chr JSR2 DUP #60 GTH [ LIT &case $1 ] AND #50 SFT SUB
 	( output ) STH2r #00 .grid/width LDZ ADD2 ;set-port-output JSR2
 
