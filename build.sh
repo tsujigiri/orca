@@ -19,7 +19,7 @@ echo "Installing.."
 if [ -d "$HOME/roms" ] && [ -e ./bin/orca.rom ]
 then
 	cp ./bin/orca.rom $HOME/roms
-    echo "Installed in $HOME/roms" 
+	echo "Installed in $HOME/roms"
 fi
 
 if [ "${1}" = '--push' ]; 

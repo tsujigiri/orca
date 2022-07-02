@@ -1,28 +1,28 @@
 ( Orca )
 
-%CHAR-NULL  { #00 } %CHAR-LINE  { #0a }
-%CHAR-HASH  { #23 } %CHAR-BANG  { #2a }
-%CHAR-DOT   { #2e } %CHAR-SLASH { #2f }
+%CHAR-NULL { #00 } %CHAR-LINE { #0a }
+%CHAR-HASH { #23 } %CHAR-BANG { #2a }
+%CHAR-DOT { #2e } %CHAR-SLASH { #2f }
 %CHAR-COLON { #3a } %CHAR-EQUAL { #3d }
-%CHAR-SEMI  { #3b }
+%CHAR-SEMI { #3b }
 
-%LOCKED-TYPE   { #01 } %PORTEL-TYPE   { #02 }
-%OPERATOR-TYPE { #03 } %PORTER-TYPE   { #04 }
-%OUTPUT-TYPE   { #05 } %IO-TYPE       { #07 }
+%LOCKED-TYPE { #01 } %PORTEL-TYPE { #02 }
+%OPERATOR-TYPE { #03 } %PORTER-TYPE { #04 }
+%OUTPUT-TYPE { #05 } %IO-TYPE { #07 }
 
 ( helpers )
 
-|00 @System     &vector $2 &pad      $6 &r      $2 &g     $2 &b      $2
-|10 @Console    &vector $2 &read     $1 &pad    $5 &write $1
-|20 @Screen     &vector $2 &width    $2 &height $2 &auto  $1 &pad    $1 &x $2 &y $2 &addr $2 &pixel $1 &sprite $1
-|30 @Audio0     &vector $2 &position $2 &output $1 &pad   $3 &adsr   $2 &length $2 &addr  $2 &volume $1 &pitch $1
-|40 @Audio1     &vector $2 &position $2 &output $1 &pad   $3 &adsr   $2 &length $2 &addr  $2 &volume $1 &pitch $1
-|50 @Audio2     &vector $2 &position $2 &output $1 &pad   $3 &adsr   $2 &length $2 &addr  $2 &volume $1 &pitch $1
-|60 @Audio3     &vector $2 &position $2 &output $1 &pad   $3 &adsr   $2 &length $2 &addr  $2 &volume $1 &pitch $1
-|80 @Controller &vector $2 &button   $1 &key    $1
-|90 @Mouse      &vector $2 &x        $2 &y      $2 &state $1 &chord  $1
-|a0 @File       &vector $2 &success  $2 &stat   $2 &delete $1 &append $1 &name  $2 &length $2 &read $2 &write $2
-|c0 @DateTime   &year   $2 &month    $1 &day    $1 &hour  $1 &minute $1 &second $1 &dotw $1 &doty $2 &isdst $1
+|00 @System &vector $2 &pad $6 &r $2 &g $2 &b $2
+|10 @Console &vector $2 &read $1 &pad $5 &write $1
+|20 @Screen &vector $2 &width $2 &height $2 &auto $1 &pad $1 &x $2 &y $2 &addr $2 &pixel $1 &sprite $1
+|30 @Audio0 &vector $2 &position $2 &output $1 &pad $3 &adsr $2 &length $2 &addr $2 &volume $1 &pitch $1
+|40 @Audio1 &vector $2 &position $2 &output $1 &pad $3 &adsr $2 &length $2 &addr $2 &volume $1 &pitch $1
+|50 @Audio2 &vector $2 &position $2 &output $1 &pad $3 &adsr $2 &length $2 &addr $2 &volume $1 &pitch $1
+|60 @Audio3 &vector $2 &position $2 &output $1 &pad $3 &adsr $2 &length $2 &addr $2 &volume $1 &pitch $1
+|80 @Controller &vector $2 &button $1 &key $1
+|90 @Mouse &vector $2 &x $2 &y $2 &state $1 &chord $1
+|a0 @File &vector $2 &success $2 &stat $2 &delete $1 &append $1 &name $2 &length $2 &read $2 &write $2
+|c0 @DateTime &year $2 &month $1 &day $1 &hour $1 &minute $1 &second $1 &dotw $1 &doty $2 &isdst $1
 
 |0000
 
@@ -223,14 +223,10 @@ BRK
 
 	( modifier handlers )
 	.Controller/button DEI #f0 AND ;on-button-arrow JCN2
-	.Controller/button DEI #01 AND ;on-button-ctrl JCN2
 
 	( default )
 	.Controller/key DEI
 	[ #00 ] EQUk NIP ,&end JCN
-	[ #1b ] NEQk NIP ,&no-esc JCN .selection/from LDZ2 ;set-sel-from JSR2 POP BRK &no-esc
-	[ #20 ] NEQk NIP ,&no-spc JCN ;toggle-play JSR2 POP BRK &no-spc
-	[ #08 ] NEQk NIP OVR #7f NEQ AND ,&no-bks JCN CHAR-DOT ;fill-sel JSR2 POP BRK &no-bks
 	DUP ;ci-key JSR2 #00 EQU ,&no-key JCN .Controller/key DEI ;fill-sel JSR2 &no-key
 	&end
 	POP
@@ -241,26 +237,11 @@ BRK
 
 	.Controller/key DEI
 	[ #00 ] EQUk NIP ,&end JCN
-	[ #1b ] NEQk NIP ,&no-esc JCN ;unset-insert JSR2 POP BRK &no-esc
+	[ #1b ] NEQk NIP ,&no-esc JCN ;toggle-insert JSR2 POP BRK &no-esc
 	[ #20 ] NEQk NIP ,&no-spc JCN #01 #00 #00 ;mod-sel JSR2 POP BRK &no-spc
 	[ #08 ] NEQk NIP ,&no-bks JCN #ff #00 #00 ;mod-sel JSR2 CHAR-DOT ;fill-sel JSR2 POP BRK &no-bks
 	DUP ;ci-key JSR2 #00 EQU ,&no-key JCN .Controller/key DEI ;fill-sel JSR2 #01 #00 #00 ;mod-sel JSR2 &no-key
 	&end
-	POP
-
-BRK
-
-@on-button-ctrl ( -> )
-
-	.Controller/key DEI
-
-	( select-all/insert )
-	[ LIT 'a ] NEQk NIP ,&no-a JCN ;set-sel-all JSR2 &no-a
-	[ LIT 'i ] NEQk NIP ,&no-i JCN ;set-insert JSR2 &no-i
-	[ LIT 'h ] NEQk NIP ,&no-h JCN ;toggle-guide JSR2 &no-h
-	( tempo )
-	[ LIT ', ] NEQk NIP ,&no-slow JCN #ff ;mod-speed JSR2 &no-slow
-	[ LIT '. ] NEQk NIP ,&no-fast JCN #01 ;mod-speed &no-fast
 	POP
 
 BRK
@@ -323,7 +304,7 @@ BRK
 	( left-side )
 	.Mouse/x DEI2 .grid/x1 LDZ2 SUB2 #03 SFT2 NIP
 	[ #05 ] GTHk NIP ,&no-insert JCN ;toggle-insert JSR2 POP BRK &no-insert
-	[ #09 ] GTHk NIP ,&no-pause JCN ;toggle-play JSR2 POP BRK &no-pause
+	[ #09 ] GTHk NIP ,&no-pause JCN ;play-toggle JSR2 POP BRK &no-pause
 	[ #0d ] GTHk NIP ,&no-speed JCN [ .Mouse/state DEI #01 EQU #10 SFT #01 SUB ] ;mod-speed JSR2 #00 .Mouse/state DEO POP BRK &no-speed
 	[ #0e ] GTHk NIP OVR .grid/width LDZ SWP SUB #06 GTH #0101 NEQ2 ,&no-rename JCN ;trap JSR2 &no-rename
 	POP
@@ -339,6 +320,9 @@ BRK
 BRK
 
 ( selection )
+
+@play-decr ( -- ) #ff ;mod-speed JSR2 JMP2r
+@play-incr ( -- ) #01 ;mod-speed JSR2 JMP2r
 
 @mod-sel ( x y mod -- )
 
@@ -365,7 +349,13 @@ BRK
 JMP2r
 	&add-pos ROT ADD STH ADD STHr JMP2r
 
-@set-sel-all ( -- )
+@select-reset ( -- )
+
+	.selection/from LDZ2 ;set-sel-from JSR2
+
+JMP2r
+
+@select-all ( -- )
 
 	#0000 .grid/size LDZ2 ,set-sel-range JSR
 
@@ -438,25 +428,16 @@ JMP2r
 
 @toggle-insert ( -- )
 
-	.Controller/vector DEI2 ;on-button-insert EQU2 ,unset-insert JCN
-
-@set-insert ( -- )
-
-	;on-button-insert .Controller/vector DEO2
+	;on-button ;on-button-insert
+		.Controller/vector DEI2 ;on-button-insert EQU2
+		[ JMP SWP2 POP2 ]
+		.Controller/vector DEO2
 	;draw-position JSR2
 	#00 .Mouse/state DEO
 
 JMP2r
 
-@unset-insert ( -- )
-
-	;on-button .Controller/vector DEO2
-	;draw-position JSR2
-	#00 .Mouse/state DEO
-
-JMP2r
-
-@toggle-play ( -- )
+@play-toggle ( -- )
 
 	.timer/playing LDZk #00 EQU SWP STZ
 	#00 .Mouse/state DEO
@@ -990,6 +971,12 @@ JMP2r
 ( snarf )
 
 @snarf-txt ".snarf $1
+
+@edit-erase ( -- )
+
+	CHAR-DOT ;fill-sel JSR2
+
+JMP2r
 
 @edit-cut ( -- )
 
