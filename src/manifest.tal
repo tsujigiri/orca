@@ -359,6 +359,23 @@ JMP2r
 
 JMP2r
 
+( theme )
+
+@load-theme ( -- )
+
+	;&path .File/name DEO2
+	#0002 .File/length DEO2
+	;&r .File/read DEO2
+	;&g .File/read DEO2
+	;&b .File/read DEO2
+	.File/success DEI2 ORA #01 JCN JMP2r
+	LIT2 &r $2 .System/r DEO2
+	LIT2 &g $2 .System/g DEO2
+	LIT2 &b $2 .System/b DEO2
+
+JMP2r
+	&path ".theme $1
+
 @buttons-icns
 
 	0000 0000 387c fefe fe7c 3800 0000 0000
