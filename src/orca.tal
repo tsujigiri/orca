@@ -74,15 +74,16 @@
 	#0020 .grid/y1 STZ2
 	.Screen/height DEI2
 		DUP2 #04 SFT2 NIP #05 SUB .grid/height STZ
-		#01 SFT2 .grid/height LDZ #01 SFT #00 SWP #40 SFT2 ADD2 #0008 SUB2 .grid/y2 STZ2
+		#01 SFT2 .grid/height LDZ #01 SFT #00 SWP #40 SFT2 ADD2 .grid/y2 STZ2
 	( len )
 	#00 .grid/height LDZ #00 .grid/width LDZ MUL2 .grid/length STZ2
 
 	( set toolbar size )
 	.grid/x1 LDZ2 .toolbar/x1 STZ2
-	.grid/y2 LDZ2 #0014 ADD2 .toolbar/y1 STZ2
 	.grid/x2 LDZ2 .toolbar/x2 STZ2
-	.toolbar/y1 LDZ2 #0008 ADD2 .toolbar/y2 STZ2
+	.grid/y2 LDZ2 #000c ADD2
+		DUP2 .toolbar/y1 STZ2
+		#0010 ADD2 .toolbar/y2 STZ2
 
 	( vectors )
 	;untrap JSR2
@@ -291,10 +292,10 @@ BRK
 	.Mouse/x DEI2 DUP2 .cursor/x STZ2 .Screen/x DEO2
 	.Mouse/y DEI2 DUP2 .cursor/y STZ2 .Screen/y DEO2
 	;cursor-icn .Screen/addr DEO2
-	#41 [ .Mouse/state DEI #00 NEQ #10 SFT ] ADD .Screen/sprite DEO
+	.Mouse/state DEI #00 NEQ #10 SFT #41 ADD .Screen/sprite DEO
 	( route )
-	.Mouse/y DEI2 .toolbar/y1 LDZ2 SUB2 #04 SFT2 #0000 EQU2 ;on-mouse-toolbar JCN2
 	.Mouse/x DEI2 .Mouse/y DEI2 .grid ;within-rect JSR2 ,on-mouse-grid JCN
+	.Mouse/x DEI2 .Mouse/y DEI2 .toolbar ;within-rect JSR2 ,on-mouse-toolbar JCN
 
 BRK
 
@@ -726,8 +727,6 @@ JMP2r
 
 @redraw-all ( -- )
 
-JMP2r
-
 @draw-grid ( -- )
 
 	( reset head ) LIT2r 0000
@@ -1133,6 +1132,14 @@ JMP2r
 		INC2 GTH2k ,&loop JCN
 	POP2 POP2
 	POP2r
+
+JMP2r
+
+@print ( short* -- )
+
+	SWP ,&byte JSR
+	&byte ( byte -- ) DUP #04 SFT ,&char JSR
+	&char ( char -- ) #0f AND DUP #09 GTH #27 MUL ADD #30 ADD #18 DEO
 
 JMP2r
 
