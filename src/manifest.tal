@@ -1,0 +1,385 @@
+@manifest
+
+	&name "Orca $1
+	&date "2022-07-02 $1
+	&menu
+		04 "File $1
+			01 'n :file-new "New $1
+			01 'r :file-rename "Rename $1
+			01 'o :file-open "Open $1
+			01 's :file-save "Save $1
+		03 "Edit $1
+			01 'c :edit-copy "Copy $1
+			01 'C :edit-copy-string "CopyText $1
+			01 'v :edit-paste "Paste $1
+			( 01 'x :edit-cut "Cut $1 )
+		09 "Move $1
+			10 00 :move-up "Up $1
+			20 00 :move-down "Down $1
+			40 00 :move-left "Left $1
+			80 00 :move-right "Right $1
+			14 00 :move-dech "Decr.H $1
+			24 00 :move-inch "Incr.H $1
+			44 00 :move-decw "Decr.W $1
+			84 00 :move-incw "Incr.W $1
+			00 1b :move-reset "Reset $1
+		06 "Options $1
+			00 0d :option-insert "Insert $1
+			00 08 :option-erase "Erase $1
+			00 '. :option-incr "ValIncr $1
+			00 ', :option-decr "ValDecr $1
+			04 '< :option-roll "RollLeft $1
+			04 '> :option-rolr "RollRight $1
+		$1
+
+@menu-init ( -- )
+
+	#ff ;draw-menu/sel STA
+	#ff ;draw-sub/sel STA
+
+	( clear cursor )
+	.cursor/x LDZ2 .Screen/x DEO2
+	.cursor/y LDZ2 .Screen/y DEO2
+	#40 .Screen/sprite DEO
+
+	#0401 ;draw-menu/theme STA2
+	#0804 ;draw-sub/theme STA2
+
+	;draw-menu JSR2
+
+JMP2r
+
+@trap-menu ( -> )
+
+	;on-mouse-menu .Mouse/vector DEO2
+	;on-control-menu .Controller/vector DEO2
+	,menu-init JSR
+
+BRK
+
+@on-mouse-menu ( -> )
+
+	( clear last cursor )
+	.cursor/x LDZ2 .Screen/x DEO2
+	.cursor/y LDZ2 .Screen/y DEO2
+	#40 .Screen/sprite DEO
+	( record mouse positions )
+	.Mouse/x DEI2 DUP2 .cursor/x STZ2 .Screen/x DEO2
+	.Mouse/y DEI2 DUP2 .cursor/y STZ2 .Screen/y DEO2
+	( draw new cursor )
+	;hand-icn .Screen/addr DEO2
+	#42 .Mouse/state DEI #00 NEQ ADD .Screen/sprite DEO
+	( when touch cat )
+	.Mouse/state DEI #00 EQU ,&no-touch-cat JCN
+	.Mouse/y DEI2 #0014 GTH2 ,&no-touch-cat JCN
+		.Mouse/x DEI2 ;menu-picking JSR2 ;menu-select JSR2
+		( release ) #00 .Mouse/state DEO
+		BRK
+		&no-touch-cat
+	( when sub active )
+	;draw-menu/sel LDA #ff EQU ,&no-sub JCN
+		( when sel changed )
+		.Mouse/y DEI2 #0004 SUB2 #04 SFT2 NIP #01 SUB
+		DUP ;draw-sub/sel LDA EQU ,&no-change JCN
+			DUP ;draw-sub/sel STA
+			;draw-menu/sel LDA #ff ;draw-sub JSR2
+			&no-change
+		POP
+		( when touch sub )
+		.Mouse/state DEI #00 EQU ,&no-touch-sub JCN
+			;draw-sub/sel LDA ;menu-select-sub JSR2
+			( release ) #00 .Mouse/state DEO
+			&no-touch-sub
+		BRK
+		&no-sub
+	( don't leave if menu is active )
+	;draw-menu/sel LDA #ff EQU
+	.Mouse/y DEI2 #0013 GTH2
+		AND ;on-menu-leave JCN2
+
+BRK
+
+@on-menu-leave ( -> )
+
+	;menu-close JSR2
+
+BRK
+
+@menu-picking ( x* -- cat )
+
+	#0010 SUB2 #0028 DIV2 NIP
+
+JMP2r
+
+@menu-close ( -- )
+
+	;untrap JSR2
+	;draw-menu/sel LDA
+	DUP #ff EQU ,&no-clear JCN
+		DUP #00 ;draw-sub JSR2
+		#ff ;draw-menu/sel STA
+		;draw-menu JSR2
+		;redraw-all JSR2
+	&no-clear
+	POP
+
+JMP2r
+
+@menu-select ( cat -- )
+
+	( exists )
+	DUP ;get-cat JSR2 ORA ,&exists JCN
+		POP JMP2r
+		&exists
+	( clear )
+	;draw-menu/sel LDA
+	( unchanged ) EQUk ,menu-deselect JCN
+	( unselected ) DUP #ff EQU ,&no-clear JCN
+		DUP #00 ;draw-sub JSR2
+		&no-clear
+	POP
+	( draw )
+	;redraw-all JSR2
+	#ff ;draw-sub/sel STA
+	DUP ;draw-menu/sel STA
+	#ff ;draw-sub JSR2
+	;draw-menu JSR2
+
+JMP2r
+
+@menu-deselect ( cat cat -- )
+
+	POP2 ;menu-close JSR2
+
+JMP2r
+
+@menu-select-sub ( sub -- )
+
+	;get-sub JSR2
+	;menu-close JSR2
+	DUP2 #0000 EQU2 ,&skip JCN
+		DUP2 JSR2
+		&skip
+	POP2
+
+JMP2r
+
+@on-control-menu ( -> )
+
+	( TODO )
+
+BRK
+
+@get-cat ( cat -- cat* )
+
+	STH
+	#00 ,&id STR
+	;manifest/menu
+	&cat
+		[ LIT &id 00 ] STHkr EQU ,&end JCN
+		;skip-sub JSR2
+		,&id LDR INC ,&id STR
+		LDAk ,&cat JCN
+	POP2
+	#0000
+	&end
+	POPr
+
+JMP2r
+
+@get-sub ( sub -- sub* )
+
+	STH
+	;draw-menu/sel LDA ;get-cat JSR2
+	LDAk STH INC2 ;skip-str JSR2
+	STHr #00
+	&subcat
+		DUP STHkr EQU ,&end JCN
+		SWP2 #0004 ADD2 ;skip-str JSR2 SWP2
+		INC GTHk ,&subcat JCN
+	POP2 POP2
+	( TODO: merge tails )
+	POPr
+	#0000
+	JMP2r
+	&end
+	POP2
+	INC2 INC2 LDA2
+	POPr
+
+JMP2r
+
+@get-anchor ( cat -- x* )
+
+	LIT2r 0000
+	,&target STR
+	#00 ,&id STR
+	;manifest/menu
+	&cat
+		[ LIT &id 00 ] [ LIT &target $1 ] EQU ,&end JCN
+		INC2k ;slen JSR2 INC2 STH2 ADD2r
+		;skip-sub JSR2
+		,&id LDR INC ,&id STR
+		LDAk ,&cat JCN
+	POP2
+	&end
+	STH2r
+	INC2 INC2 #30 SFT2
+
+JMP2r
+
+@find-modkey ( mod key -- fn* )
+
+	,&mk STR2
+	;manifest/menu
+	&cat
+		LDAk STH INC2 ,skip-str JSR
+		STHr #00
+		&subcat
+			OVR2 LDA2 [ LIT2 &mk $2 ] NEQ2 ,&continue JCN
+				POP2 INC2 INC2 LDA2 JMP2r
+				&continue
+			SWP2 #0004 ADD2 ,skip-str JSR SWP2
+			INC GTHk ,&subcat JCN
+		POP2
+		LDAk ,&cat JCN
+	POP2
+	#0000
+
+JMP2r
+
+@skip-sub ( sub* -- sub* )
+
+	LDAk STH INC2 ;skip-str JSR2
+	STHr #00
+	&subcat
+		SWP2 #0004 ADD2 ,skip-str JSR SWP2
+		INC GTHk ,&subcat JCN
+	POP2
+
+JMP2r
+
+@skip-str ( str* -- str* )
+
+	&skip INC2 LDAk ,&skip JCN INC2
+
+JMP2r
+
+@draw-menu ( -- )
+
+	#0010 .Screen/x DEO2
+	#0004 .Screen/y DEO2
+	#15 .Screen/auto DEO
+	#00 ,&id STR
+	;manifest/menu
+	&cat
+		[ LIT2 &theme $2 ] [ LIT &sel $1 ] [ LIT &id $1 ] EQU [ JMP SWP POP ] ;draw-chr/color STA
+		INC2k ;draw-str JSR2 POP2 #00 .Screen/sprite DEO
+		;skip-sub JSR2
+		,&id LDR INC ,&id STR
+		LDAk ,&cat JCN
+	POP2
+	#00 .Screen/auto DEO
+
+JMP2r
+
+@draw-sub ( cat mask -- )
+
+	,&mask STR POP
+	;draw-menu/sel LDA ;get-cat JSR2
+	DUP2 #0000 EQU2 ,&skip JCN
+	;draw-menu/sel LDA ;get-anchor JSR2 ,&anchor STR2
+	#15 .Screen/auto DEO
+	LDAk STH INC2 ;skip-str JSR2
+	STHr #00
+	&subcat
+		STHk [ LIT2 &theme $2 ] STHr [ LIT &sel $1 ] EQU [ JMP SWP POP ] [ LIT &mask $1 ] AND ;draw-chr/color STA
+		[ LIT2 &anchor $2 ] .Screen/x DEO2
+		#00 OVR INC #40 SFT2 #0004 ADD2 .Screen/y DEO2
+		SWP2 ;draw-label JSR2 SWP2
+		INC GTHk ,&subcat JCN
+	POP2 POP2
+	#00 .Screen/auto DEO
+	&skip
+	POP2
+
+JMP2r
+
+@draw-label ( label* -- next-label* )
+
+	LDA2k SWP2
+	#0004 ADD2 STH2k ;draw-str JSR2
+	( fill )
+	#0c STH2r ;slen JSR2 NIP SUB #00
+	&loop
+		#20 ;draw-chr JSR2
+		INC GTHk ,&loop JCN
+	POP2
+	.Screen/x DEI2 #0008 SUB2 .Screen/x DEO2
+	SWP2 ;draw-key JSR2 ;draw-mod JSR2
+
+JMP2r
+
+@draw-mod (  mod -- )
+
+	( mod )
+	STH
+	#0800
+	&loop
+		STHkr OVR SFT #01 AND #00 EQU ,&no-button JCN
+			#00 OVR #40 SFT2 ;buttons-icns ADD2 ;draw-chr/raw JSR2
+			.Screen/x DEI2 #0010 SUB2 .Screen/x DEO2
+			&no-button
+		INC GTHk ,&loop JCN
+	POP2
+	POPr
+
+JMP2r
+
+@draw-key ( mod key -- )
+
+	( key )
+	DUP #00 EQU ,&skip-key JCN
+	DUP #08 NEQ ,&no-del JCN ;&del ,&inv JMP &no-del
+	DUP #09 NEQ ,&no-tab JCN ;&tab ,&inv JMP &no-tab
+	DUP #0d NEQ ,&no-ent JCN ;&ent ,&inv JMP &no-ent
+	DUP #20 NEQ ,&no-spc JCN ;&spc ,&inv JMP &no-spc
+	DUP #1b NEQ ,&no-esc JCN ;&esc ,&inv JMP &no-esc
+	DUP ;draw-chr JSR2
+	.Screen/x DEI2 #0010 SUB2 .Screen/x DEO2
+	&skip-key
+	POP
+
+JMP2r
+	&inv .Screen/x DEI2 #0010 SUB2 .Screen/x DEO2 ROT POP ;draw-str JSR2 POP2 JMP2r
+	&del "del $1 &tab "tab $1 &ent "ent $1 &spc "spc $1 &esc "esc $1
+
+@draw-str ( str* -- str* )
+
+	&while
+		LDAk ,draw-chr JSR
+		INC2 LDAk ,&while JCN
+	INC2
+
+JMP2r
+
+@draw-chr ( char -- )
+
+	#20 SUB #00 SWP #40 SFT2 ;font ADD2 &raw .Screen/addr DEO2
+	[ LIT &color 01 ] .Screen/sprite DEO
+
+JMP2r
+
+@buttons-icns
+
+	0000 0000 387c fefe fe7c 3800 0000 0000
+	0000 0000 3844 8282 8244 3800 0000 0000
+	0000 0000 1038 7cfe 7c38 1000 0000 0000
+	0000 0000 1028 4482 4428 1000 0000 0000
+
+	0000 0000 1038 7cfe 1010 1000 0000 0000
+	0000 0000 1010 10fe 7c38 1000 0000 0000
+	0000 0000 1030 70fe 7030 1000 0000 0000
+	0000 0000 1018 1cfe 1c18 1000 0000 0000
+
+
