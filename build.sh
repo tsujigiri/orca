@@ -8,6 +8,8 @@ if [ -e "$HOME/roms/uxnlin.rom" ]
 then
 	echo "Linting.."
 	uxncli $HOME/roms/uxnlin.rom src/orca.tal
+	uxncli $HOME/roms/uxnlin.rom src/library.tal
+	uxncli $HOME/roms/uxnlin.rom src/manifest.tal
 fi
 
 echo "Assembling.."

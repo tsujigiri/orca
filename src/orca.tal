@@ -208,6 +208,11 @@ BRK
 
 @on-button ( -> )
 
+	.Controller/button DEI2 ;find-modkey JSR2
+		DUP2 #0000 EQU2 ,&skip JCN DUP2 JSR2
+		( block ) POP2 BRK &skip
+	POP2
+
 	( d-pad handler )
 	.Controller/button DEI .dpad/last LDZ
 	DUP2 #0200 EQU2 ;dpad-input/start JCN2
@@ -248,15 +253,7 @@ BRK
 @on-button-ctrl ( -> )
 
 	.Controller/key DEI
-	( copy/paste/cut )
-	[ LIT 'c ] NEQk NIP ,&no-copy JCN ;edit-copy JSR2 &no-copy
-	[ LIT 'v ] NEQk NIP ,&no-paste JCN ;edit-paste JSR2 &no-paste
-	[ LIT 'x ] NEQk NIP ,&no-cut JCN ;edit-cut JSR2 &no-cut
-	( new/rename/open/save )
-	[ LIT 'n ] NEQk NIP ,&no-new JCN ;file-new JSR2 &no-new
-	[ LIT 'r ] NEQk NIP ,&no-name JCN ;trap JSR2 &no-name
-	[ LIT 'o ] NEQk NIP ,&no-open JCN ;file-open JSR2 &no-open
-	[ LIT 's ] NEQk NIP ,&no-save JCN ;file-save JSR2 &no-save
+
 	( select-all/insert )
 	[ LIT 'a ] NEQk NIP ,&no-a JCN ;set-sel-all JSR2 &no-a
 	[ LIT 'i ] NEQk NIP ,&no-i JCN ;set-insert JSR2 &no-i
@@ -1167,3 +1164,8 @@ JMP2r
 ~src/library.tal
 ~src/assets.tal
 ~src/manifest.tal
+
+@data
+	&cells $4000
+	&locks $4000
+	&types $4000
