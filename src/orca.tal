@@ -51,8 +51,8 @@
 	#15 .Screen/auto DEO
 
 	( size )
-	#0320 .Screen/width DEO2
-	#01c0 .Screen/height DEO2
+	#0328 .Screen/width DEO2
+	#01e0 .Screen/height DEO2
 
 	( synths )
 	#dd .Audio0/volume DEO #0118 .Audio0/adsr DEO2 #0100 .Audio0/length DEO2
@@ -65,20 +65,22 @@
 	;saw-pcm .Audio2/addr DEO2
 	;sqr-pcm .Audio3/addr DEO2
 
-	( set grid size )
+	( x )
+	#0010 .grid/x1 STZ2
 	.Screen/width DEI2
-		DUP2 #03 SFT2 NIP #03 SUB .grid/width STZ
-		DUP2 #01 SFT2 .grid/width LDZ #01 SFT INC #00 SWP #30 SFT2 SUB2 #0004 ADD2 .grid/x1 STZ2
+		DUP2 #03 SFT2 NIP #04 SUB .grid/width STZ
 		#01 SFT2 .grid/width LDZ #01 SFT #00 SWP #30 SFT2 ADD2 #0004 ADD2 .grid/x2 STZ2
+	( y )
+	#0020 .grid/y1 STZ2
 	.Screen/height DEI2
-		DUP2 #04 SFT2 NIP #03 SUB .grid/height STZ
-		DUP2 #01 SFT2 .grid/height LDZ #01 SFT INC #00 SWP #40 SFT2 SUB2 #0004 SUB2 .grid/y1 STZ2
+		DUP2 #04 SFT2 NIP #05 SUB .grid/height STZ
 		#01 SFT2 .grid/height LDZ #01 SFT #00 SWP #40 SFT2 ADD2 #0008 SUB2 .grid/y2 STZ2
+	( len )
 	#00 .grid/height LDZ #00 .grid/width LDZ MUL2 .grid/length STZ2
 
 	( set toolbar size )
 	.grid/x1 LDZ2 .toolbar/x1 STZ2
-	.grid/y2 LDZ2 #0010 ADD2 .toolbar/y1 STZ2
+	.grid/y2 LDZ2 #0014 ADD2 .toolbar/y1 STZ2
 	.grid/x2 LDZ2 .toolbar/x2 STZ2
 	.toolbar/y1 LDZ2 #0008 ADD2 .toolbar/y2 STZ2
 
@@ -87,6 +89,7 @@
 
 	( theme support )
 	;load-theme JSR2
+	;menu-init JSR2
 	( draw once )
 	.grid/x2 LDZ2 #0020 SUB2 .Screen/x DEO2
 	.toolbar/y1 LDZ2 .Screen/y DEO2
@@ -95,7 +98,7 @@
 	( init random )
 	;init-prng JSR2
 	( blank file )
-	;init-file JSR2
+	;file-new JSR2
 	( display guide )
 	;toggle-guide JSR2
 	( draw position )
@@ -168,7 +171,7 @@ BRK
 
 	DUP ,&no-null JCN POP JMP2r &no-null
 	[ #08 ] NEQk NIP ,&no-pop JCN ;filepath ;spop JSR2 POP JMP2r &no-pop
-	[ #0a ] NEQk NIP ,&no-load JCN ;load-file JSR2 &no-load
+	[ #0a ] NEQk NIP ,&no-load JCN ;file-open JSR2 &no-load
 	[ #7f ] NEQk NIP ,&no-delete JCN ;filepath #0040 ;mclr JSR2 POP JMP2r &no-delete
 	[ #20 ] GTHk NIP ,&no-special JCN ;untrap JSR2 POP JMP2r &no-special
 	;filepath ;slen JSR2 NIP #3f EQU ,&no-push JCN
@@ -245,14 +248,14 @@ BRK
 
 	.Controller/key DEI
 	( copy/paste/cut )
-	[ LIT 'c ] NEQk NIP ,&no-copy JCN ;copy-snarf JSR2 &no-copy
-	[ LIT 'v ] NEQk NIP ,&no-paste JCN ;paste-snarf JSR2 &no-paste
-	[ LIT 'x ] NEQk NIP ,&no-cut JCN ;cut-snarf JSR2 &no-cut
+	[ LIT 'c ] NEQk NIP ,&no-copy JCN ;edit-copy JSR2 &no-copy
+	[ LIT 'v ] NEQk NIP ,&no-paste JCN ;edit-paste JSR2 &no-paste
+	[ LIT 'x ] NEQk NIP ,&no-cut JCN ;edit-cut JSR2 &no-cut
 	( new/rename/open/save )
-	[ LIT 'n ] NEQk NIP ,&no-new JCN ;init-file JSR2 &no-new
+	[ LIT 'n ] NEQk NIP ,&no-new JCN ;file-new JSR2 &no-new
 	[ LIT 'r ] NEQk NIP ,&no-name JCN ;trap JSR2 &no-name
-	[ LIT 'o ] NEQk NIP ,&no-open JCN ;load-file JSR2 &no-open
-	[ LIT 's ] NEQk NIP ,&no-save JCN ;save-file JSR2 &no-save
+	[ LIT 'o ] NEQk NIP ,&no-open JCN ;file-open JSR2 &no-open
+	[ LIT 's ] NEQk NIP ,&no-save JCN ;file-save JSR2 &no-save
 	( select-all/insert )
 	[ LIT 'a ] NEQk NIP ,&no-a JCN ;set-sel-all JSR2 &no-a
 	[ LIT 'i ] NEQk NIP ,&no-i JCN ;set-insert JSR2 &no-i
@@ -277,6 +280,8 @@ BRK
 	&vec 00 ff 01 00
 
 @on-mouse ( -> )
+
+	.Mouse/y DEI2 #0014 LTH2 ;trap-menu JCN2
 
 	( clear last cursor )
 	.cursor/x LDZ2 .Screen/x DEO2
@@ -326,9 +331,9 @@ BRK
 	POP
 	( right-side )
 	.grid/x2 LDZ2 .Mouse/x DEI2 SUB2 #03 SFT2 NIP
-	[ #00 ] NEQk NIP ,&no-save JCN ;save-file JSR2 &no-save
-	[ #02 ] NEQk NIP ,&no-load JCN ;load-file JSR2 &no-load
-	[ #03 ] NEQk NIP ,&no-name JCN ;init-file JSR2 &no-name
+	[ #00 ] NEQk NIP ,&no-save JCN ;file-save JSR2 &no-save
+	[ #02 ] NEQk NIP ,&no-load JCN ;file-open JSR2 &no-load
+	[ #03 ] NEQk NIP ,&no-name JCN ;file-new JSR2 &no-name
 	[ #05 ] NEQk NIP ,&no-guide JCN ;toggle-guide JSR2 &no-guide
 	POP
 	#00 .Mouse/state DEO
@@ -346,11 +351,11 @@ BRK
 		&no-scale
 	DUP #01 NEQ ,&no-drag JCN
 		POP
-		;cut-snarf JSR2
+		;edit-cut JSR2
 		STH2k .selection/from LDZ2 ,&add-pos JSR
 		STH2r .selection/to LDZ2 ,&add-pos JSR
 			;set-sel-range JSR2
-		;paste-snarf JSR2
+		;edit-paste JSR2
 		JMP2r
 		&no-drag
 	POP
@@ -557,8 +562,12 @@ JMP2r
 		INC GTHk ,&ver JCN
 	POP2
 	POP2r
-	;draw-grid JSR2
-	;draw-timer JSR2
+
+	( do not draw when menu )
+	;draw-menu/sel LDA #ff NEQ ,&skip JCN
+		;draw-grid JSR2
+		;draw-timer JSR2
+		&skip
 
 JMP2r
 
@@ -692,7 +701,7 @@ JMP2r
 	( value )
 	.timer/speed LDZ #01 ;draw-byte JSR2
 	( th )
-	;&th-txt #03 ;draw-str JSR2
+	;&th-txt #03 ;draw-string JSR2
 
 JMP2r
 	&th-txt "th $1
@@ -711,7 +720,11 @@ JMP2r
 	.toolbar/y1 LDZ2 .Screen/y DEO2
 	.toolbar/x1 LDZ2 #0078 ADD2 .Screen/x DEO2
 	( icon )
-	;filepath ROT ;draw-str JSR2
+	;filepath ROT ;draw-string JSR2
+
+JMP2r
+
+@redraw-all ( -- )
 
 JMP2r
 
@@ -812,13 +825,13 @@ JMP2r
 		DUP2 #10 SFT2 ;op-table/docs ADD2 LDA2
 		( glyph ) LDAk #08 ;draw-char JSR2
 		( space ) ;draw-sprite/blank JSR2
-		( text ) INC2 #01 ,draw-str JSR
+		( text ) INC2 #01 ,draw-string JSR
 		INC2 GTH2k ,&loop JCN
 	POP2 POP2
 
 JMP2r
 
-@draw-str ( str* color -- )
+@draw-string ( str* color -- )
 
 	STH
 	&while
@@ -862,7 +875,7 @@ JMP2r
 
 ( file )
 
-@init-file ( default* -- )
+@file-new ( -- )
 
 	;init JSR2
 
@@ -880,7 +893,13 @@ JMP2r
 
 JMP2r
 
-@load-file ( -- )
+@file-rename ( -- )
+
+	;trap JSR2
+
+JMP2r
+
+@file-open ( -- )
 
 	#0000 ;filepath ,inject-file JSR
 	;draw-grid JSR2
@@ -910,7 +929,7 @@ JMP2r
 JMP2r
 	&b $1
 
-@save-file ( -- )
+@file-save ( -- )
 
 	;filepath .File/name DEO2
 	#0001 .File/length DEO2
@@ -976,14 +995,14 @@ JMP2r
 
 @snarf-txt ".snarf $1
 
-@cut-snarf ( -- )
+@edit-cut ( -- )
 
-	,copy-snarf JSR
+	,edit-copy JSR
 	CHAR-DOT ;fill-sel JSR2
 
 JMP2r
 
-@copy-snarf ( -- )
+@edit-copy ( -- )
 
 	;snarf-txt .File/name DEO2
 	#0001 .File/length DEO2
@@ -1002,7 +1021,7 @@ JMP2r
 JMP2r
 	&lb 0a
 
-@paste-snarf ( -- )
+@edit-paste ( -- )
 
 	.selection LDZ2 ;snarf-txt ;inject-file JSR2
 	;draw-grid JSR2
@@ -1703,8 +1722,7 @@ JMP2r
 
 JMP2r
 
-( orca/assets )
-
 @untitled-txt "untitled.orca $1
 
 ~src/assets.tal
+~src/manifest.tal

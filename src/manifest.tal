@@ -10,26 +10,8 @@
 			01 's :file-save "Save $1
 		03 "Edit $1
 			01 'c :edit-copy "Copy $1
-			01 'C :edit-copy-string "CopyText $1
 			01 'v :edit-paste "Paste $1
-			( 01 'x :edit-cut "Cut $1 )
-		09 "Move $1
-			10 00 :move-up "Up $1
-			20 00 :move-down "Down $1
-			40 00 :move-left "Left $1
-			80 00 :move-right "Right $1
-			14 00 :move-dech "Decr.H $1
-			24 00 :move-inch "Incr.H $1
-			44 00 :move-decw "Decr.W $1
-			84 00 :move-incw "Incr.W $1
-			00 1b :move-reset "Reset $1
-		06 "Options $1
-			00 0d :option-insert "Insert $1
-			00 08 :option-erase "Erase $1
-			00 '. :option-incr "ValIncr $1
-			00 ', :option-decr "ValDecr $1
-			04 '< :option-roll "RollLeft $1
-			04 '> :option-rolr "RollRight $1
+			01 'x :edit-cut "Cut $1
 		$1
 
 @menu-init ( -- )
@@ -269,7 +251,6 @@ JMP2r
 
 	#0010 .Screen/x DEO2
 	#0004 .Screen/y DEO2
-	#15 .Screen/auto DEO
 	#00 ,&id STR
 	;manifest/menu
 	&cat
@@ -279,7 +260,6 @@ JMP2r
 		,&id LDR INC ,&id STR
 		LDAk ,&cat JCN
 	POP2
-	#00 .Screen/auto DEO
 
 JMP2r
 
@@ -289,7 +269,6 @@ JMP2r
 	;draw-menu/sel LDA ;get-cat JSR2
 	DUP2 #0000 EQU2 ,&skip JCN
 	;draw-menu/sel LDA ;get-anchor JSR2 ,&anchor STR2
-	#15 .Screen/auto DEO
 	LDAk STH INC2 ;skip-str JSR2
 	STHr #00
 	&subcat
@@ -299,7 +278,6 @@ JMP2r
 		SWP2 ;draw-label JSR2 SWP2
 		INC GTHk ,&subcat JCN
 	POP2 POP2
-	#00 .Screen/auto DEO
 	&skip
 	POP2
 
