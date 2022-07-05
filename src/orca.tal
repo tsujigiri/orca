@@ -176,7 +176,7 @@ BRK
 	[ #7f ] NEQk NIP ,&no-delete JCN ;filepath #0040 ;mclr JSR2 POP JMP2r &no-delete
 	[ #20 ] GTHk NIP ,&no-special JCN ;untrap JSR2 POP JMP2r &no-special
 	;filepath ;slen JSR2 NIP #3f EQU ,&no-push JCN
-		DUP ;filepath ROT ;sput JSR2
+		DUP ;filepath ;sput JSR2
 		&no-push
 	POP
 
@@ -762,7 +762,7 @@ JMP2r
 	&while
 		INC2 DUP2 ;data/cells ADD2 LDA
 			DUP LIT '. EQU ,&skip JCN
-				DUP ;&word ROT ;sput JSR2
+				DUP ;&word ;sput JSR2
 				&skip
 			LIT '. NEQ ,&while JCN
 	POP2
@@ -1051,6 +1051,21 @@ JMP2r
 
 ( standards )
 
+@scat ( src* dst* -- )
+
+	DUP2 ,slen JSR ADD2
+
+@scpy ( src* dst* -- )
+
+	STH2
+	&while
+		LDAk STH2kr STA INC2r
+		INC2 LDAk ,&while JCN
+	POP2
+	#00 STH2r STA
+
+JMP2r
+
 @slen ( str* -- len* )
 
 	DUP2 ,scap JSR SWP2 SUB2
@@ -1064,9 +1079,9 @@ JMP2r
 
 JMP2r
 
-@sput ( str* char -- )
+@sput ( char str* -- )
 
-	ROT ROT ,scap JSR STA
+	,scap JSR STA
 
 JMP2r
 

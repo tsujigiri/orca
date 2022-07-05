@@ -296,52 +296,60 @@ JMP2r
 
 @draw-label ( label* -- next-label* )
 
-	LDA2k SWP2
-	#0004 ADD2 STH2k ;draw-str JSR2
 	( fill )
-	#0c STH2r ;slen JSR2 NIP SUB #00
-	&loop
-		#20 ;draw-chr JSR2
-		INC GTHk ,&loop JCN
-	POP2
-	.Screen/x DEI2 #0008 SUB2 .Screen/x DEO2
-	SWP2 ;draw-key JSR2 ;draw-mod JSR2
+	.Screen/x DEI2 STH2k
+	.Screen/y DEI2
+		.Screen/auto DEI
+			#f2 .Screen/auto DEO
+			;blank-icn .Screen/addr DEO2
+			;draw-chr/color LDA .Screen/sprite DEOk DEO
+		.Screen/auto DEO
+	.Screen/y DEO2
+	( mod )
+	#0078 ADD2 .Screen/x DEO2
+	LDA2k ;get-keymod-str JSR2 ;draw-str-right JSR2 POP2
+	STH2r .Screen/x DEO2
+	#0004 ADD2 ;draw-str JSR2
 
 JMP2r
 
-@draw-mod ( mod -- )
+@get-keymod-str ( key mod -- str* )
 
+	;&buf #0008 ;mclr JSR2
 	( mod )
-	STH
+	SWP STH
 	#0800
 	&loop
 		STHkr OVR SFT #01 AND #00 EQU ,&no-button JCN
-			#00 OVR #40 SFT2 ;buttons-icns ADD2 ;draw-chr/raw JSR2
-			.Screen/x DEI2 #0010 SUB2 .Screen/x DEO2
+			#00 OVR ;&buttons ADD2 LDA ;&buf ;sput JSR2
 			&no-button
 		INC GTHk ,&loop JCN
 	POP2
-	POPr
-
-JMP2r
-
-@draw-key ( mod key -- )
-
+	( mix )
+	DUP #00 NEQ STHr #00 NEQ #0101 NEQ2 ,&no-mod JCN
+		LIT '+ ;&buf ;sput JSR2
+		&no-mod
 	( key )
-	DUP #00 EQU ,&skip-key JCN
-	DUP #08 NEQ ,&no-del JCN ;&del ,&inv JMP &no-del
-	DUP #09 NEQ ,&no-tab JCN ;&tab ,&inv JMP &no-tab
-	DUP #0d NEQ ,&no-ent JCN ;&ent ,&inv JMP &no-ent
-	DUP #20 NEQ ,&no-spc JCN ;&spc ,&inv JMP &no-spc
-	DUP #1b NEQ ,&no-esc JCN ;&esc ,&inv JMP &no-esc
-	DUP ;draw-chr JSR2
-	.Screen/x DEI2 #0010 SUB2 .Screen/x DEO2
-	&skip-key
+	DUP #08 NEQ ,&no-del JCN ;&del ,&cat JMP &no-del
+	DUP #09 NEQ ,&no-tab JCN ;&tab ,&cat JMP &no-tab
+	DUP #0d NEQ ,&no-ent JCN ;&ent ,&cat JMP &no-ent
+	DUP #20 NEQ ,&no-spc JCN ;&spc ,&cat JMP &no-spc
+	DUP #1b NEQ ,&no-esc JCN ;&esc ,&cat JMP &no-esc
+	DUP ;&buf ;sput JSR2
+	&end
 	POP
+	;&buf
 
 JMP2r
-	&inv .Screen/x DEI2 #0010 SUB2 .Screen/x DEO2 ROT POP ;draw-str JSR2 POP2 JMP2r
+	&buf $8
+	&buttons "ABsSUDLR $1
+	&cat ;&buf ;scat JSR2 ,&end JMP
 	&del "del $1 &tab "tab $1 &ent "ent $1 &spc "spc $1 &esc "esc $1
+
+@draw-str-right ( text* -- )
+
+	DUP2 ;slen JSR2 #30 SFT2 STH2
+	.Screen/x DEI2k STH2r SUB2 ROT DEO2
 
 @draw-str ( str* -- str* )
 
@@ -354,7 +362,7 @@ JMP2r
 
 @draw-chr ( char -- )
 
-	#20 SUB #00 SWP #40 SFT2 ;font ADD2 &raw .Screen/addr DEO2
+	#20 SUB #00 SWP #40 SFT2 ;font ADD2 .Screen/addr DEO2
 	[ LIT &color 01 ] .Screen/sprite DEO
 
 JMP2r
@@ -376,16 +384,7 @@ JMP2r
 JMP2r
 	&path ".theme $1
 
-@buttons-icns
-
-	0000 0000 387c fefe fe7c 3800 0000 0000
-	0000 0000 3844 8282 8244 3800 0000 0000
-	0000 0000 1038 7cfe 7c38 1000 0000 0000
-	0000 0000 1028 4482 4428 1000 0000 0000
-
-	0000 0000 1038 7cfe 1010 1000 0000 0000
-	0000 0000 1010 10fe 7c38 1000 0000 0000
-	0000 0000 1030 70fe 7030 1000 0000 0000
-	0000 0000 1018 1cfe 1c18 1000 0000 0000
-
-
+@hand-icn
+	2020 20b8 7c7c 3838
+@blank-icn
+	0000 0000 0000 0000
