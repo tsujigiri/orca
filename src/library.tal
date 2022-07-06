@@ -109,7 +109,7 @@ JMP2r
 	( len ) STH2kr #0001 SUB2 ;get-port-left-value JSR2 DUP #00 EQU ADD
 	#00
 	&loop
-		( load ) DUP #00 SWP STH2kr INC2 ADD2 ;get-port-right-raw JSR2
+		( load ) #00 OVR STH2kr INC2 ADD2 ;get-port-right-raw JSR2
 		( save ) OVR #00 SWP [ LIT2 &save $2 ] ADD2 ;set-port-output JSR2
 		INC GTHk ,&loop JCN
 	POP2
@@ -167,7 +167,7 @@ JMP2r
 	STH2k
 	#0001 SUB2 ;get-port-left-value JSR2 #00
 	&loop
-		DUP #00 SWP STH2kr INC2 ADD2 STH2k ;get-port-right-raw JSR2
+		#00 OVR STH2kr INC2 ADD2 STH2k ;get-port-right-raw JSR2
 		DUP CHAR-DOT EQU ,&skip JCN
 			( load ) DUP ;chrb36 JSR2 .variables ADD LDZ
 			( save ) STH2kr #00 .grid/width LDZ ADD2 ;set-port-output JSR2
@@ -267,10 +267,10 @@ JMP2r
 		( load ) #00 SWP [ #00 .grid/width LDZ MUL2 ] ADD2
 	,&load STR2
 	( len ) STH2kr #0001 SUB2 ;get-port-left-value JSR2 DUP #00 EQU ADD
-		( save ) DUP #00 SWP STH2kr #00 .grid/width LDZ ADD2 SWP2 SUB2 INC2 ,&save STR2
+		( save ) #00 OVR STH2kr #00 .grid/width LDZ ADD2 SWP2 SUB2 INC2 ,&save STR2
 	#00
 	&loop
-		( load ) DUP #00 SWP [ LIT2 &load $2 ] ADD2 ;get-port-right-raw JSR2
+		( load ) #00 OVR [ LIT2 &load $2 ] ADD2 ;get-port-right-raw JSR2
 		( save ) OVR #00 SWP [ LIT2 &save $2 ] ADD2 ;set-port-output JSR2
 		INC GTHk ,&loop JCN
 	POP2
