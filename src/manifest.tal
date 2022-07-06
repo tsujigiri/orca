@@ -1,61 +1,17 @@
-@manifest
-
-	&name "Orca $1
-	&date "2022-07-02 $1
-	&menu
-		04 "File $1
-			01 'n :file-new "New $1
-			01 'r :file-rename "Rename $1
-			01 'o :file-open "Open $1
-			01 's :file-save "Save $1
-		05 "Edit $1
-			01 'c :edit-copy "Copy $1
-			01 'v :edit-paste "Paste $1
-			01 'x :edit-cut "Cut $1
-			01 'i :toggle-insert "Insert $1
-			00 08 :edit-erase "Erase $1
-		03 "Play $1
-			00 20 :play-toggle "Pause $1
-			01 ', :play-decr "Decr $1
-			01 '. :play-incr "Incr $1
-		01 "View $1
-			01 'h :toggle-guide "Guide $1
-		02 "Select $1
-			00 1b :select-reset "Reset $1
-			01 'a :select-all "All $1
-		$1
-
-@menu-init ( -- )
-
-	#ff ;draw-menu/sel STA
-	#ff ;draw-sub/sel STA
-
-	( clear cursor )
-	.cursor/x LDZ2 .Screen/x DEO2
-	.cursor/y LDZ2 .Screen/y DEO2
-	#40 .Screen/sprite DEO
-
-	#0401 ;draw-menu/theme STA2
-	#0804 ;draw-sub/theme STA2
-
-	;draw-menu JSR2
-
-JMP2r
+( manifest )
 
 @trap-menu ( -> )
 
 	;on-mouse-menu .Mouse/vector DEO2
 	;on-control-menu .Controller/vector DEO2
-	,menu-init JSR
+
+	#40 ;draw-cursor JSR2
 
 BRK
 
 @on-mouse-menu ( -> )
 
-	( clear last cursor )
-	.cursor/x LDZ2 .Screen/x DEO2
-	.cursor/y LDZ2 .Screen/y DEO2
-	#40 .Screen/sprite DEO
+	#40 ;draw-cursor JSR2
 	( record mouse positions )
 	.Mouse/x DEI2 DUP2 .cursor/x STZ2 .Screen/x DEO2
 	.Mouse/y DEI2 DUP2 .cursor/y STZ2 .Screen/y DEO2
@@ -65,14 +21,14 @@ BRK
 	( when touch cat )
 	.Mouse/state DEI #00 EQU ,&no-touch-cat JCN
 	.Mouse/y DEI2 #0014 GTH2 ,&no-touch-cat JCN
-		.Mouse/x DEI2 ;menu-picking JSR2 ;menu-select JSR2
+		.Mouse/x DEI2 ;get-xcat JSR2 ;menu-select JSR2
 		( release ) #00 .Mouse/state DEO
 		BRK
 		&no-touch-cat
 	( when sub active )
 	;draw-menu/sel LDA #ff EQU ,&no-sub JCN
 		( when sel changed )
-		.Mouse/y DEI2 #0004 SUB2 #04 SFT2 NIP #01 SUB
+		.Mouse/y DEI2 #0004 SUB2 menu-r SFT2 NIP #01 SUB
 		DUP ;draw-sub/sel LDA EQU ,&no-change JCN
 			DUP ;draw-sub/sel STA
 			;draw-menu/sel LDA #ff ;draw-sub JSR2
@@ -97,12 +53,6 @@ BRK
 	;menu-close JSR2
 
 BRK
-
-@menu-picking ( x* -- cat )
-
-	#0010 SUB2 #0028 DIV2 NIP
-
-JMP2r
 
 @menu-close ( -- )
 
@@ -202,7 +152,7 @@ JMP2r
 
 JMP2r
 
-@get-anchor ( cat -- x* )
+@get-catx ( cat -- x* )
 
 	LIT2r 0000
 	,&target STR
@@ -210,14 +160,36 @@ JMP2r
 	;manifest/menu
 	&cat
 		[ LIT &id 00 ] [ LIT &target $1 ] EQU ,&end JCN
-		INC2k ;slen JSR2 INC2 STH2 ADD2r
+		INC2k ;get-strw JSR2 #0008 ADD2 STH2 ADD2r
 		;skip-sub JSR2
 		,&id LDR INC ,&id STR
 		LDAk ,&cat JCN
 	POP2
 	&end
 	STH2r
-	INC2 INC2 #30 SFT2
+	#0010 ADD2
+
+JMP2r
+
+@get-xcat ( x* -- cat )
+
+	#0010 SUB2
+	LIT2r 0000
+	,&target STR2
+	#00 ,&id STR
+	;manifest/menu
+	&cat
+		INC2k ;get-strw JSR2 #0008 ADD2 STH2r ADD2
+		DUP2 [ LIT2 &target $2 ] LTH2 ,&continue JCN
+			POP2 POP2 [ LIT &id 00 ] JMP2r
+			&continue
+			STH2
+		;skip-sub JSR2
+		,&id LDR INC ,&id STR
+		LDAk ,&cat JCN
+	POP2
+	POP2r
+	#ff
 
 JMP2r
 
@@ -258,14 +230,14 @@ JMP2r
 
 JMP2r
 
-@draw-menu ( -- )
+@draw-menu ( mask -- )
 
 	#0010 .Screen/x DEO2
 	#0004 .Screen/y DEO2
 	#00 ,&id STR
 	;manifest/menu
 	&cat
-		[ LIT2 &theme $2 ] [ LIT &sel $1 ] [ LIT &id $1 ] EQU [ JMP SWP POP ] ;draw-chr/color STA
+		menu-sel menu-def [ LIT &sel ff ] [ LIT &id $1 ] EQU [ JMP SWP POP ] ;draw-chr/color STA
 		INC2k ;draw-str JSR2 POP2 #00 .Screen/sprite DEO
 		;skip-sub JSR2
 		,&id LDR INC ,&id STR
@@ -279,13 +251,13 @@ JMP2r
 	,&mask STR POP
 	;draw-menu/sel LDA ;get-cat JSR2
 	DUP2 #0000 EQU2 ,&skip JCN
-	;draw-menu/sel LDA ;get-anchor JSR2 ,&anchor STR2
+	;draw-menu/sel LDA ;get-catx JSR2 ,&anchor STR2
 	LDAk STH INC2 ;skip-str JSR2
 	STHr #00
 	&subcat
-		STHk [ LIT2 &theme $2 ] STHr [ LIT &sel $1 ] EQU [ JMP SWP POP ] [ LIT &mask $1 ] AND ;draw-chr/color STA
+		STHk menu-hov menu-sel STHr [ LIT &sel ff ] EQU [ JMP SWP POP ] [ LIT &mask $1 ] AND ;draw-chr/color STA
 		[ LIT2 &anchor $2 ] .Screen/x DEO2
-		#00 OVR INC #40 SFT2 #0004 ADD2 .Screen/y DEO2
+		#00 OVR INC menu-l SFT2 #0004 ADD2 .Screen/y DEO2
 		SWP2 ;draw-label JSR2 SWP2
 		INC GTHk ,&subcat JCN
 	POP2 POP2
@@ -296,17 +268,16 @@ JMP2r
 
 @draw-label ( label* -- next-label* )
 
-	( fill )
-	.Screen/x DEI2 STH2k
+	.Screen/x DEI2
 	.Screen/y DEI2
 		.Screen/auto DEI
 			#f2 .Screen/auto DEO
 			;blank-icn .Screen/addr DEO2
-			;draw-chr/color LDA .Screen/sprite DEOk DEO
+			;draw-chr/color LDA .Screen/sprite menu-label
 		.Screen/auto DEO
 	.Screen/y DEO2
 	( mod )
-	#0078 ADD2 .Screen/x DEO2
+	STH2k #0078 ADD2 .Screen/x DEO2
 	LDA2k ;get-keymod-str JSR2 ;draw-str-right JSR2 POP2
 	STH2r .Screen/x DEO2
 	#0004 ADD2 ;draw-str JSR2
@@ -348,13 +319,14 @@ JMP2r
 
 @draw-str-right ( text* -- )
 
-	DUP2 ;slen JSR2 #30 SFT2 STH2
+	DUP2 ;get-strw JSR2 STH2
 	.Screen/x DEI2k STH2r SUB2 ROT DEO2
 
 @draw-str ( str* -- str* )
 
+	menu-auto .Screen/auto DEO
 	&while
-		LDAk ,draw-chr JSR
+		LDAk ;draw-chr JSR2
 		INC2 LDAk ,&while JCN
 	INC2
 
@@ -364,6 +336,20 @@ JMP2r
 
 	#20 SUB #00 SWP #40 SFT2 ;font ADD2 .Screen/addr DEO2
 	[ LIT &color 01 ] .Screen/sprite DEO
+
+JMP2r
+
+@get-strw ( str* -- width* )
+
+	;slen JSR2 #30 SFT2
+
+JMP2r
+
+@draw-cursor ( color -- )
+
+	.cursor/x LDZ2 .Screen/x DEO2
+	.cursor/y LDZ2 .Screen/y DEO2
+	.Screen/sprite DEO
 
 JMP2r
 
@@ -383,6 +369,82 @@ JMP2r
 
 JMP2r
 	&path ".theme $1
+
+( stdlib )
+
+@scat ( src* dst* -- )
+
+	DUP2 ,slen JSR ADD2
+
+@scpy ( src* dst* -- )
+
+	STH2
+	&while
+		LDAk STH2kr STA INC2r
+		INC2 LDAk ,&while JCN
+	POP2
+	#00 STH2r STA
+
+JMP2r
+
+@slen ( str* -- len* )
+
+	DUP2 ,scap JSR SWP2 SUB2
+
+JMP2r
+
+@scap ( str* -- end* )
+
+	LDAk #00 NEQ JMP JMP2r
+	&while INC2 LDAk ,&while JCN
+
+JMP2r
+
+@sput ( char str* -- )
+
+	,scap JSR STA
+
+JMP2r
+
+@spop ( str* -- )
+
+	LDAk ,&no-null JCN
+		POP2 JMP2r &no-null
+	#00 ROT ROT ,scap JSR #0001 SUB2 STA
+
+JMP2r
+
+@mclr ( addr* len* -- )
+
+	OVR2 ADD2 SWP2
+	&loop
+		STH2k #00 STH2r STA
+		INC2 GTH2k ,&loop JCN
+	POP2 POP2
+
+JMP2r
+
+@mcpy ( src* dst* len* -- )
+
+	SWP2 STH2
+	OVR2 ADD2 SWP2
+	&loop
+		LDAk STH2kr STA INC2r
+		INC2 GTH2k ,&loop JCN
+	POP2 POP2
+	POP2r
+
+JMP2r
+
+@print ( short* -- )
+
+	SWP ,&byte JSR
+	&byte ( byte -- ) DUP #04 SFT ,&char JSR
+	&char ( char -- ) #0f AND DUP #09 GTH #27 MUL ADD #30 ADD #18 DEO
+
+JMP2r
+
+( assets )
 
 @hand-icn
 	2020 20b8 7c7c 3838

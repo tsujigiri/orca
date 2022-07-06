@@ -1,16 +1,4 @@
-( Orca )
-
-%CHAR-NULL { #00 } %CHAR-LINE { #0a }
-%CHAR-HASH { #23 } %CHAR-BANG { #2a }
-%CHAR-DOT { #2e } %CHAR-SLASH { #2f }
-%CHAR-COLON { #3a } %CHAR-EQUAL { #3d }
-%CHAR-SEMI { #3b }
-
-%LOCKED-TYPE { #01 } %PORTEL-TYPE { #02 }
-%OPERATOR-TYPE { #03 } %PORTER-TYPE { #04 }
-%OUTPUT-TYPE { #05 } %IO-TYPE { #07 }
-
-( helpers )
+( app/orca : livecoding ide )
 
 |00 @System &vector $2 &pad $6 &r $2 &g $2 &b $2
 |10 @Console &vector $2 &read $1 &pad $5 &write $1
@@ -23,6 +11,24 @@
 |90 @Mouse &vector $2 &x $2 &y $2 &state $1 &chord $1
 |a0 @File &vector $2 &success $2 &stat $2 &delete $1 &append $1 &name $2 &length $2 &read $2 &write $2
 |c0 @DateTime &year $2 &month $1 &day $1 &hour $1 &minute $1 &second $1 &dotw $1 &doty $2 &isdst $1
+
+%CHAR-NULL { #00 } %CHAR-LINE { #0a }
+%CHAR-HASH { #23 } %CHAR-BANG { #2a }
+%CHAR-DOT { #2e } %CHAR-SLASH { #2f }
+%CHAR-COLON { #3a } %CHAR-EQUAL { #3d }
+%CHAR-SEMI { #3b }
+
+%LOCKED-TYPE { #01 } %PORTEL-TYPE { #02 }
+%OPERATOR-TYPE { #03 } %PORTER-TYPE { #04 }
+%OUTPUT-TYPE { #05 } %IO-TYPE { #07 }
+
+%menu-def { #01 }
+%menu-sel { #04 }
+%menu-hov { #08 }
+%menu-auto { #15 }
+%menu-label { DEOk DEO }
+%menu-l { #40 }
+%menu-r { #04 }
 
 |0000
 
@@ -90,7 +96,7 @@
 
 	( theme support )
 	;load-theme JSR2
-	;menu-init JSR2
+	;draw-menu JSR2
 	( draw once )
 	.grid/x2 LDZ2 #0020 SUB2 .Screen/x DEO2
 	.toolbar/y1 LDZ2 .Screen/y DEO2
@@ -108,6 +114,33 @@
 	.timer/playing LDZk #00 EQU SWP STZ
 
 BRK
+
+@manifest
+
+	&name "Orca $1
+	&date "2022-07-02 $1
+	&menu
+		04 "File $1
+			01 'n :file-new "New $1
+			01 'r :file-rename "Rename $1
+			01 'o :file-open "Open $1
+			01 's :file-save "Save $1
+		05 "Edit $1
+			01 'c :edit-copy "Copy $1
+			01 'v :edit-paste "Paste $1
+			01 'x :edit-cut "Cut $1
+			01 'i :toggle-insert "Insert $1
+			00 08 :edit-erase "Erase $1
+		03 "Play $1
+			00 20 :play-toggle "Pause $1
+			01 ', :play-decr "Decr $1
+			01 '. :play-incr "Incr $1
+		01 "View $1
+			01 'h :toggle-guide "Guide $1
+		02 "Select $1
+			00 1b :select-reset "Reset $1
+			01 'a :select-all "All $1
+		$1
 
 @untrap ( -- )
 
@@ -1048,82 +1081,6 @@ JMP2r
 
 @ciuc ( char -- bool ) DUP #40 GTH SWP #5b LTH AND JMP2r
 @ci-key ( char -- bool ) DUP #20 GTH SWP #7b LTH AND JMP2r
-
-( standards )
-
-@scat ( src* dst* -- )
-
-	DUP2 ,slen JSR ADD2
-
-@scpy ( src* dst* -- )
-
-	STH2
-	&while
-		LDAk STH2kr STA INC2r
-		INC2 LDAk ,&while JCN
-	POP2
-	#00 STH2r STA
-
-JMP2r
-
-@slen ( str* -- len* )
-
-	DUP2 ,scap JSR SWP2 SUB2
-
-JMP2r
-
-@scap ( str* -- str-end* )
-
-	LDAk #00 NEQ JMP JMP2r
-	&while INC2 LDAk ,&while JCN
-
-JMP2r
-
-@sput ( char str* -- )
-
-	,scap JSR STA
-
-JMP2r
-
-@spop ( str* -- )
-
-	LDAk ,&no-null JCN
-		POP2 JMP2r &no-null
-	#00 ROT ROT ,scap JSR #0001 SUB2 STA
-
-JMP2r
-
-( memory generics )
-
-@mclr ( addr* len* -- )
-
-	OVR2 ADD2 SWP2
-	&loop
-		STH2k #00 STH2r STA
-		INC2 GTH2k ,&loop JCN
-	POP2 POP2
-
-JMP2r
-
-@mcpy ( src* dst* len* -- )
-
-	SWP2 STH2
-	OVR2 ADD2 SWP2
-	&loop
-		LDAk STH2kr STA INC2r
-		INC2 GTH2k ,&loop JCN
-	POP2 POP2
-	POP2r
-
-JMP2r
-
-@print ( short* -- )
-
-	SWP ,&byte JSR
-	&byte ( byte -- ) DUP #04 SFT ,&char JSR
-	&char ( char -- ) #0f AND DUP #09 GTH #27 MUL ADD #30 ADD #18 DEO
-
-JMP2r
 
 ( generics )
 
