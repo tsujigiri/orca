@@ -241,9 +241,12 @@ BRK
 
 @on-button ( -> )
 
-	.Controller/button DEI2 ;find-modkey JSR2
-		DUP2 #0000 EQU2 ,&skip JCN DUP2 JSR2
-		( block ) POP2 BRK &skip
+	.Controller/button DEI2
+		DUP2 #0000 EQU2 ,&skip JCN
+			;find-modkey JSR2 DUP2 #0000 EQU2 ,&skip JCN
+				DUP2 JSR2
+				( block ) POP2 BRK
+		&skip
 	POP2
 
 	( d-pad handler )
