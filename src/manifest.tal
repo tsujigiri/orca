@@ -195,6 +195,8 @@ JMP2r
 
 @find-modkey ( mod key -- fn* )
 
+	ORAk ,&no-null JCN JMP2r &no-null
+	( not null )
 	,&mk STR2
 	;manifest/menu
 	&cat
@@ -278,13 +280,13 @@ JMP2r
 	.Screen/y DEO2
 	( mod )
 	STH2k #0078 ADD2 .Screen/x DEO2
-	LDA2k ;get-keymod-str JSR2 ;draw-str-right JSR2 POP2
+	LDA2k ;get-modkey-str JSR2 ;draw-str-right JSR2 POP2
 	STH2r .Screen/x DEO2
 	#0004 ADD2 ;draw-str JSR2
 
 JMP2r
 
-@get-keymod-str ( key mod -- str* )
+@get-modkey-str ( mod key -- str* )
 
 	;&buf #0008 ;mclr JSR2
 	( mod )
@@ -301,11 +303,12 @@ JMP2r
 		LIT '+ ;&buf ;sput JSR2
 		&no-mod
 	( key )
-	DUP #08 NEQ ,&no-del JCN ;&del ,&cat JMP &no-del
+	DUP #08 NEQ ,&no-bsp JCN ;&bsp ,&cat JMP &no-bsp
 	DUP #09 NEQ ,&no-tab JCN ;&tab ,&cat JMP &no-tab
 	DUP #0d NEQ ,&no-ent JCN ;&ent ,&cat JMP &no-ent
 	DUP #20 NEQ ,&no-spc JCN ;&spc ,&cat JMP &no-spc
 	DUP #1b NEQ ,&no-esc JCN ;&esc ,&cat JMP &no-esc
+	DUP #7f NEQ ,&no-del JCN ;&del ,&cat JMP &no-del
 	DUP ;&buf ;sput JSR2
 	&end
 	POP
@@ -315,7 +318,7 @@ JMP2r
 	&buf $8
 	&buttons "ABsSUDLR $1
 	&cat ;&buf ;scat JSR2 ,&end JMP
-	&del "del $1 &tab "tab $1 &ent "ent $1 &spc "spc $1 &esc "esc $1
+	&bsp "bsp $1 &tab "tab $1 &ent "ent $1 &spc "spc $1 &esc "esc $1 &del "del $1
 
 @draw-str-right ( text* -- )
 
@@ -324,24 +327,13 @@ JMP2r
 
 @draw-str ( str* -- str* )
 
+	LDAk #00 EQU ,&skip JCN
 	menu-auto .Screen/auto DEO
 	&while
 		LDAk ;draw-chr JSR2
 		INC2 LDAk ,&while JCN
+	&skip
 	INC2
-
-JMP2r
-
-@draw-chr ( char -- )
-
-	#20 SUB #00 SWP #40 SFT2 ;font ADD2 .Screen/addr DEO2
-	[ LIT &color 01 ] .Screen/sprite DEO
-
-JMP2r
-
-@get-strw ( str* -- width* )
-
-	;slen JSR2 #30 SFT2
 
 JMP2r
 
