@@ -881,6 +881,19 @@ JMP2r
 JMP2r
 	&blank #00 .Screen/sprite DEO JMP2r
 
+@draw-chr ( char -- )
+
+	#20 SUB #00 SWP #40 SFT2 ;font ADD2 .Screen/addr DEO2
+	[ LIT &color 01 ] .Screen/sprite DEO
+
+JMP2r
+
+@get-strw ( str* -- width* )
+
+	;slen JSR2 #30 SFT2
+
+JMP2r
+
 @draw-unknown ( char color -- )
 
 	NIP ;unknown-icn ROT ,draw-sprite JMP
