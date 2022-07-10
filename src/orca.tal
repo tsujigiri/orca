@@ -25,6 +25,7 @@
 %menu-def { #01 }
 %menu-sel { #04 }
 %menu-hov { #08 }
+%menu-hit { #0014 }
 %menu-auto { #15 }
 %menu-label { DEOk DEO }
 %menu-l { #40 }

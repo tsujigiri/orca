@@ -20,7 +20,7 @@ BRK
 	#42 .Mouse/state DEI #00 NEQ ADD .Screen/sprite DEO
 	( when touch cat )
 	.Mouse/state DEI #00 EQU ,&no-touch-cat JCN
-	.Mouse/y DEI2 #0014 GTH2 ,&no-touch-cat JCN
+	.Mouse/y DEI2 menu-hit GTH2 ,&no-touch-cat JCN
 		.Mouse/x DEI2 ;get-xcat JSR2 ;menu-select JSR2
 		( release ) #00 .Mouse/state DEO
 		BRK
@@ -42,15 +42,10 @@ BRK
 		BRK
 		&no-sub
 	( don't leave if menu is active )
-	;draw-menu/sel LDA #ff EQU
-	.Mouse/y DEI2 #0013 GTH2
-		AND ;on-menu-leave JCN2
-
-BRK
-
-@on-menu-leave ( -> )
-
-	;menu-close JSR2
+	;draw-menu/sel LDA #ff NEQ ,&no-leave JCN
+	.Mouse/y DEI2 menu-hit LTH2 ,&no-leave JCN
+		,menu-close JSR
+		&no-leave
 
 BRK
 
