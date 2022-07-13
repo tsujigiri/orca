@@ -275,9 +275,9 @@ BRK
 	.Controller/key DEI
 	[ #00 ] EQUk NIP ,&end JCN
 	[ #1b ] NEQk NIP ,&no-esc JCN ;toggle-insert JSR2 POP BRK &no-esc
-	[ #20 ] NEQk NIP ,&no-spc JCN #01 #00 #00 ;mod-sel JSR2 POP BRK &no-spc
-	[ #08 ] NEQk NIP ,&no-bks JCN #ff #00 #00 ;mod-sel JSR2 CHAR-DOT ;fill-sel JSR2 POP BRK &no-bks
-	DUP ;ci-key JSR2 #00 EQU ,&no-key JCN .Controller/key DEI ;fill-sel JSR2 #01 #00 #00 ;mod-sel JSR2 &no-key
+	[ #20 ] NEQk NIP ,&no-spc JCN #01 #0000 ;mod-sel JSR2 POP BRK &no-spc
+	[ #08 ] NEQk NIP ,&no-bks JCN #ff #0000 ;mod-sel JSR2 CHAR-DOT ;fill-sel JSR2 POP BRK &no-bks
+	DUP ;ci-key JSR2 #00 EQU ,&no-key JCN .Controller/key DEI ;fill-sel JSR2 #01 #0000 ;mod-sel JSR2 &no-key
 	&end
 	POP
 

@@ -95,7 +95,7 @@ JMP2r
 
 	;get-sub JSR2
 	;menu-close JSR2
-	DUP2 #0000 EQU2 ,&skip JCN
+	ORAk #00 EQU ,&skip JCN
 		DUP2 JSR2
 		&skip
 	POP2
@@ -247,7 +247,7 @@ JMP2r
 
 	,&mask STR POP
 	;draw-menu/sel LDA ;get-cat JSR2
-	DUP2 #0000 EQU2 ,&skip JCN
+	ORAk #00 EQU ,&skip JCN
 	;draw-menu/sel LDA ;get-catx JSR2 ,&anchor STR2
 	LDAk STH INC2 ;skip-str JSR2
 	STHr #00
@@ -359,69 +359,14 @@ JMP2r
 
 ( stdlib )
 
-@scat ( src* dst* -- )
-
-	DUP2 ,slen JSR ADD2
-
-@scpy ( src* dst* -- )
-
-	STH2
-	&while
-		LDAk STH2kr STA INC2r
-		INC2 LDAk ,&while JCN
-	POP2
-	#00 STH2r STA
-
-JMP2r
-
-@slen ( str* -- len* )
-
-	DUP2 ,scap JSR SWP2 SUB2
-
-JMP2r
-
-@scap ( str* -- end* )
-
-	LDAk #00 NEQ JMP JMP2r
-	&while INC2 LDAk ,&while JCN
-
-JMP2r
-
-@sput ( char str* -- )
-
-	,scap JSR STA
-
-JMP2r
-
-@spop ( str* -- )
-
-	LDAk ,&no-null JCN
-		POP2 JMP2r &no-null
-	#00 ROT ROT ,scap JSR #0001 SUB2 STA
-
-JMP2r
-
-@mclr ( addr* len* -- )
-
-	OVR2 ADD2 SWP2
-	&loop
-		STH2k #00 STH2r STA
-		INC2 GTH2k ,&loop JCN
-	POP2 POP2
-
-JMP2r
-
-@mcpy ( src* dst* len* -- )
-
-	SWP2 STH2
-	OVR2 ADD2 SWP2
-	&loop
-		LDAk STH2kr STA INC2r
-		INC2 GTH2k ,&loop JCN
-	POP2 POP2
-	POP2r
-
-JMP2r
+@scap ( str* -- end* ) LDAk #00 NEQ JMP JMP2r &w INC2 LDAk ,&w JCN JMP2r
+@spop ( str* -- ) LDAk ,&n JCN POP2 JMP2r &n ,scap JSR #0001 SUB2 #00 ROT ROT STA JMP2r
+@sput ( chr str* -- ) ,scap JSR STA JMP2r
+@slen ( str* -- len* ) DUP2 ,scap JSR SWP2 SUB2 JMP2r
+@scat ( src* dst* -- ) DUP2 ,slen JSR ADD2
+@scpy ( src* dst* -- ) STH2 &w LDAk STH2kr STA INC2r INC2 LDAk ,&w JCN POP2 #00 STH2r STA JMP2r
+@mclr ( src* len* -- ) OVR2 ADD2 SWP2 &l STH2k #00 STH2r STA INC2 GTH2k ,&l JCN POP2 POP2 JMP2r
+@mcpy ( src* dst* len* -- ) SWP2 STH2 OVR2 ADD2 SWP2 &loop LDAk STH2kr STA INC2r INC2 GTH2k ,&loop JCN POP2 POP2 POP2r JMP2r
 
 @print ( short* -- )
 
