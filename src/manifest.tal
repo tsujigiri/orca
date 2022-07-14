@@ -95,10 +95,7 @@ JMP2r
 
 	;get-sub JSR2
 	;menu-close JSR2
-	ORAk #00 EQU ,&skip JCN
-		DUP2 JSR2
-		&skip
-	POP2
+	ORAk ROT ROT JCN2
 
 JMP2r
 

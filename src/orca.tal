@@ -243,8 +243,8 @@ BRK
 @on-button ( -> )
 
 	.Controller/button DEI2
-		ORAk #00 EQU ,&skip JCN
-			;find-modkey JSR2 ORAk #00 EQU ,&skip JCN
+		DUP2 #0000 EQU2 ,&skip JCN
+			;find-modkey JSR2 DUP2 #0000 EQU2 ,&skip JCN
 				DUP2 JSR2
 				( block ) POP2 BRK
 		&skip
@@ -317,7 +317,7 @@ BRK
 @on-mouse-grid ( -> )
 
 	.Mouse/state DEI [ LIT &last $1 ]
-		ORAk #00 EQU ,&end JCN
+		DUP2 #0000 EQU2 ,&end JCN
 		( on down )
 		DUP2 #0100 NEQ2 ,&no-down JCN
 			.Mouse/x DEI2 .grid/x1 LDZ2 SUB2 #03 SFT2 NIP
