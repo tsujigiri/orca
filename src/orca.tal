@@ -243,8 +243,8 @@ BRK
 @on-button ( -> )
 
 	.Controller/button DEI2
-		DUP2 #0000 EQU2 ,&skip JCN
-			;find-modkey JSR2 DUP2 #0000 EQU2 ,&skip JCN
+		ORAk #00 EQU ,&skip JCN
+			;find-modkey JSR2 ORAk #00 EQU ,&skip JCN
 				DUP2 JSR2
 				( block ) POP2 BRK
 		&skip
@@ -307,7 +307,7 @@ BRK
 	.Mouse/x DEI2 DUP2 .cursor/x STZ2 .Screen/x DEO2
 	.Mouse/y DEI2 DUP2 .cursor/y STZ2 .Screen/y DEO2
 	;cursor-icn .Screen/addr DEO2
-	.Mouse/state DEI #00 NEQ #10 SFT #41 ADD .Screen/sprite DEO
+	.Mouse/state DEI #00 NEQ DUP ADD #41 ADD .Screen/sprite DEO
 	( route )
 	.Mouse/x DEI2 .Mouse/y DEI2 .grid ;within-rect JSR2 ,on-mouse-grid JCN
 	.Mouse/x DEI2 .Mouse/y DEI2 .toolbar ;within-rect JSR2 ,on-mouse-toolbar JCN
@@ -342,7 +342,7 @@ BRK
 	.Mouse/x DEI2 .grid/x1 LDZ2 SUB2 #03 SFT2 NIP
 	[ #05 ] GTHk NIP ,&no-insert JCN ;toggle-insert JSR2 POP BRK &no-insert
 	[ #09 ] GTHk NIP ,&no-pause JCN ;play-toggle JSR2 POP BRK &no-pause
-	[ #0d ] GTHk NIP ,&no-speed JCN [ .Mouse/state DEI #01 EQU #10 SFT #01 SUB ] ;mod-speed JSR2 #00 .Mouse/state DEO POP BRK &no-speed
+	[ #0d ] GTHk NIP ,&no-speed JCN [ .Mouse/state DEI #01 EQU DUP ADD #01 SUB ] ;mod-speed JSR2 #00 .Mouse/state DEO POP BRK &no-speed
 	[ #0e ] GTHk NIP OVR .grid/width LDZ SWP SUB #06 GTH #0101 NEQ2 ,&no-rename JCN ;trap JSR2 &no-rename
 	POP
 	( right-side )
@@ -542,11 +542,10 @@ JMP2r
 	( iterate thru channels )
 
 	#10 #00 &while EQUk ,&end JCN
-		( note ) DUP #10 SFT .voices ADD LDZk
+		( note ) DUPk ADD .voices ADD LDZk
 		( remaining length ) SWP INC LDZ
 		( next channel if already 0 ) DUP #00 EQU ,&next-chan JCN
-
-		( update remaining length ) #01 SUB ROTk #10 SFT .voices ADD INC STZ POP
+		( update remaining length ) #01 SUB ROTk DUP ADD .voices ADD INC STZ POP
 		( send note-off when length reaches 0 )
 		#00 NEQ ,&no-off JCN
 			( channel ) OVR .Console/write DEO
@@ -614,7 +613,7 @@ JMP2r
 		&run
 		.head/addr LDZ2 STH2k
 		( set type ) OPERATOR-TYPE STH2r ;data/types ADD2 STA
-		( run ) ROT ;chrb36 JSR2 #0a SUB #10 SFT #00 SWP ;op-table/func ADD2 LDA2 JMP2
+		( run ) ROT ;chrb36 JSR2 #0a SUB DUP ADD #00 SWP ;op-table/func ADD2 LDA2 JMP2
 		&no-uc
 	( special )
 	[ LIT '* ] EQUk NIP ;op-bang/func JCN2
@@ -704,7 +703,7 @@ JMP2r
 	.toolbar/y1 LDZ2 .Screen/y DEO2
 	.grid/x1 LDZ2 #0030 ADD2 .Screen/x DEO2
 	( value )
-	.timer/frame-lb LDZ STHk #03 .timer/playing LDZ #10 SFT SUB ;draw-byte JSR2
+	.timer/frame-lb LDZ STHk #03 .timer/playing LDZ DUP ADD SUB ;draw-byte JSR2
 	( icon )
 	;font/beat #03 STHr #07 AND #00 EQU SUB ;draw-sprite JSR2
 
@@ -836,7 +835,7 @@ JMP2r
 	&loop
 		( x ) DUP2 #84 SFT2 .grid/x1 LDZ2 ADD2 #0020 ADD2 .Screen/x DEO2
 		( y ) DUP2 #000f AND2 #40 SFT2 .grid/y1 LDZ2 ADD2 #0020 ADD2 .Screen/y DEO2
-		DUP2 #10 SFT2 ;op-table/docs ADD2 LDA2
+		DUP2k ADD2 ;op-table/docs ADD2 LDA2
 		( glyph ) LDAk #08 ;draw-char JSR2
 		( space ) ;draw-sprite/blank JSR2
 		( text ) INC2 #01 ,draw-string JSR
@@ -984,7 +983,7 @@ JMP2r
 	#00 .DateTime/minute DEI #60 SFT2 EOR2
 	#00 .DateTime/hour DEI #c0 SFT2 EOR2 ,prng/x STR2
 	#00 .DateTime/hour DEI #04 SFT2
-	#00 .DateTime/day DEI #10 SFT2 EOR2
+	#00 .DateTime/day DEI DUP2 ADD2 EOR2
 	#00 .DateTime/month DEI #60 SFT2 EOR2
 	.DateTime/year DEI2 #a0 SFT2 EOR2 ,prng/y STR2
 

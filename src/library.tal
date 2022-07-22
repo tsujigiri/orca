@@ -488,12 +488,12 @@ JMP2r
 	( has note ) OVR CHAR-DOT NEQ ,&has-note JCN [ POP POP2 POP2r JMP2r ] &has-note
 	( has bang ) ;get-bang JSR2 ,&is-bang JCN [ POP POP2 POP2r JMP2r ] &is-bang
 
-	( store length ) .voices ,&ch LDR #10 SFT ADD INC STZk POP [ ,&len STR ]
+	( store length ) .voices ,&ch LDR DUP ADD ADD INC STZk POP [ ,&len STR ]
 
 	( animate ) IO-TYPE STH2r ;data/types ADD2 STA
 
 	( get note ) ;chrmid JSR2 SWP [ #0c MUL ] ADD
-	( store note ) DUP .voices ,&ch LDR #10 SFT ADD STZ
+	( store note ) DUP .voices ,&ch LDR DUP ADD ADD STZ
 	( get velocity ) [ LIT &vel $1 ]
 		DUP CHAR-DOT NEQ ,&normalize JCN
 			( default to max ) POP #7f ,&continue JMP
