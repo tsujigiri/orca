@@ -29,4 +29,4 @@ then
 fi
 
 echo "Running.."
-uxn11 bin/orca.rom
+uxnemu bin/orca.rom
