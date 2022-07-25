@@ -800,6 +800,7 @@ JMP2r
 	&loop
 		( x ) DUP2 #84 SFT2 .grid/x1 LDZ2 ADD2 #0020 ADD2 .Screen/x DEO2
 		( y ) DUP2 #000f AND2 #40 SFT2 .grid/y1 LDZ2 ADD2 #0020 ADD2 .Screen/y DEO2
+		.Screen/y DEI2 .grid/y2 LDZ2 #0030 SUB2 GTH2 ,&skip JCN
 		DUP2k ADD2 ;op-table/docs ADD2 LDA2
 		( glyph )
 			LDAk #08 ;draw-chr-color JSR2
@@ -807,6 +808,7 @@ JMP2r
 			#00 .Screen/sprite DEO
 		( text )
 			INC2 #01 ;draw-str-color JSR2
+		&skip
 		INC2 GTH2k ,&loop JCN
 	POP2 POP2
 
