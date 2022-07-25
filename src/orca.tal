@@ -512,10 +512,12 @@ BRK
 
 @init ( -- )
 
-	;data/cells .grid/length LDZ2 ;mclr-haste JSR2
+	LIT '. DUP ;mfil/data STA2
+	;data/cells .grid/length LDZ2 ;mfil JSR2
 	&grid
-	;data/locks .grid/length LDZ2 STH2k ;mclr-haste JSR2
-	;data/types STH2r ;mclr-haste JSR2
+	#0000 ;mfil/data STA2
+	;data/locks .grid/length LDZ2 STH2k ;mfil JSR2
+	;data/types STH2r ;mfil JSR2
 	#00 .signal/midi STZ
 
 	( init-variables )
@@ -548,6 +550,8 @@ JMP2r
 
 	&next-chan POP2 INC
 	,&while JMP
+
+JMP2r
 
 @run ( -- )
 
@@ -591,6 +595,8 @@ JMP2r
 	.head/addr LDZ2 ;data/locks ADD2 LDA #00 EQU ,&no-locked JCN
 		POP JMP2r
 		&no-locked
+
+
 	( lowercase )
 	DUP #61 LTH ,&no-lc JCN
 	DUP #7a GTH ,&no-lc JCN
@@ -1083,11 +1089,11 @@ JMP2r
 
 ( generics )
 
-@mclr-haste ( src* len* -- )
+@mfil ( src* len* -- )
 
 	ADD2k NIP2 SWP2
 	&l
-		#0000 OVR2 STA2
+		[ LIT2 &data 0000 ] OVR2 STA2
 		INC2 INC2 GTH2k ,&l JCN
 	POP2 POP2
 
