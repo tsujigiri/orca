@@ -704,7 +704,8 @@ JMP2r
 	( value )
 	.timer/frame-lb LDZ STHk #03 .timer/playing LDZ DUP ADD SUB ;draw-byte JSR2
 	( icon )
-	;beat-icn #03 STHr #07 AND #00 EQU SUB ;draw-sprite JSR2
+	;beat-icn .Screen/addr DEO2
+	#03 STHr #07 AND #00 EQU SUB .Screen/sprite DEO
 
 JMP2r
 
@@ -762,7 +763,7 @@ JMP2r
 	( draw meter )
 	;draw-meter JSR2
 	( draw guide )
-	.guide LDZ JMP JMP2r ;draw-guide JSR2
+	.guide LDZ ;draw-guide JCN2
 
 JMP2r
 
