@@ -12,12 +12,6 @@
 |a0 @File &vector $2 &success $2 &stat $2 &delete $1 &append $1 &name $2 &length $2 &read $2 &write $2
 |c0 @DateTime &year $2 &month $1 &day $1 &hour $1 &minute $1 &second $1 &dotw $1 &doty $2 &isdst $1
 
-%CHAR-NULL { #00 } %CHAR-LINE { #0a }
-%CHAR-HASH { #23 } %CHAR-BANG { #2a }
-%CHAR-DOT { #2e } %CHAR-SLASH { #2f }
-%CHAR-COLON { #3a } %CHAR-EQUAL { #3d }
-%CHAR-SEMI { #3b }
-
 %LOCKED-TYPE { #01 } %PORTEL-TYPE { #02 }
 %OPERATOR-TYPE { #03 } %PORTER-TYPE { #04 }
 %OUTPUT-TYPE { #05 } %IO-TYPE { #07 }
@@ -275,7 +269,7 @@ BRK
 	[ #00 ] EQUk NIP ,&end JCN
 	[ #1b ] NEQk NIP ,&no-esc JCN ;toggle-insert JSR2 POP BRK &no-esc
 	[ #20 ] NEQk NIP ,&no-spc JCN #01 #0000 ;mod-sel JSR2 POP BRK &no-spc
-	[ #08 ] NEQk NIP ,&no-bks JCN #ff #0000 ;mod-sel JSR2 CHAR-DOT ;fill-sel JSR2 POP BRK &no-bks
+	[ #08 ] NEQk NIP ,&no-bks JCN #ff #0000 ;mod-sel JSR2 LIT '. ;fill-sel JSR2 POP BRK &no-bks
 	DUP ;ci-key JSR2 #00 EQU ,&no-key JCN 
 		DUP ;fill-sel JSR2 #01 #0000 ;mod-sel JSR2 &no-key
 	&end
@@ -527,7 +521,7 @@ BRK
 	( init-variables )
 	#2400
 	&loop
-		STHk #2e2e .variables STHr ADD STZ2
+		STHk LIT '. LIT '. .variables STHr ADD STZ2
 		INC INC GTHk ,&loop JCN
 	POP2
 
@@ -585,7 +579,7 @@ JMP2r
 @run-char ( x y char -- )
 
 	( skip dot )
-	DUP CHAR-DOT NEQ ,&no-dot JCN
+	DUP LIT '. NEQ ,&no-dot JCN
 		POP JMP2r
 		&no-dot
 	( skip numbers )
@@ -621,7 +615,7 @@ JMP2r
 	[ LIT '$ ] EQUk NIP ;op-self/func JCN2
 	POP
 	( erase )
-	CHAR-DOT .head/addr LDZ2 ;data/cells ADD2 STA
+	LIT '. .head/addr LDZ2 ;data/cells ADD2 STA
 
 JMP2r
 
@@ -637,10 +631,10 @@ JMP2r
 @get-bang ( -- bang )
 
 	.head/addr LDZ2 ;data/cells ADD2 STH2k
-	#0001 SUB2 LDA CHAR-BANG EQU ,&bang JCN
-	STH2kr INC2 LDA CHAR-BANG EQU ,&bang JCN
-	STH2kr #00 .grid/width LDZ SUB2 LDA CHAR-BANG EQU ,&bang JCN
-	STH2kr #00 .grid/width LDZ ADD2 LDA CHAR-BANG EQU ,&bang JCN
+	#0001 SUB2 LDA LIT '* EQU ,&bang JCN
+	STH2kr INC2 LDA LIT '* EQU ,&bang JCN
+	STH2kr #00 .grid/width LDZ SUB2 LDA LIT '* EQU ,&bang JCN
+	STH2kr #00 .grid/width LDZ ADD2 LDA LIT '* EQU ,&bang JCN
 	POP2r #00 JMP2r
 	&bang POP2r #01
 
@@ -776,7 +770,7 @@ JMP2r
 @get-char-at-addr ( addr* -- char )
 
 	;data/cells ADD2 LDA
-	DUP CHAR-DOT NEQ ,&no-bar JCN
+	DUP LIT '. NEQ ,&no-bar JCN
 		POP .head LDZ2
 		DUP2 #07 AND SWP #0f AND #0000 EQU2 ,&cross JCN
 		DUP2 #01 AND SWP #03 AND #0000 EQU2 ,&dot JCN
@@ -995,14 +989,14 @@ JMP2r
 
 @edit-erase ( -- )
 
-	CHAR-DOT ;fill-sel JSR2
+	LIT '. ;fill-sel JSR2
 
 JMP2r
 
 @edit-cut ( -- )
 
 	,edit-copy JSR
-	CHAR-DOT ;fill-sel JSR2
+	LIT '. ;fill-sel JSR2
 
 JMP2r
 

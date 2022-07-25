@@ -64,7 +64,7 @@ JMP2r
 	( get rate ) #0001 SUB2 ;get-port-left-value JSR2 DUP #00 EQU ADD
 	( get mod ) STH2kr INC2 ;get-port-right-value JSR2 DUP #00 EQU ADD
 	( res ) MUL #00 SWP .timer/frame LDZ2 SWP2 DIV2k MUL2 SUB2 #0000 EQU2
-	( bang on equal ) #fc MUL CHAR-DOT ADD
+	( bang on equal ) #fc MUL LIT '. ADD
 	( output ) STH2r #00 .grid/width LDZ ADD2 ;set-port-output JSR2
 
 JMP2r
@@ -75,12 +75,12 @@ JMP2r
 
 	STH2k ;data/cells ADD2 LDA ,&self STR
 	( wall ) .head/x LDZ INC .grid/width LDZ EQU ,&collide JCN
-	( cell ) STH2kr INC2 ;data/cells ADD2 LDA CHAR-DOT NEQ ,&collide JCN
+	( cell ) STH2kr INC2 ;data/cells ADD2 LDA LIT '. NEQ ,&collide JCN
 	( write new ) [ LIT &self $1 ] STH2kr INC2 ;set-port-raw JSR2
-	( erase old ) CHAR-DOT STH2r ;set-port-raw JSR2
+	( erase old ) LIT '. STH2r ;set-port-raw JSR2
 	JMP2r
 	&collide
-	( output ) CHAR-BANG STH2r ;set-port-output JSR2
+	( output ) LIT '* STH2r ;set-port-output JSR2
 
 JMP2r
 
@@ -91,7 +91,7 @@ JMP2r
 	STH2k
 	( get a ) #0001 SUB2 ;get-port-left-raw JSR2
 	( get b ) STH2kr INC2 ;get-port-right-raw JSR2
-	( bang on equal ) EQU [ #fc MUL CHAR-DOT ADD ]
+	( bang on equal ) EQU [ #fc MUL LIT '. ADD ]
 	( output ) STH2r #00 .grid/width LDZ ADD2 ;set-port-output JSR2
 
 JMP2r
@@ -168,7 +168,7 @@ JMP2r
 	#0001 SUB2 ;get-port-left-value JSR2 #00
 	&loop
 		#00 OVR STH2kr INC2 ADD2 STH2k ;get-port-right-raw JSR2
-		DUP CHAR-DOT EQU ,&skip JCN
+		DUP LIT '. EQU ,&skip JCN
 			( load ) DUP ;chrb36 JSR2 .variables ADD LDZ
 			( save ) STH2kr #00 .grid/width LDZ ADD2 ;set-port-output JSR2
 			&skip
@@ -216,12 +216,12 @@ JMP2r
 
 	STH2k ;data/cells ADD2 LDA ,&self STR
 	( wall ) .head/y LDZ #01 SUB #ff EQU ,&collide JCN
-	( cell ) STH2kr #00 .grid/width LDZ SUB2 ;data/cells ADD2 LDA CHAR-DOT NEQ ,&collide JCN
+	( cell ) STH2kr #00 .grid/width LDZ SUB2 ;data/cells ADD2 LDA LIT '. NEQ ,&collide JCN
 	( write new ) [ LIT &self $1 ] STH2kr #00 .grid/width LDZ SUB2 ;set-port-raw JSR2
-	( erase old ) CHAR-DOT STH2r ;set-port-raw JSR2
+	( erase old ) LIT '. STH2r ;set-port-raw JSR2
 	JMP2r
 	&collide
-	( output ) CHAR-BANG STH2r ;set-port-output JSR2
+	( output ) LIT '* STH2r ;set-port-output JSR2
 
 JMP2r
 
@@ -299,12 +299,12 @@ JMP2r
 
 	STH2k ;data/cells ADD2 LDA ,&self STR
 	( wall ) .head/y LDZ INC .grid/height LDZ EQU ,&collide JCN
-	( cell ) STH2kr #00 .grid/width LDZ ADD2 ;data/cells ADD2 LDA CHAR-DOT NEQ ,&collide JCN
+	( cell ) STH2kr #00 .grid/width LDZ ADD2 ;data/cells ADD2 LDA LIT '. NEQ ,&collide JCN
 	( write new ) [ LIT &self $1 ] STH2kr #00 .grid/width LDZ ADD2 ;set-port-raw JSR2
-	( erase old ) CHAR-DOT STH2r ;set-port-raw JSR2
+	( erase old ) LIT '. STH2r ;set-port-raw JSR2
 	JMP2r
 	&collide
-	( output ) CHAR-BANG STH2r ;set-port-output JSR2
+	( output ) LIT '* STH2r ;set-port-output JSR2
 
 JMP2r
 
@@ -339,7 +339,7 @@ JMP2r
 	( % max ) STHkr #00 SWP DIV2k MUL2 SUB2
 	( ADD step ) SWPr STHr #00 SWP ADD2
 	( bucket GTH= max ) STHr #00 SWP LTH2 #01 NEQ
-	( bang if equal ) #fc MUL CHAR-DOT ADD
+	( bang if equal ) #fc MUL LIT '. ADD
 	STH2r #00 .grid/width LDZ ADD2 ;set-port-output JSR2
 
 JMP2r
@@ -351,7 +351,7 @@ JMP2r
 	STH2k
 	( key ) #0001 SUB2 ;get-port-left-raw JSR2
 	( val ) STH2kr INC2 ;get-port-right-raw JSR2
-	DUP CHAR-DOT EQU ,&idle JCN
+	DUP LIT '. EQU ,&idle JCN
 	OVR ;chrb36 JSR2 ,&save JCN
 	( load )
 		NIP ;chrb36 JSR2 .variables ADD LDZ STH2r #00 .grid/width LDZ ADD2 ;set-port-output JSR2 JMP2r
@@ -368,12 +368,12 @@ JMP2r
 
 	STH2k ;data/cells ADD2 LDA ,&self STR
 	( wall ) .head/x LDZ #01 SUB #ff EQU ,&collide JCN
-	( cell ) STH2kr #0001 SUB2 ;data/cells ADD2 LDA CHAR-DOT NEQ ,&collide JCN
+	( cell ) STH2kr #0001 SUB2 ;data/cells ADD2 LDA LIT '. NEQ ,&collide JCN
 	( write new ) [ LIT &self $1 ] STH2kr #0001 SUB2 ;set-port-raw JSR2
-	( erase old ) CHAR-DOT STH2r ;set-port-raw JSR2
+	( erase old ) LIT '. STH2r ;set-port-raw JSR2
 	JMP2r
 	&collide
-	( output ) CHAR-BANG STH2r ;set-port-output JSR2
+	( output ) LIT '* STH2r ;set-port-output JSR2
 
 JMP2r
 
@@ -430,7 +430,7 @@ JMP2r
 	&func ( char -- )
 
 	POP
-	CHAR-DOT .head/addr LDZ2 ;data/cells ADD2 STA
+	LIT '. .head/addr LDZ2 ;data/cells ADD2 STA
 
 JMP2r
 
@@ -449,7 +449,7 @@ JMP2r
 		DUP2 ;data/types ADD2 LDA ,&skip JCN
 			( set type ) DUP2 LOCKED-TYPE ROT ROT ;data/types ADD2 STA
 			&skip
-		( stop at hash ) DUP2 ;data/cells ADD2 LDA CHAR-HASH EQU ,&end JCN
+		( stop at hash ) DUP2 ;data/cells ADD2 LDA LIT '# EQU ,&end JCN
 		INC2 GTH2k ,&loop JCN
 	&end
 	POP2 POP2
@@ -465,7 +465,7 @@ JMP2r
 	( channel ) INC2 ;get-port-right-value JSR2 [ ,&ch STR ]
 	( octave ) STH2kr INC2 INC2 ;get-port-right-value JSR2
 	( note ) STH2kr #0003 ADD2 ;get-port-right-raw JSR2
-	( has note ) DUP CHAR-DOT NEQ ,&has-note JCN [ POP2 POP2r JMP2r ] &has-note
+	( has note ) DUP LIT '. NEQ ,&has-note JCN [ POP2 POP2r JMP2r ] &has-note
 	( has bang ) ;get-bang JSR2 ,&is-bang JCN [ POP2 POP2r JMP2r ] &is-bang
 	( animate ) IO-TYPE STH2r ;data/types ADD2 STA
 	( get note ) ;chrmid JSR2 SWP [ #0c MUL ] ADD
@@ -485,7 +485,7 @@ JMP2r
 	( velocity ) STH2kr #0004 ADD2 ;get-port-right-raw JSR2 [ ,&vel STR ]
 	( length ) STH2kr #0005 ADD2 ;get-port-right-value JSR2
 
-	( has note ) OVR CHAR-DOT NEQ ,&has-note JCN [ POP POP2 POP2r JMP2r ] &has-note
+	( has note ) OVR LIT '. NEQ ,&has-note JCN [ POP POP2 POP2r JMP2r ] &has-note
 	( has bang ) ;get-bang JSR2 ,&is-bang JCN [ POP POP2 POP2r JMP2r ] &is-bang
 
 	( store length ) .voices ,&ch LDR DUP ADD ADD INC STZk POP [ ,&len STR ]
@@ -495,7 +495,7 @@ JMP2r
 	( get note ) ;chrmid JSR2 SWP [ #0c MUL ] ADD
 	( store note ) DUP .voices ,&ch LDR DUP ADD ADD STZ
 	( get velocity ) [ LIT &vel $1 ]
-		DUP CHAR-DOT NEQ ,&normalize JCN
+		DUP LIT '. NEQ ,&normalize JCN
 			( default to max ) POP #7f ,&continue JMP
 		&normalize
 		;raw-to-b128 JSR2 &continue SWP
@@ -527,7 +527,7 @@ JMP2r
 	.head/addr LDZ2 STH2k
 	( octave ) INC2 ;get-port-right-value JSR2
 	( note ) STH2kr INC2 INC2 ;get-port-right-raw JSR2
-	( has note ) DUP CHAR-DOT NEQ ,&has-note JCN [ POP2 POP2r JMP2r ] &has-note
+	( has note ) DUP LIT '. NEQ ,&has-note JCN [ POP2 POP2r JMP2r ] &has-note
 	( has bang ) ;get-bang JSR2 ,&is-bang JCN [ POP2 POP2r JMP2r ] &is-bang
 	( animate ) IO-TYPE STH2r ;data/types ADD2 STA
 	( get note ) ;chrmid JSR2 SWP [ #0c MUL ] ADD .Console/write DEO
