@@ -593,7 +593,7 @@ JMP2r
 		&no-locked
 
 	( new router )
-	#00 SWP #21 SUB DUP ADD ;op-ascii ADD2 LDA2 
+	#00 SWP #20 SUB DUP ADD ;op-ascii ADD2 LDA2
 		.head/addr LDZ2 SWP2 JMP2
 
 JMP2r

@@ -1,5 +1,5 @@
 @op-ascii
-	( 20	  ) :op-null
+	( 20	_ ) :op-null
 	( 21	! ) :op-null
 	( 22	" ) :op-null
 	( 23	# ) :op-comment
@@ -7,8 +7,8 @@
 	( 25	% ) :op-null
 	( 26	& ) :op-null
 	( 27	' ) :op-null
-	( 28	( ) :op-null
-	( 29	) ) :op-null
+	( 28	_ ) :op-null
+	( 29	_ ) :op-null
 	( 2A	* ) :op-bang
 	( 2B	+ ) :op-null
 	( 2C	, ) :op-null
@@ -94,7 +94,7 @@
 	( 7C	| ) :op-null
 	( 7D	} ) :op-null
 	( 7E	~ ) :op-null
-	( 7F	 ) :op-null
+	( 7F	_ ) :op-null
 
 @op-table
 	&docs
