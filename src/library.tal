@@ -14,7 +14,7 @@
 	( 2C	, ) :op-null
 	( 2D	- ) :op-null
 	( 2E	. ) :op-null
-	( 2F	/ ) :op-null
+	( 2F	/ ) :op-byte
 	( 30	0 ) :op-null
 	( 31	1 ) :op-null
 	( 32	2 ) :op-null
@@ -103,11 +103,6 @@
 	:op-q/? :op-r/? :op-s/? :op-t/? :op-u/? :op-v/? :op-w/? :op-x/?
 	:op-y/? :op-z/?
 	:op-bang/? :op-comment/? :op-synth/? :op-midi/? :op-pitch/? :op-byte/? :op-self/?
-	&func
-	:op-a :op-b :op-c :op-d :op-e :op-f :op-g :op-h
-	:op-i :op-j :op-k :op-l :op-m :op-n :op-o :op-p
-	:op-q :op-r :op-s :op-t :op-u :op-v :op-w :op-x
-	:op-y :op-z
 
 @op-a-lc ;get-bang JSR2 ,&* POP JMP2r &*
 @op-a ( add )
