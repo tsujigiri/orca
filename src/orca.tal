@@ -101,8 +101,6 @@
 	( draw once )
 	.grid/x2 LDZ2 #0020 SUB2 .Screen/x DEO2
 	.toolbar/y1 LDZ2 .Screen/y DEO2
-	;font/load #01 ;draw-sprite JSR2
-	;font/make #01 ;draw-sprite JSR2
 	( init random )
 	;init-prng JSR2
 	( blank file )
@@ -317,7 +315,7 @@ BRK
 @on-mouse-grid ( -> )
 
 	.Mouse/state DEI [ LIT &last $1 ]
-		DUP2 #0000 EQU2 ,&end JCN
+		ORAk #00 EQU ,&end JCN
 		( on down )
 		DUP2 #0100 NEQ2 ,&no-down JCN
 			.Mouse/x DEI2 .grid/x1 LDZ2 SUB2 #03 SFT2 NIP
@@ -348,9 +346,7 @@ BRK
 	( right-side )
 	.grid/x2 LDZ2 .Mouse/x DEI2 SUB2 #03 SFT2 NIP
 	[ #00 ] NEQk NIP ,&no-save JCN ;file-save JSR2 &no-save
-	[ #02 ] NEQk NIP ,&no-load JCN ;file-open JSR2 &no-load
-	[ #03 ] NEQk NIP ,&no-name JCN ;file-new JSR2 &no-name
-	[ #05 ] NEQk NIP ,&no-guide JCN ;toggle-guide JSR2 &no-guide
+	[ #02 ] NEQk NIP ,&no-guide JCN ;toggle-guide JSR2 &no-guide
 	POP
 	#00 .Mouse/state DEO
 
@@ -487,8 +483,8 @@ JMP2r
 	.guide LDZk #00 EQU SWP STZ
 	;draw-grid JSR2
 	.toolbar/y1 LDZ2 .Screen/y DEO2
-	.grid/x2 LDZ2 #0030 SUB2 .Screen/x DEO2
-	;font/help [ #00 .guide LDZ #40 SFT2 ] ADD2 #01 ;draw-sprite JSR2
+	.grid/x2 LDZ2 #0018 SUB2 .Screen/x DEO2
+	;help-icn [ #00 .guide LDZ #40 SFT2 ] ADD2 #01 ;draw-sprite JSR2
 
 JMP2r
 
@@ -692,7 +688,7 @@ JMP2r
 	( value )
 	POP2 #01 ;draw-short JSR2
 	( icon )
-	;font/selector #00 [ .Controller/vector DEI2 ;on-button-insert EQU2 ] #40 SFT2 ADD2
+	;selector-icn #00 [ .Controller/vector DEI2 ;on-button-insert EQU2 ] #40 SFT2 ADD2
 	#02 .selection/from LDZ2 .selection/to LDZ2 EQU2 ADD
 		;draw-sprite JSR2
 
@@ -705,7 +701,7 @@ JMP2r
 	( value )
 	.timer/frame-lb LDZ STHk #03 .timer/playing LDZ DUP ADD SUB ;draw-byte JSR2
 	( icon )
-	;font/beat #03 STHr #07 AND #00 EQU SUB ;draw-sprite JSR2
+	;beat-icn #03 STHr #07 AND #00 EQU SUB ;draw-sprite JSR2
 
 JMP2r
 
@@ -726,7 +722,7 @@ JMP2r
 	.toolbar/x2 LDZ2 #0008 SUB2 .Screen/x DEO2
 	.toolbar/y1 LDZ2 .Screen/y DEO2
 	( icon )
-	;font/save #01 .state/changed LDZ ADD ;draw-sprite JSR2
+	;save-icn #01 .state/changed LDZ ADD ;draw-sprite JSR2
 
 JMP2r
 
@@ -822,7 +818,7 @@ JMP2r
 @draw-meter ( -- )
 
 	.toolbar/y1 LDZ2 .Screen/y DEO2
-	.grid/x2 LDZ2 #0040 SUB2 .Screen/x DEO2
+	.grid/x2 LDZ2 #0028 SUB2 .Screen/x DEO2
 	.signal/midi LDZ #07 [ LTHk JMP SWP POP ] STH
 	;meter-icn #00 STHkr #40 SFT2 ADD2 .Screen/addr DEO2
 	#01 STHr #07 EQU ADD .Screen/sprite DEO
@@ -869,7 +865,6 @@ JMP2r
 
 @draw-char ( char color -- )
 
-	OVR #20 LTH ,draw-unknown JCN
 	STH #20 SUB #00 SWP #40 SFT2 ;font ADD2 STHr
 
 @draw-sprite ( addr* color -- )
@@ -890,12 +885,6 @@ JMP2r
 @get-strw ( str* -- width* )
 
 	;slen JSR2 #30 SFT2
-
-JMP2r
-
-@draw-unknown ( char color -- )
-
-	NIP ;unknown-icn ROT ,draw-sprite JMP
 
 JMP2r
 
