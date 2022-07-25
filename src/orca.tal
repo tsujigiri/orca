@@ -162,7 +162,6 @@ JMP2r
 	;on-mouse-trap .Mouse/vector DEO2
 	;on-frame-trap .Screen/vector DEO2
 	#00 .Mouse/state DEO
-
 	( clear cursor )
 	#40 ;draw-cursor JSR2
 
@@ -245,11 +244,8 @@ BRK
 
 @on-button ( -> )
 
-	.Controller/button DEI2
-		ORAk #00 EQU ,&skip JCN
-			;find-modkey JSR2 ORAk #00 EQU ,&skip JCN
-				DUP2 JSR2
-				( block ) POP2 BRK
+	.Controller/button DEI2 ;find-modkey JSR2 ORAk #00 EQU ,&skip JCN
+		JSR2 BRK
 		&skip
 	POP2
 
@@ -265,10 +261,10 @@ BRK
 	.Controller/button DEI #f0 AND ;on-button-arrow JCN2
 
 	( default )
-	.Controller/key DEI
-	[ #00 ] EQUk NIP ,&end JCN
-	DUP ;ci-key JSR2 #00 EQU ,&no-key JCN .Controller/key DEI ;fill-sel JSR2 &no-key
-	&end
+	.Controller/key DEI 
+		DUP ;ci-key JSR2 #00 EQU ,&no-input JCN
+			DUP ;fill-sel JSR2
+		&no-input
 	POP
 
 BRK
