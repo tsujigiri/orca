@@ -440,7 +440,7 @@ JMP2r
 		STHk
 		.selection/x2 LDZ INC .selection/x1 LDZ
 		&hor
-			DUP STHkr [ LIT &c $1 ] ;set-cell JSR2
+			[ LIT &c $1 ] OVR STHkr ;get-cell JSR2 ;data/cells ADD2 STA
 			INC GTHk ,&hor JCN
 		POP2 POPr
 		INC GTHk ,&ver JCN
@@ -518,10 +518,10 @@ BRK
 
 @init ( -- )
 
-	;data/cells .grid/length LDZ2 ;mclr JSR2
+	;data/cells .grid/length LDZ2 ;mclr-haste JSR2
 	&grid
-	;data/locks .grid/length LDZ2 STH2k ;mclr JSR2
-	;data/types STH2r ;mclr JSR2
+	;data/locks .grid/length LDZ2 STH2k ;mclr-haste JSR2
+	;data/types STH2r ;mclr-haste JSR2
 	#00 .signal/midi STZ
 
 	( init-variables )
@@ -1088,6 +1088,16 @@ JMP2r
 @ci-key ( char -- bool ) DUP #20 GTH SWP #7b LTH AND JMP2r
 
 ( generics )
+
+@mclr-haste ( src* len* -- )
+
+	ADD2k NIP2 SWP2
+	&l
+		#0000 OVR2 STA2
+		INC2 INC2 GTH2k ,&l JCN
+	POP2 POP2
+
+JMP2r
 
 @within-rect ( x* y* rect -- flag )
 
