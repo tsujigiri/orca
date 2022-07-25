@@ -669,9 +669,9 @@ JMP2r
 	( value )
 	.dpad LDZ #04 ;draw-byte JSR2
 	( space )
-	;draw-sprite/blank JSR2
+	#00 .Screen/sprite DEO
 	( icon )
-	.dpad LDZ #01 ;draw-char JSR2
+	.dpad LDZ #01 ;draw-chr-color JSR2
 
 JMP2r
 
@@ -710,10 +710,11 @@ JMP2r
 	( value )
 	.timer/speed LDZ #01 ;draw-byte JSR2
 	( th )
-	;&th-txt #03 ;draw-string JSR2
+	#03 ;draw-chr/color STA
+	LIT 't ;draw-chr JSR2
+	LIT 'h ;draw-chr JSR2
 
 JMP2r
-	&th-txt "th $1
 
 @draw-state ( -- )
 
@@ -729,7 +730,7 @@ JMP2r
 	.toolbar/y1 LDZ2 .Screen/y DEO2
 	.toolbar/x1 LDZ2 #0078 ADD2 .Screen/x DEO2
 	( icon )
-	;filepath ROT ;draw-string JSR2
+	;filepath ROT ;draw-str-color JSR2 POP2
 
 JMP2r
 
@@ -747,7 +748,7 @@ JMP2r
 		&hor
 			DUP .head/x STZ
 			STH2kr .head/addr STZ2
-			STH2kr ,get-char-at-addr JSR ,get-color JSR ;draw-char JSR2
+			STH2kr ,get-char-at-addr JSR ,get-color JSR ;draw-chr-color JSR2
 			INC2r
 			INC GTHk ,&hor JCN
 		POP2
@@ -830,22 +831,14 @@ JMP2r
 		( x ) DUP2 #84 SFT2 .grid/x1 LDZ2 ADD2 #0020 ADD2 .Screen/x DEO2
 		( y ) DUP2 #000f AND2 #40 SFT2 .grid/y1 LDZ2 ADD2 #0020 ADD2 .Screen/y DEO2
 		DUP2k ADD2 ;op-table/docs ADD2 LDA2
-		( glyph ) LDAk #08 ;draw-char JSR2
-		( space ) ;draw-sprite/blank JSR2
-		( text ) INC2 #01 ,draw-string JSR
+		( glyph )
+			LDAk #08 ;draw-chr-color JSR2
+		( space )
+			#00 .Screen/sprite DEO
+		( text )
+			INC2 #01 ;draw-str-color JSR2 POP2
 		INC2 GTH2k ,&loop JCN
 	POP2 POP2
-
-JMP2r
-
-@draw-string ( str* color -- )
-
-	STH
-	&while
-		LDAk STHkr ,draw-char JSR
-		INC2 LDAk ,&while JCN
-	POP2
-	POPr
 
 JMP2r
 
@@ -859,11 +852,8 @@ JMP2r
 
 @draw-hex ( byte color -- )
 
-	STH #0f AND ;b36chr JSR2 STHr
-
-@draw-char ( char color -- )
-
-	STH #20 SUB #00 SWP #40 SFT2 ;font ADD2 STHr
+	STH #0f AND ;b36chr JSR2
+	#20 SUB #00 SWP #40 SFT2 ;font ADD2 STHr
 
 @draw-sprite ( addr* color -- )
 
@@ -871,12 +861,22 @@ JMP2r
 	STHr .Screen/sprite DEO
 
 JMP2r
-	&blank #00 .Screen/sprite DEO JMP2r
+
+@draw-chr-color ( char color -- )
+
+	,draw-chr/color STR
 
 @draw-chr ( char -- )
 
 	#20 SUB #00 SWP #40 SFT2 ;font ADD2 .Screen/addr DEO2
 	[ LIT &color 01 ] .Screen/sprite DEO
+
+JMP2r
+
+@draw-str-color ( str* color -- )
+
+	,draw-chr/color STR
+	;draw-str JSR2
 
 JMP2r
 
