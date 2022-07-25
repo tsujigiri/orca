@@ -56,7 +56,7 @@
 	( 56	V ) :op-v
 	( 57	W ) :op-w
 	( 58	X ) :op-x
-	( 59	Y ) :op-x
+	( 59	Y ) :op-y
 	( 5A	Z ) :op-z
 	( 5B	[ ) :op-null
 	( 5C	\ ) :op-null
