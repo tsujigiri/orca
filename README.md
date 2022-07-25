@@ -3,6 +3,7 @@
 [Orca](https://wiki.xxiivv.com/orca) is an esoteric programming language, written in [Uxntal](https://wiki.xxiivv.com/site/uxntal.html).
 
 In Orca, every letter of the alphabet is an operation, where lowercase letters operate on bang, uppercase letters operate each frame. 
+For more details, see the complete [operation manual](https://wiki.xxiivv.com/site/orca.html).
 
 ## Build
 
@@ -63,46 +64,8 @@ To display the list of operators inside of Orca, use `CmdOrCtrl+G`.
 - `/` **byte**(hb lb): Sends a single byte.
 - `$` **self**(path): Inject file in grid.
 
-#### Advanced
+## Support
 
-Orca listens to stdin events and inputs the byte values as keyboard inputs. The cursor can also be moved with special bytes:
-
-- `#11` **up**
-- `#12` **down**
-- `#13` **left**
-- `#14` **right**
-
-## Controls
-
-### Mouse
-
-- `mouse1` select cell
-
-### Arrows
-
-- `arrow` move
-- `shift+arrow` scale selection
-- `ctrl+arrow` drag selection
-
-### Ctrl
-
-- `ctrl+n` new
-- `ctrl+r` rename
-- `ctrl+o` open
-- `ctrl+s` save
-- `ctrl+c` copy
-- `ctrl+v` paste
-- `ctrl+x` cut
-- `ctrl+h` toggle guide
-- `ctrl+i` toggle insert
-- `ctrl+a` select all
-
-### Misc
-
-- `space` toggle play
-- `backspace` erase
-- `escape` deselect
-
-## Help
-
-For more details, see the complete [operation manual](https://wiki.xxiivv.com/site/orca.html).
+- [theme](https://wiki.xxiivv.com/site/theme.html)
+- [snarf](https://wiki.xxiivv.com/site/snarf.html)
+- [manifest](https://wiki.xxiivv.com/site/manifest.html)

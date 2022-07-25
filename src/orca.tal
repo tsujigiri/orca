@@ -170,15 +170,20 @@ JMP2r
 
 @on-console ( -> )
 
+	#00 ;draw-filepath JSR2
+	( start )
+	[ LIT &listening $1 ] ,&no-start JCN
+		#01 ,&listening STR
+		;filepath #0040 ;mclr JSR2
+		&no-start
+	( end )
 	.Console/read DEI
-	[ #11 ] NEQk NIP ,&no-u JCN #00ff #00 ;mod-sel JSR2 &no-u
-	[ #12 ] NEQk NIP ,&no-d JCN #0001 #00 ;mod-sel JSR2 &no-d
-	[ #13 ] NEQk NIP ,&no-l JCN #ff00 #00 ;mod-sel JSR2 &no-l
-	[ #14 ] NEQk NIP ,&no-r JCN #0100 #00 ;mod-sel JSR2 &no-r
-	DUP ;ci-key JSR2 #00 EQU ,&no-key JCN
-		STHk .selection LDZ2 STHr ;set-cell JSR2
-		&no-key
-	POP
+	DUPk #1f GTH SWP #7f LTH AND ,&no-end JCN
+		#00 ,&listening STR
+		&no-end
+	( capture )
+	,capture-trap JSR
+	#01 ;draw-filepath JSR2
 
 BRK
 
@@ -710,11 +715,10 @@ JMP2r
 	( value )
 	.timer/speed LDZ #01 ;draw-byte JSR2
 	( th )
-	#03 ;draw-chr/color STA
-	LIT 't ;draw-chr JSR2
-	LIT 'h ;draw-chr JSR2
+	;&th #03 ;draw-str-color JSR2
 
 JMP2r
+	&th "th $1
 
 @draw-state ( -- )
 
@@ -730,7 +734,7 @@ JMP2r
 	.toolbar/y1 LDZ2 .Screen/y DEO2
 	.toolbar/x1 LDZ2 #0078 ADD2 .Screen/x DEO2
 	( icon )
-	;filepath ROT ;draw-str-color JSR2 POP2
+	;filepath ROT ;draw-str-color JSR2
 
 JMP2r
 
@@ -836,7 +840,7 @@ JMP2r
 		( space )
 			#00 .Screen/sprite DEO
 		( text )
-			INC2 #01 ;draw-str-color JSR2 POP2
+			INC2 #01 ;draw-str-color JSR2
 		INC2 GTH2k ,&loop JCN
 	POP2 POP2
 
@@ -876,7 +880,7 @@ JMP2r
 @draw-str-color ( str* color -- )
 
 	,draw-chr/color STR
-	;draw-str JSR2
+	;draw-str JSR2 POP2
 
 JMP2r
 

@@ -1,0 +1,14 @@
+
+@on-console-listen ( -> )
+
+	.Console/read DEI
+	[ #11 ] NEQk NIP ,&no-u JCN #00ff #00 ;mod-sel JSR2 &no-u
+	[ #12 ] NEQk NIP ,&no-d JCN #0001 #00 ;mod-sel JSR2 &no-d
+	[ #13 ] NEQk NIP ,&no-l JCN #ff00 #00 ;mod-sel JSR2 &no-l
+	[ #14 ] NEQk NIP ,&no-r JCN #0100 #00 ;mod-sel JSR2 &no-r
+	DUP ;ci-key JSR2 #00 EQU ,&no-key JCN
+		STHk .selection LDZ2 STHr ;set-cell JSR2
+		&no-key
+	POP
+
+BRK
