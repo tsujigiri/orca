@@ -109,7 +109,6 @@
 
 	STH2k
 	( set type ) OPERATOR-TYPE STH2kr ;data/types ADD2 STA
-
 	( a-val ) #0001 SUB2 ;get-port-left-value JSR2
 	( b-raw ) STH2kr INC2 ;get-port-right-raw JSR2
 		( get case ) DUP ;ciuc JSR2 ,&case STR
@@ -141,7 +140,6 @@ JMP2r
 @op-c ( clock )
 
 	STH2k
-	( set type ) OPERATOR-TYPE STH2kr ;data/types ADD2 STA
 	( set type ) OPERATOR-TYPE STH2kr ;data/types ADD2 STA
 	( get rate ) #0001 SUB2 ;get-port-left-value JSR2 DUP #00 EQU ADD
 	( get mod ) STH2kr INC2 ;get-port-right-raw JSR2
@@ -554,16 +552,14 @@ JMP2r
 
 @op-bang ( bang )
 
-	POP2
-	LIT '. .head/addr LDZ2 ;data/cells ADD2 STA
+	LIT '. ROT ROT ;data/cells ADD2 STA
 
 JMP2r
 	&? '* "Bangs 20 "neighboring 20 "operands $1
 
 @op-comment ( comment )
 
-	POP2
-	.head/addr LDZ2 STH2k
+	STH2k
 	( bounds )
 	#00 .grid/width LDZ .head/x LDZ SUB ADD2
 	STH2r INC2
@@ -583,8 +579,7 @@ JMP2r
 
 @op-synth ( synth )
 
-	POP2
-	.head/addr LDZ2 STH2k
+	STH2k
 	( channel ) INC2 ;get-port-right-value JSR2 [ ,&ch STR ]
 	( octave ) STH2kr INC2 INC2 ;get-port-right-value JSR2
 	( note ) STH2kr #0003 ADD2 ;get-port-right-raw JSR2
@@ -599,8 +594,7 @@ JMP2r
 
 @op-midi ( midi )
 
-	POP2
-	.head/addr LDZ2 STH2k
+	STH2k
 	( channel ) INC2 ;get-port-right-value JSR2 [ ,&ch STR ]
 	( octave ) STH2kr INC2 INC2 ;get-port-right-value JSR2
 	( note ) STH2kr #0003 ADD2 ;get-port-right-raw JSR2
@@ -644,8 +638,7 @@ JMP2r
 
 @op-pitch ( pitch )
 
-	POP2
-	.head/addr LDZ2 STH2k
+	STH2k
 	( octave ) INC2 ;get-port-right-value JSR2
 	( note ) STH2kr INC2 INC2 ;get-port-right-raw JSR2
 	( has note ) DUP LIT '. NEQ ,&has-note JCN [ POP2 POP2r JMP2r ] &has-note
@@ -658,8 +651,7 @@ JMP2r
 
 @op-byte ( byte )
 
-	POP2
-	.head/addr LDZ2 STH2k
+	STH2k
 	( hn ) INC2 ;get-port-right-value JSR2
 	( ln ) STH2kr INC2 INC2 ;get-port-right-value JSR2
 	( has bang ) ;get-bang JSR2 ,&is-bang JCN [ POP2 POP2r JMP2r ] &is-bang
@@ -671,8 +663,7 @@ JMP2r
 
 @op-self ( self )
 
-	POP2
-	.head/addr LDZ2 STH2k
+	STH2k
 	&while
 		INC2 DUP2 ;get-port-right-raw JSR2 LIT '. NEQ ,&while JCN
 	POP2
