@@ -606,13 +606,13 @@ JMP2r
 		( run ) ROT ;chrb36 JSR2 #0a SUB DUP ADD #00 SWP ;op-table/func ADD2 LDA2 JMP2
 		&no-uc
 	( special )
-	[ LIT '* ] EQUk NIP ;op-bang/func JCN2
-	[ LIT '# ] EQUk NIP ;op-comment/func JCN2
-	[ LIT '= ] EQUk NIP ;op-synth/func JCN2
-	[ LIT '; ] EQUk NIP ;op-pitch/func JCN2
-	[ LIT ': ] EQUk NIP ;op-midi/func JCN2
-	[ LIT '/ ] EQUk NIP ;op-byte/func JCN2
-	[ LIT '$ ] EQUk NIP ;op-self/func JCN2
+	[ LIT '* ] EQUk NIP ;op-bang JCN2
+	[ LIT '# ] EQUk NIP ;op-comment JCN2
+	[ LIT '= ] EQUk NIP ;op-synth JCN2
+	[ LIT '; ] EQUk NIP ;op-pitch JCN2
+	[ LIT ': ] EQUk NIP ;op-midi JCN2
+	[ LIT '/ ] EQUk NIP ;op-byte JCN2
+	[ LIT '$ ] EQUk NIP ;op-self JCN2
 	POP
 	( erase )
 	LIT '. .head/addr LDZ2 ;data/cells ADD2 STA

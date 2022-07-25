@@ -97,21 +97,19 @@
 
 @op-table
 	&docs
+	:op-a/? :op-b/? :op-c/? :op-d/? :op-e/? :op-f/? :op-g/? :op-h/?
+	:op-i/? :op-j/? :op-k/? :op-l/? :op-m/? :op-n/? :op-o/? :op-p/?
+	:op-q/? :op-r/? :op-s/? :op-t/? :op-u/? :op-v/? :op-w/? :op-x/?
+	:op-y/? :op-z/?
+	:op-bang/? :op-comment/? :op-synth/? :op-midi/? :op-pitch/? :op-byte/? :op-self/?
+	&func
 	:op-a :op-b :op-c :op-d :op-e :op-f :op-g :op-h
 	:op-i :op-j :op-k :op-l :op-m :op-n :op-o :op-p
 	:op-q :op-r :op-s :op-t :op-u :op-v :op-w :op-x
 	:op-y :op-z
-	:op-bang :op-comment :op-synth :op-midi :op-pitch :op-byte :op-self
-	&func
-	:op-a/func :op-b/func :op-c/func :op-d/func :op-e/func :op-f/func :op-g/func :op-h/func
-	:op-i/func :op-j/func :op-k/func :op-l/func :op-m/func :op-n/func :op-o/func :op-p/func
-	:op-q/func :op-r/func :op-s/func :op-t/func :op-u/func :op-v/func :op-w/func :op-x/func
-	:op-y/func :op-z/func
 
 @op-a-lc ;get-bang JSR2 ,&* POP JMP2r &*
 @op-a ( add )
-	'A "Outputs 20 "sum 20 "of 20 "inputs $1
-	&func ( addr* -- )
 
 	STH2k
 	( a-val ) #0001 SUB2 ;get-port-left-value JSR2
@@ -123,11 +121,10 @@
 	( output ) STH2r #00 .grid/width LDZ ADD2 ;set-port-output JSR2
 
 JMP2r
+	&? 'A "Outputs 20 "sum 20 "of 20 "inputs $1
 
 @op-b-lc ;get-bang JSR2 ,&* POP JMP2r &*
 @op-b ( subtract )
-	'B "Outputs 20 "difference 20 "of 20 "inputs $1
-	&func ( addr* -- )
 
 	STH2k
 	( get a ) #0001 SUB2 ;get-port-left-value JSR2
@@ -139,11 +136,10 @@ JMP2r
 	( output ) STH2r #00 .grid/width LDZ ADD2 ;set-port-output JSR2
 
 JMP2r
+	&? 'B "Outputs 20 "difference 20 "of 20 "inputs $1
 
 @op-c-lc ;get-bang JSR2 ,&* POP JMP2r &*
 @op-c ( clock )
-	'C "Outputs 20 "modulo 20 "of 20 "frame $1
-	&func ( addr* -- )
 
 	STH2k
 	( get rate ) #0001 SUB2 ;get-port-left-value JSR2 DUP #00 EQU ADD
@@ -155,11 +151,10 @@ JMP2r
 	( output ) STH2r #00 .grid/width LDZ ADD2 ;set-port-output JSR2
 
 JMP2r
+	&? 'C "Outputs 20 "modulo 20 "of 20 "frame $1
 
 @op-d-lc ;get-bang JSR2 ,&* POP JMP2r &*
 @op-d ( delay )
-	'D "Bangs 20 "on 20 "modulo 20 "of 20 "frame $1
-	&func ( addr* -- )
 
 	STH2k
 	( get rate ) #0001 SUB2 ;get-port-left-value JSR2 DUP #00 EQU ADD
@@ -169,11 +164,10 @@ JMP2r
 	( output ) STH2r #00 .grid/width LDZ ADD2 ;set-port-output JSR2
 
 JMP2r
+	&? 'D "Bangs 20 "on 20 "modulo 20 "of 20 "frame $1
 
 @op-e-lc ;get-bang JSR2 ,&* POP JMP2r &*
 @op-e ( east )
-	'E "Moves 20 "eastward 20 "or 20 "bangs $1
-	&func ( addr* -- )
 
 	STH2k ;data/cells ADD2 LDA ,&self STR
 	( wall ) .head/x LDZ INC .grid/width LDZ EQU ,&collide JCN
@@ -185,11 +179,10 @@ JMP2r
 	( output ) LIT '* STH2r ;set-port-output JSR2
 
 JMP2r
+	&? 'E "Moves 20 "eastward 20 "or 20 "bangs $1
 
 @op-f-lc ;get-bang JSR2 ,&* POP JMP2r &*
 @op-f ( if )
-	'F "Bangs 20 "if 20 "inputs 20 "are 20 "equal $1
-	&func ( addr* -- )
 
 	STH2k
 	( get a ) #0001 SUB2 ;get-port-left-raw JSR2
@@ -198,11 +191,10 @@ JMP2r
 	( output ) STH2r #00 .grid/width LDZ ADD2 ;set-port-output JSR2
 
 JMP2r
+	&? 'F "Bangs 20 "if 20 "inputs 20 "are 20 "equal $1
 
 @op-g-lc ;get-bang JSR2 ,&* POP JMP2r &*
 @op-g ( generator )
-	'G "Writes 20 "operands 20 "with 20 "offset $1
-	&func ( addr* -- )
 
 	STH2k
 	( x ) STH2kr #0003 SUB2 ;get-port-left-value JSR2
@@ -220,22 +212,20 @@ JMP2r
 	POP2r
 
 JMP2r
+	&? 'G "Writes 20 "operands 20 "with 20 "offset $1
 
 @op-h-lc ;get-bang JSR2 ,&* POP JMP2r &*
 @op-h ( hold )
-	'H "Holds 20 "southward 20 "operand $1
-	&func ( addr* -- )
 
 	#00 .grid/width LDZ ADD2
 	( set lock ) DUP2 #01 ROT ROT ;data/locks ADD2 STA
 	( set type ) OUTPUT-TYPE ROT ROT ;data/types ADD2 STA
 
 JMP2r
+	&? 'H "Holds 20 "southward 20 "operand $1
 
 @op-i-lc ;get-bang JSR2 ,&* POP JMP2r &*
 @op-i ( increment )
-	'I "Increments 20 "southward 20 "operand $1
-	&func ( addr* -- )
 
 	STH2k
 	( step ) #0001 SUB2 ;get-port-left-value JSR2
@@ -247,11 +237,10 @@ JMP2r
 	( output ) STH2r #00 .grid/width LDZ ADD2 ;set-port-output JSR2
 
 JMP2r
+	&? 'I "Increments 20 "southward 20 "operand $1
 
 @op-j-lc ;get-bang JSR2 ,&* POP JMP2r &*
 @op-j ( jumper )
-	'J "Outputs 20 "northward 20 "operand $1
-	&func ( addr* -- )
 
 	STH2k
 	( get above ) #00 .grid/width LDZ SUB2 ;get-port-left-raw JSR2
@@ -266,11 +255,10 @@ JMP2r
 	( set below ) ;set-port-output JSR2
 
 JMP2r
+	&? 'J "Outputs 20 "northward 20 "operand $1
 
 @op-k-lc ;get-bang JSR2 ,&* POP JMP2r &*
 @op-k ( konkat )
-	'K "Reads 20 "multiple 20 "variables $1
-	&func ( addr* -- )
 
 	STH2k
 	#0001 SUB2 ;get-port-left-value JSR2 #00
@@ -287,11 +275,10 @@ JMP2r
 	POP2r
 
 JMP2r
+	&? 'K "Reads 20 "multiple 20 "variables $1
 
 @op-l-lc ;get-bang JSR2 ,&* POP JMP2r &*
 @op-l ( lesser )
-	'L "Outputs 20 "smallest 20 "of 20 "inputs $1
-	&func ( addr* -- )
 
 	STH2k
 	( get a ) #0001 SUB2 ;get-port-left-value JSR2
@@ -303,11 +290,10 @@ JMP2r
 	( output ) STH2r #00 .grid/width LDZ ADD2 ;set-port-output JSR2
 
 JMP2r
+	&? 'L "Outputs 20 "smallest 20 "of 20 "inputs $1
 
 @op-m-lc ;get-bang JSR2 ,&* POP JMP2r &*
 @op-m ( multiply )
-	'M "Outputs 20 "product 20 "of 20 "inputs $1
-	&func ( addr* -- )
 
 	STH2k
 	( get a ) #0001 SUB2 ;get-port-left-value JSR2
@@ -319,11 +305,10 @@ JMP2r
 	( output ) STH2r #00 .grid/width LDZ ADD2 ;set-port-output JSR2
 
 JMP2r
+	&? 'M "Outputs 20 "product 20 "of 20 "inputs $1
 
 @op-n-lc ;get-bang JSR2 ,&* POP JMP2r &*
 @op-n ( north )
-	'N "Moves 20 "Northward 20 "or 20 "bangs $1
-	&func ( addr* -- )
 
 	STH2k ;data/cells ADD2 LDA ,&self STR
 	( wall ) .head/y LDZ #01 SUB #ff EQU ,&collide JCN
@@ -335,11 +320,10 @@ JMP2r
 	( output ) LIT '* STH2r ;set-port-output JSR2
 
 JMP2r
+	&? 'N "Moves 20 "Northward 20 "or 20 "bangs $1
 
 @op-o-lc ;get-bang JSR2 ,&* POP JMP2r &*
 @op-o ( read )
-	'O "Reads 20 "operand 20 "with 20 "offset $1
-	&func ( addr* -- )
 
 	STH2k
 	( x ) STH2kr #0002 SUB2 ;get-port-left-value JSR2 INC #00 SWP ADD2
@@ -348,11 +332,10 @@ JMP2r
 	( output ) STH2r #00 .grid/width LDZ ADD2 ;set-port-output JSR2
 
 JMP2r
+	&? 'O "Reads 20 "operand 20 "with 20 "offset $1
 
 @op-p-lc ;get-bang JSR2 ,&* POP JMP2r &*
 @op-p ( push )
-	'P "Writes 20 "eastward 20 "operand $1
-	&func ( addr* -- )
 
 	STH2k
 	( key ) #0002 SUB2 ;get-port-left-value JSR2
@@ -368,11 +351,10 @@ JMP2r
 	( output ) ROT ROT DIVk MUL SUB #00 SWP STH2r #00 .grid/width LDZ ADD2 ADD2 ;set-port-output JSR2
 
 JMP2r
+	&? 'P "Writes 20 "eastward 20 "operand $1
 
 @op-q-lc ;get-bang JSR2 ,&* POP JMP2r &*
 @op-q ( query )
-	'Q "Reads 20 "operands 20 "with 20 "offset $1
-	&func ( addr* -- )
 
 	STH2k
 	( x ) STH2kr #0003 SUB2 ;get-port-left-value JSR2
@@ -391,11 +373,10 @@ JMP2r
 	POP2r
 
 JMP2r
+	&? 'Q "Reads 20 "operands 20 "with 20 "offset $1
 
 @op-r-lc ;get-bang JSR2 ,&* POP JMP2r &*
 @op-r ( random )
-	'R "Outputs 20 "random 20 "value $1
-	&func ( addr* -- )
 
 	STH2k
 	( a-min ) #0001 SUB2 ;get-port-left-value JSR2
@@ -407,11 +388,10 @@ JMP2r
 	( output ) STH2r #00 .grid/width LDZ ADD2 ;set-port-output JSR2
 
 JMP2r
+	&? 'R "Outputs 20 "random 20 "value $1
 
 @op-s-lc ;get-bang JSR2 ,&* POP JMP2r &*
 @op-s ( south )
-	'S "Moves 20 "southward 20 "or 20 "bangs $1
-	&func ( addr* -- )
 
 	STH2k ;data/cells ADD2 LDA ,&self STR
 	( wall ) .head/y LDZ INC .grid/height LDZ EQU ,&collide JCN
@@ -423,11 +403,10 @@ JMP2r
 	( output ) LIT '* STH2r ;set-port-output JSR2
 
 JMP2r
+	&? 'S "Moves 20 "southward 20 "or 20 "bangs $1
 
 @op-t-lc ;get-bang JSR2 ,&* POP JMP2r &*
 @op-t ( track )
-	'T "Reads 20 "eastward 20 "operand $1
-	&func ( addr* -- )
 
 	STH2k
 	( key ) #0002 SUB2 ;get-port-left-value JSR2
@@ -443,11 +422,10 @@ JMP2r
 	STH2r #00 .grid/width LDZ ADD2 ;set-port-output JSR2
 
 JMP2r
+	&? 'T "Reads 20 "eastward 20 "operand $1
 
 @op-u-lc ;get-bang JSR2 ,&* POP JMP2r &*
 @op-u ( Uclid )
-	'U "Bangs 20 "on 20 "Euclidean 20 "rhythm $1
-	&func ( addr* -- )
 
 	STH2k
 	( step ) #0001 SUB2 ;get-port-left-value JSR2
@@ -461,11 +439,10 @@ JMP2r
 	STH2r #00 .grid/width LDZ ADD2 ;set-port-output JSR2
 
 JMP2r
+	&? 'U "Bangs 20 "on 20 "Euclidean 20 "rhythm $1
 
 @op-v-lc ;get-bang JSR2 ,&* POP JMP2r &*
 @op-v ( variable )
-	'V "Reads 20 "and 20 "writes 20 "variable $1
-	&func ( addr* -- )
 
 	STH2k
 	( key ) #0001 SUB2 ;get-port-left-raw JSR2
@@ -480,11 +457,10 @@ JMP2r
 		POP2 POP2r
 
 JMP2r
+	&? 'V "Reads 20 "and 20 "writes 20 "variable $1
 
 @op-w-lc ;get-bang JSR2 ,&* POP JMP2r &*
 @op-w ( west )
-	'W "Moves 20 "westward 20 "or 20 "bangs $1
-	&func ( addr* -- )
 
 	STH2k ;data/cells ADD2 LDA ,&self STR
 	( wall ) .head/x LDZ #01 SUB #ff EQU ,&collide JCN
@@ -496,11 +472,10 @@ JMP2r
 	( output ) LIT '* STH2r ;set-port-output JSR2
 
 JMP2r
+	&? 'W "Moves 20 "westward 20 "or 20 "bangs $1
 
 @op-x-lc ;get-bang JSR2 ,&* POP JMP2r &*
 @op-x ( write )
-	'X "Writes 20 "operand 20 "with 20 "offset $1
-	&func ( addr* -- )
 
 	STH2k
 	( x ) STH2kr #0002 SUB2 ;get-port-left-value JSR2 #00 SWP ADD2
@@ -509,11 +484,10 @@ JMP2r
 	( output ) ROT ROT ;set-port-output JSR2
 
 JMP2r
+	&? 'X "Writes 20 "operand 20 "with 20 "offset $1
 
 @op-y-lc ;get-bang JSR2 ,&* POP JMP2r &*
 @op-y ( yumper )
-	'Y "Outputs 20 "westward 20 "operand $1
-	&func ( addr* -- )
 
 	STH2k
 	( get above ) #0001 SUB2 ;get-port-left-raw JSR2
@@ -528,11 +502,10 @@ JMP2r
 	( set below ) ;set-port-output JSR2
 
 JMP2r
+	&? 'Y "Outputs 20 "westward 20 "operand $1
 
 @op-z-lc ;get-bang JSR2 ,&* POP JMP2r &*
 @op-z ( lerp )
-	'Z "Transitions 20 "operand 20 "to 20 "input $1
-	&func ( addr* -- )
 
 	STH2k
 	( rate ) #0001 SUB2 ;get-port-left-value JSR2
@@ -545,21 +518,19 @@ JMP2r
 	( output ) STH2r #00 .grid/width LDZ ADD2 ;set-port-output JSR2
 
 JMP2r
+	&? 'Z "Transitions 20 "operand 20 "to 20 "input $1
 
 ( special )
 
 @op-bang ( bang )
-	'* "Bangs 20 "neighboring 20 "operands $1
-	&func ( char -- )
 
 	POP
 	LIT '. .head/addr LDZ2 ;data/cells ADD2 STA
 
 JMP2r
+	&? '* "Bangs 20 "neighboring 20 "operands $1
 
 @op-comment ( comment )
-	'# "Comments 20 "a 20 "line $1
-	&func ( char -- )
 
 	POP
 	.head/addr LDZ2 STH2k
@@ -578,10 +549,9 @@ JMP2r
 	POP2 POP2
 
 JMP2r
+	&? '# "Comments 20 "a 20 "line $1
 
 @op-synth ( synth )
-	'= "Play 20 "note 20 "with 20 "uxn 20 "synth $1
-	&func ( char -- )
 
 	POP
 	.head/addr LDZ2 STH2k
@@ -595,10 +565,9 @@ JMP2r
 	( play ) .Audio0/pitch [ LIT &ch $1 ] #03 AND #40 SFT ADD DEO
 
 JMP2r
+	&? '= "Play 20 "note 20 "with 20 "uxn 20 "synth $1
 
 @op-midi ( midi )
-	': "Send 20 "a 20 "midi 20 "note $1
-	&func ( char -- )
 
 	POP
 	.head/addr LDZ2 STH2k
@@ -641,10 +610,9 @@ JMP2r
 	POP2
 
 JMP2r
+	&? ': "Send 20 "a 20 "midi 20 "note $1
 
 @op-pitch ( pitch )
-	'; "Send 20 "a 20 "raw 20 "pitch 20 "byte $1
-	&func ( char -- )
 
 	POP
 	.head/addr LDZ2 STH2k
@@ -656,10 +624,9 @@ JMP2r
 	( get note ) ;chrmid JSR2 SWP [ #0c MUL ] ADD .Console/write DEO
 
 JMP2r
+	&? '; "Send 20 "a 20 "raw 20 "pitch 20 "byte $1
 
 @op-byte ( byte )
-	'/ "Send 20 "a 20 "raw 20 "hexadecimal 20 "byte $1
-	&func ( char -- )
 
 	POP
 	.head/addr LDZ2 STH2k
@@ -670,10 +637,9 @@ JMP2r
 	#0f AND SWP #0f AND #40 SFT ADD .Console/write DEO
 
 JMP2r
+	&? '/ "Send 20 "a 20 "raw 20 "hexadecimal 20 "byte $1
 
 @op-self ( self )
-	'$ "Load 20 "orca 20 "file $1
-	&func ( char -- )
 
 	POP
 	.head/addr LDZ2 STH2k
@@ -685,9 +651,9 @@ JMP2r
 	( animate ) IO-TYPE STH2r ;data/types ADD2 STA
 
 JMP2r
+	&? '$ "Load 20 "orca 20 "file $1
 
 @op-null ( null )
-	&func ( char -- )
 
 	POP
 
