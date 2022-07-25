@@ -33,7 +33,7 @@
 	( 40	@ ) :op-null
 	( 41	A ) :op-a
 	( 42	B ) :op-b
-	( 43	C ) :op-b
+	( 43	C ) :op-c
 	( 44	D ) :op-d
 	( 45	E ) :op-e
 	( 46	F ) :op-f
@@ -65,7 +65,7 @@
 	( 60	` ) :op-null
 	( 61	a ) :op-a-lc
 	( 62	b ) :op-b-lc
-	( 63	c ) :op-b-lc
+	( 63	c ) :op-c-lc
 	( 64	d ) :op-d-lc
 	( 65	e ) :op-e-lc
 	( 66	f ) :op-f-lc
