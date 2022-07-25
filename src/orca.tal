@@ -54,6 +54,9 @@
 	#0fc8 .System/g DEO2
 	#0f98 .System/b DEO2
 
+	( init random )
+	;init-prng JSR2
+
 	( drawing mode )
 	#15 .Screen/auto DEO
 
@@ -92,25 +95,24 @@
 		DUP2 .toolbar/y1 STZ2
 		#0010 ADD2 .toolbar/y2 STZ2
 
-	( vectors )
-	;untrap JSR2
-
 	( theme support )
 	;load-theme JSR2
 	;draw-menu JSR2
-	( draw once )
-	.grid/x2 LDZ2 #0020 SUB2 .Screen/x DEO2
-	.toolbar/y1 LDZ2 .Screen/y DEO2
-	( init random )
-	;init-prng JSR2
+
 	( blank file )
 	;file-new JSR2
+
 	( display guide )
 	;toggle-guide JSR2
+
 	( draw position )
 	;draw-position JSR2
+
 	( start )
 	.timer/playing LDZk #00 EQU SWP STZ
+
+	( vectors )
+	;untrap JSR2
 
 BRK
 
@@ -162,9 +164,7 @@ JMP2r
 	#00 .Mouse/state DEO
 
 	( clear cursor )
-	.cursor/x LDZ2 .Screen/x DEO2
-	.cursor/y LDZ2 .Screen/y DEO2
-	#40 .Screen/sprite DEO
+	#40 ;draw-cursor JSR2
 
 JMP2r
 
@@ -298,9 +298,7 @@ BRK
 	.Mouse/y DEI2 #0014 LTH2 ;trap-menu JCN2
 
 	( clear last cursor )
-	.cursor/x LDZ2 .Screen/x DEO2
-	.cursor/y LDZ2 .Screen/y DEO2
-	#40 .Screen/sprite DEO
+	#40 ;draw-cursor JSR2
 	( draw new cursor )
 	.Mouse/x DEI2 DUP2 .cursor/x STZ2 .Screen/x DEO2
 	.Mouse/y DEI2 DUP2 .cursor/y STZ2 .Screen/y DEO2
