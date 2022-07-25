@@ -585,12 +585,9 @@ JMP2r
 	( skip locked )
 	.head/addr LDZ2
 	DUP2 ;data/locks ADD2 LDA ,&locked JCN
-
-	( new router )
-	;data/cells ADD2 LDA
-	#00 SWP #20 SUB DUP ADD ;op-ascii ADD2 LDA2
-		.head/addr LDZ2 SWP2 JMP2
-
+	( run unlocked )
+	DUP2 ;data/cells ADD2 LDA
+	#00 SWP #20 SUB DUP ADD ;op-ascii ADD2 LDA2 JMP2
 	&locked
 	POP2
 
