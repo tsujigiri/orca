@@ -321,29 +321,32 @@ BRK
 		ORAk #00 EQU ,&end JCN
 		( on down )
 		DUP2 #0100 NEQ2 ,&no-down JCN
-			.Mouse/x DEI2 .grid/x1 LDZ2 SUB2 #03 SFT2 NIP
-			.Mouse/y DEI2 .grid/y1 LDZ2 SUB2 #04 SFT2 NIP
-				;set-sel-from JSR2
+			,&get-pos JSR ;set-sel-from JSR2
 			,&end JMP
 			&no-down
 		( on release )
-		.Mouse/x DEI2 .grid/x1 LDZ2 SUB2 #03 SFT2 NIP
-		.Mouse/y DEI2 .grid/y1 LDZ2 SUB2 #04 SFT2 NIP
-			;set-sel-to JSR2
+		,&get-pos JSR ;set-sel-to JSR2
 	&end
 	POP ,&last STR
 
 BRK
+	&get-pos ( -- x y )
+		.Mouse/x DEI2 .grid/x1 LDZ2 SUB2 #03 SFT2 NIP
+		.Mouse/y DEI2 .grid/y1 LDZ2 SUB2 #04 SFT2 NIP
+	JMP2r
 
 @on-mouse-toolbar ( -> )
 
 	( skip ) .Mouse/state DEI #01 JCN BRK
 
+	( release )
+	#00 .Mouse/state DEO
+
 	( left-side )
 	.Mouse/x DEI2 .grid/x1 LDZ2 SUB2 #03 SFT2 NIP
 	[ #05 ] GTHk NIP ,&no-insert JCN ;toggle-insert JSR2 POP BRK &no-insert
 	[ #09 ] GTHk NIP ,&no-pause JCN ;play-toggle JSR2 POP BRK &no-pause
-	[ #0d ] GTHk NIP ,&no-speed JCN [ .Mouse/state DEI #01 EQU DUP ADD #01 SUB ] ;mod-speed JSR2 #00 .Mouse/state DEO POP BRK &no-speed
+	[ #0d ] GTHk NIP ,&no-speed JCN [ .Mouse/state DEI #01 EQU DUP ADD #01 SUB ] ;mod-speed JSR2 POP BRK &no-speed
 	[ #0e ] GTHk NIP OVR .grid/width LDZ SWP SUB #06 GTH #0101 NEQ2 ,&no-rename JCN ;trap JSR2 &no-rename
 	POP
 	( right-side )
@@ -351,7 +354,6 @@ BRK
 	[ #00 ] NEQk NIP ,&no-save JCN ;file-save JSR2 &no-save
 	[ #02 ] NEQk NIP ,&no-guide JCN ;toggle-guide JSR2 &no-guide
 	POP
-	#00 .Mouse/state DEO
 
 BRK
 
@@ -469,14 +471,12 @@ JMP2r
 		[ JMP SWP2 POP2 ]
 		.Controller/vector DEO2
 	;draw-position JSR2
-	#00 .Mouse/state DEO
 
 JMP2r
 
 @play-toggle ( -- )
 
 	.timer/playing LDZk #00 EQU SWP STZ
-	#00 .Mouse/state DEO
 	;draw-timer JSR2
 
 JMP2r
