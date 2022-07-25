@@ -564,7 +564,7 @@ JMP2r
 		&hor
 			DUP .head/x STZ
 			STH2kr .head/addr STZ2
-			STH2kr ;data/cells ADD2 LDA ,run-char JSR
+			,run-char JSR
 			INC2r
 			INC GTHk ,&hor JCN
 		POP2
@@ -580,21 +580,17 @@ JMP2r
 
 JMP2r
 
-@run-char ( x y char -- )
-
-	( skip dot )
-	DUP LIT '. NEQ ,&no-dot JCN
-		POP JMP2r
-		&no-dot
+@run-char ( -- )
 
 	( skip locked )
-	.head/addr LDZ2 ;data/locks ADD2 LDA #00 EQU ,&no-locked JCN
-		POP JMP2r
-		&no-locked
+	.head/addr LDZ2 ;data/locks ADD2 LDA ,&locked JCN
 
 	( new router )
+	.head/addr LDZ2 ;data/cells ADD2 LDA
 	#00 SWP #20 SUB DUP ADD ;op-ascii ADD2 LDA2
 		.head/addr LDZ2 SWP2 JMP2
+
+	&locked
 
 JMP2r
 
