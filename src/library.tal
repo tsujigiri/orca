@@ -690,7 +690,7 @@ JMP2r
 
 @op-null ( null )
 
-	POP
+	POP2
 
 JMP2r
 

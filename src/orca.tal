@@ -586,42 +586,15 @@ JMP2r
 	DUP LIT '. NEQ ,&no-dot JCN
 		POP JMP2r
 		&no-dot
-	( skip numbers )
-	DUP #30 LTH ,&no-num JCN
-	DUP #39 GTH ,&no-num JCN
-		POP JMP2r
-		&no-num
+
 	( skip locked )
 	.head/addr LDZ2 ;data/locks ADD2 LDA #00 EQU ,&no-locked JCN
 		POP JMP2r
 		&no-locked
 
-
-	( lowercase )
-	DUP #61 LTH ,&no-lc JCN
-	DUP #7a GTH ,&no-lc JCN
-		;get-bang JSR2 ,&run JCN
-		POP JMP2r
-		&no-lc
-	( uppercase )
-	DUP #41 LTH ,&no-uc JCN
-	DUP #5a GTH ,&no-uc JCN
-		&run
-		.head/addr LDZ2 STH2k
-		( set type ) OPERATOR-TYPE STH2r ;data/types ADD2 STA
-		( run ) ROT ;chrb36 JSR2 #0a SUB DUP ADD #00 SWP ;op-table/func ADD2 LDA2 JMP2
-		&no-uc
-	( special )
-	[ LIT '* ] EQUk NIP ;op-bang JCN2
-	[ LIT '# ] EQUk NIP ;op-comment JCN2
-	[ LIT '= ] EQUk NIP ;op-synth JCN2
-	[ LIT '; ] EQUk NIP ;op-pitch JCN2
-	[ LIT ': ] EQUk NIP ;op-midi JCN2
-	[ LIT '/ ] EQUk NIP ;op-byte JCN2
-	[ LIT '$ ] EQUk NIP ;op-self JCN2
-	POP
-	( erase )
-	LIT '. .head/addr LDZ2 ;data/cells ADD2 STA
+	( new router )
+	#00 SWP #21 SUB DUP ADD ;op-ascii ADD2 LDA2 
+		.head/addr LDZ2 SWP2 JMP2
 
 JMP2r
 
