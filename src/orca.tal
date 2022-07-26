@@ -41,7 +41,7 @@
 @toolbar &x1 $2 &y1 $2 &x2 $2 &y2 $2
 @head &x $1 &y $1 &addr $2
 @variables $24
-@signal &midi $1
+@signal &midi $1 &midi-last $1
 @voices $20
 
 |0100 ( -> )
@@ -96,12 +96,14 @@
 		DUP2 ;draw-speed/y STA2
 		DUP2 ;draw-state/y STA2
 		DUP2 ;draw-filepath/y STA2
+		DUP2 ;draw-meter/y STA2
 		#0010 ADD2 .toolbar/y2 STZ2
 	( cache x positions )
 	.grid/x1 LDZ2 ;draw-position/x STA2
 	.grid/x1 LDZ2 #0030 ADD2 ;draw-timer/x STA2
 	.grid/x1 LDZ2 #0050 ADD2 ;draw-dpad/x STA2
 	.grid/x1 LDZ2 #0050 ADD2 ;draw-speed/x STA2
+	.grid/x2 LDZ2 #0028 SUB2 ;draw-meter/x STA2
 	.toolbar/x1 LDZ2 #0078 ADD2 ;draw-filepath/x STA2
 	.toolbar/x2 LDZ2 #0008 SUB2 ;draw-state/x STA2
 
@@ -615,10 +617,10 @@ JMP2r
 @get-bang ( -- bang )
 
 	.head/addr LDZ2 ;data/cells ADD2 STH2k
-	#0001 SUB2 LDA LIT '* EQU ,&bang JCN
-	STH2kr INC2 LDA LIT '* EQU ,&bang JCN
-	STH2kr #00 .grid/width LDZ SUB2 LDA LIT '* EQU ,&bang JCN
-	STH2kr #00 .grid/width LDZ ADD2 LDA LIT '* EQU ,&bang JCN
+	( left ) #0001 SUB2 LDA LIT '* EQU ,&bang JCN
+	( top ) STH2kr #00 .grid/width LDZ SUB2 LDA LIT '* EQU ,&bang JCN
+	( right ) STH2kr INC2 LDA LIT '* EQU ,&bang JCN
+	( bottom ) STH2kr #00 .grid/width LDZ ADD2 LDA LIT '* EQU ,&bang JCN
 	POP2r #00 JMP2r
 	&bang POP2r #01
 
@@ -677,10 +679,11 @@ JMP2r
 	[ LIT2 &x $2 ] .Screen/x DEO2
 	[ LIT2 &y $2 ] .Screen/y DEO2
 	( value )
-	.timer/frame-lb LDZ STHk #03 .timer/playing LDZ DUP ADD SUB ;draw-byte JSR2
+	.timer/frame-lb LDZ 
+		DUP #03 .timer/playing LDZ DUP ADD SUB ;draw-byte JSR2
 	( icon )
 	;beat-icn .Screen/addr DEO2
-	#03 STHr #07 AND #00 EQU SUB .Screen/sprite DEO
+	#03 SWP #07 AND #00 EQU SUB .Screen/sprite DEO
 
 JMP2r
 
@@ -714,6 +717,16 @@ JMP2r
 
 JMP2r
 
+@draw-meter ( -- )
+
+	[ LIT2 &x $2 ] .Screen/x DEO2
+	[ LIT2 &y $2 ] .Screen/y DEO2
+	.signal/midi LDZ #07 LTHk [ JMP SWP POP ] STH
+	;meter-icn #00 STHkr #40 SFT2 ADD2 .Screen/addr DEO2
+	STHr #07 EQU INC .Screen/sprite DEO
+
+JMP2r
+
 @redraw-all ( -- )
 
 @draw-grid ( -- )
@@ -742,7 +755,7 @@ JMP2r
 
 JMP2r
 
-@get-color ( -- type )
+@get-color ( -- char type )
 
 	.head LDZ2 ;is-selected JSR2 ,&selected JCN
 		#00 .head/addr LDZ2 ;data/types ADD2 LDA ;cell-styles ADD2 LDA JMP2r
@@ -764,7 +777,7 @@ JMP2r
 	&no-bar
 
 JMP2r
-	&cross POP2 LIT '+ JMP2r
+	&cross POP2 #7f JMP2r
 	&dot POP2 LIT '. JMP2r
 
 @get-word ( addr* -- word* )
@@ -791,16 +804,6 @@ JMP2r
 		POP2 #01 JMP2r
 	&end
 	POP2 #00
-
-JMP2r
-
-@draw-meter ( -- )
-
-	.toolbar/y1 LDZ2 .Screen/y DEO2
-	.grid/x2 LDZ2 #0028 SUB2 .Screen/x DEO2
-	.signal/midi LDZ #07 [ LTHk JMP SWP POP ] STH
-	;meter-icn #00 STHkr #40 SFT2 ADD2 .Screen/addr DEO2
-	#01 STHr #07 EQU ADD .Screen/sprite DEO
 
 JMP2r
 
