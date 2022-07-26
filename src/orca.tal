@@ -16,6 +16,9 @@
 %OPERATOR-TYPE { #03 } %PORTER-TYPE { #04 }
 %OUTPUT-TYPE { #05 } %IO-TYPE { #07 }
 
+%MOD  { DIVk MUL SUB }
+%MOD2 { DIV2k MUL2 SUB2 }
+
 %menu-def { #01 }
 %menu-sel { #04 }
 %menu-hov { #08 }
@@ -571,15 +574,13 @@ JMP2r
 		.grid/width LDZ #00
 		&hor
 			DUP .head/x STZ
-			STH2kr .head/addr STZ2
-			,run-char JSR
+			STH2kr ,run-char JSR
 			INC2r
 			INC GTHk ,&hor JCN
 		POP2
 		INC GTHk ,&ver JCN
 	POP2
 	POP2r
-
 	( do not draw when menu )
 	;draw-menu/sel LDA #ff NEQ ,&skip JCN
 		;draw-grid JSR2
@@ -588,10 +589,11 @@ JMP2r
 
 JMP2r
 
-@run-char ( -- )
+@run-char ( id* -- )
 
+	( cache )
+	DUP2 .head/addr STZ2
 	( skip locked )
-	.head/addr LDZ2
 	DUP2 ;data/locks ADD2 LDA ,&locked JCN
 	( run unlocked )
 	DUP2 ;data/cells ADD2 LDA
@@ -603,7 +605,7 @@ JMP2r
 
 ( operations )
 
-@b36chr ( b36 -- char ) #24 DIVk MUL SUB #00 SWP ;b36clc ADD2 LDA JMP2r
+@b36chr ( b36 -- char ) #24 MOD #00 SWP ;b36clc ADD2 LDA JMP2r
 @chrb36 ( char -- b36 ) #20 SUB #00 SWP ;values ADD2 LDA JMP2r
 @chrmid ( char -- midi ) DUP ,chrb36 JSR SWP ;ciuc JSR2 #24 MUL ADD #00 SWP ;notes ADD2 LDA JMP2r
 
