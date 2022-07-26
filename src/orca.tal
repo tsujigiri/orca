@@ -431,8 +431,8 @@ JMP2r
 	( from )
 	SWP2 DUP2 .selection/from LDZ2 NEQ2 STH .selection/from STZ2
 	( to )
-	.selection/y1 LDZ [ GTHk JMP SWP POP ] .grid/height LDZ #01 SUB [ LTHk JMP SWP POP ] STH
-	.selection/x1 LDZ [ GTHk JMP SWP POP ] .grid/width LDZ #01 SUB [ LTHk JMP SWP POP ] STHr
+	.selection/y1 LDZ GTHk [ JMP SWP POP ] .grid/height LDZ #01 SUB LTHk [ JMP SWP POP ] STH
+	.selection/x1 LDZ GTHk [ JMP SWP POP ] .grid/width LDZ #01 SUB LTHk [ JMP SWP POP ] STHr
 	DUP2 .selection/to LDZ2 NEQ2 STH .selection/to STZ2
 	( skip redraw when unchanged )
 	ADDr STHr #01 JCN JMP2r
@@ -467,7 +467,7 @@ JMP2r
 
 @set-speed ( speed -- )
 
-	#1f AND [ #04 GTHk JMP SWP POP ] .timer/speed STZ
+	#1f AND #04 GTHk [ JMP SWP POP ] .timer/speed STZ
 	#00 .timer/beat STZ
 	;draw-speed JSR2
 
@@ -477,8 +477,8 @@ JMP2r
 
 	;on-button ;on-button-insert
 		.Controller/vector DEI2 ;on-button-insert EQU2
-		[ JMP SWP2 POP2 ]
-		.Controller/vector DEO2
+			[ JMP SWP2 POP2 ]
+			.Controller/vector DEO2
 	;draw-position JSR2
 
 JMP2r
@@ -496,7 +496,8 @@ JMP2r
 	;draw-grid JSR2
 	.toolbar/y1 LDZ2 .Screen/y DEO2
 	.grid/x2 LDZ2 #0018 SUB2 .Screen/x DEO2
-	;help-icn [ #00 .guide LDZ #40 SFT2 ] ADD2 #01 ;draw-sprite JSR2
+	#00 .guide LDZ #40 SFT2 ;help-icn ADD2 .Screen/addr DEO2
+	#01 .Screen/sprite DEO
 
 JMP2r
 
@@ -628,7 +629,7 @@ JMP2r
 
 @lerp ( rate target val -- val )
 
-	DUP2 GTHk JMP SWP SUB STH
+	DUP2 GTHk [ JMP SWP SUB ] STH
 	( if rate GTH target )
 	ROT DUP STHr LTH ,&skip JCN
 		POP2 JMP2r
@@ -769,16 +770,18 @@ JMP2r
 	;data/cells ADD2 LDA
 	DUP LIT '. NEQ ,&no-bar JCN
 		POP .head LDZ2
-		DUP2 #07 AND SWP #0f AND #0000 EQU2 ,&cross JCN
-		DUP2 #01 AND SWP #03 AND #0000 EQU2 ,&dot JCN
+		DUP2 #07 AND SWP #0f AND ORA ,&no-cross JCN
+			POP2 #7f JMP2r
+			&no-cross
+		DUP2 #01 AND SWP #03 AND ORA ,&no-dot JCN
+			&dot POP2 LIT '. JMP2r
+			&no-dot
 		DUP2 ,is-selected JSR ,&dot JCN
 		.head/addr LDZ2 ;data/types ADD2 LDA ,&dot JCN
 		POP2 #20
 	&no-bar
 
 JMP2r
-	&cross POP2 #7f JMP2r
-	&dot POP2 LIT '. JMP2r
 
 @get-word ( addr* -- word* )
 
