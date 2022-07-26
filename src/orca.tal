@@ -434,7 +434,7 @@ JMP2r
 		STHk
 		.selection/x2 LDZ INC .selection/x1 LDZ
 		&hor
-			[ LIT &c $1 ] OVR STHkr ;get-cell JSR2 ;data/cells ADD2 STA
+			DUP STHkr [ LIT &c $1 ] ;set-cell JSR2
 			INC GTHk ,&hor JCN
 		POP2 POPr
 		INC GTHk ,&ver JCN
