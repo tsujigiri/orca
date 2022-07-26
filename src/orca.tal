@@ -16,7 +16,7 @@
 %OPERATOR-TYPE { #03 } %PORTER-TYPE { #04 }
 %OUTPUT-TYPE { #05 } %IO-TYPE { #07 }
 
-%MOD  { DIVk MUL SUB }
+%MOD { DIVk MUL SUB }
 %MOD2 { DIV2k MUL2 SUB2 }
 
 %menu-def { #01 }
@@ -976,12 +976,6 @@ JMP2r
 
 @snarf-txt ".snarf $1
 
-@edit-erase ( -- )
-
-	LIT '. ;fill-sel JSR2
-
-JMP2r
-
 @edit-cut ( -- )
 
 	,edit-copy JSR
@@ -1015,6 +1009,12 @@ JMP2r
 
 JMP2r
 
+@edit-erase ( -- )
+
+	LIT '. ;fill-sel JSR2
+
+JMP2r
+
 ( helpers )
 
 @raw-to-b128 ( raw -- b128 )
@@ -1026,23 +1026,23 @@ JMP2r
 
 @set-port-output ( value addr* -- )
 
-	( set lock ) DUP2 #01 ROT ROT ;data/locks ADD2 STA
-	( set type ) DUP2 OUTPUT-TYPE ROT ROT ;data/types ADD2 STA
+	( set lock ) STH2k #01 STH2kr ;data/locks ADD2 STA
+	( set type ) OUTPUT-TYPE STH2r ;data/types ADD2 STA
 	( set data ) ;data/cells ADD2 STA
 
 JMP2r
 
 @set-port-raw ( value addr* -- )
 
-	( set lock ) DUP2 #01 ROT ROT ;data/locks ADD2 STA
-	( set type ) DUP2 #00 ROT ROT ;data/types ADD2 STA
+	( set lock ) STH2k #01 STH2kr ;data/locks ADD2 STA
+	( set type ) #00 STH2r ;data/types ADD2 STA
 	( set data ) ;data/cells ADD2 STA
 
 JMP2r
 
 @get-port-left-raw ( addr* -- value )
 
-	( set type ) DUP2 PORTEL-TYPE ROT ROT ;data/types ADD2 STA
+	( set type ) STH2k PORTEL-TYPE STH2r ;data/types ADD2 STA
 	( get data ) ;data/cells ADD2 LDA
 
 JMP2r
@@ -1055,8 +1055,8 @@ JMP2r
 
 @get-port-right-raw ( addr* -- value )
 
-	( set lock ) DUP2 #01 ROT ROT ;data/locks ADD2 STA
-	( set type ) DUP2 PORTER-TYPE ROT ROT ;data/types ADD2 STA
+	( set lock ) STH2k #01 STH2kr ;data/locks ADD2 STA
+	( set type ) PORTER-TYPE STH2r ;data/types ADD2 STA
 	( get data ) ;data/cells ADD2 LDA
 
 JMP2r
