@@ -531,14 +531,9 @@ BRK
 	#0000 ;mfil/data STA2
 	;data/locks .grid/length LDZ2 STH2k ;mfil JSR2
 	;data/types STH2r ;mfil JSR2
+	LIT '. DUP ;mfil/data STA2
+	;variables #0024 ;mfil JSR2
 	#00 .signal/midi STZ
-
-	( init-variables )
-	#2400
-	&loop
-		STHk LIT '. LIT '. .variables STHr ADD STZ2
-		INC INC GTHk ,&loop JCN
-	POP2
 
 JMP2r
 
