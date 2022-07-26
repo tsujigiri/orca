@@ -1011,6 +1011,7 @@ JMP2r
 
 ( helpers )
 
+@base128 ( char - b128 ) ,chrb36 JSR #00 SWP #007f MUL2 #0023 DIV2 NIP JMP2r
 @b36chr ( b36 -- char ) #24 MOD #00 SWP ;b36clc ADD2 LDA JMP2r
 @chrb36 ( char -- b36 ) #20 SUB #00 SWP ;values ADD2 LDA JMP2r
 @chrmid ( char -- midi ) DUP ,chrb36 JSR SWP ,ciuc JSR #24 MUL ADD #00 SWP ;notes ADD2 LDA JMP2r
@@ -1020,10 +1021,21 @@ JMP2r
 @set-cell ( x y c -- ) ROT ROT ,get-cell JSR ;data/cells ADD2 STA JMP2r
 @get-cell ( x y -- addr* ) #00 SWP #00 .grid/width LDZ MUL2 ROT #00 SWP ADD2 JMP2r
 
-@raw-to-b128 ( raw -- b128 )
+@get-port-right-value ( addr* -- value ) ,get-port-right-raw JSR ,chrb36 JSR JMP2r
+@get-port-left-value ( addr* -- value ) ,get-port-left-raw JSR ,chrb36 JSR JMP2r
 
-	;chrb36 JSR2
-	#00 SWP #007f MUL2 #0023 DIV2 NIP
+@get-port-left-raw ( addr* -- value )
+
+	( set type ) STH2k PORTEL-TYPE STH2r ;data/types ADD2 STA
+	( get data ) ;data/cells ADD2 LDA
+
+JMP2r
+
+@get-port-right-raw ( addr* -- value )
+
+	( set lock ) STH2k #01 STH2kr ;data/locks ADD2 STA
+	( set type ) PORTER-TYPE STH2r ;data/types ADD2 STA
+	( get data ) ;data/cells ADD2 LDA
 
 JMP2r
 
@@ -1040,33 +1052,6 @@ JMP2r
 	( set lock ) STH2k #01 STH2kr ;data/locks ADD2 STA
 	( set type ) #00 STH2r ;data/types ADD2 STA
 	( set data ) ;data/cells ADD2 STA
-
-JMP2r
-
-@get-port-left-raw ( addr* -- value )
-
-	( set type ) STH2k PORTEL-TYPE STH2r ;data/types ADD2 STA
-	( get data ) ;data/cells ADD2 LDA
-
-JMP2r
-
-@get-port-left-value ( addr* -- value )
-
-	,get-port-left-raw JSR ;chrb36 JSR2
-
-JMP2r
-
-@get-port-right-raw ( addr* -- value )
-
-	( set lock ) STH2k #01 STH2kr ;data/locks ADD2 STA
-	( set type ) PORTER-TYPE STH2r ;data/types ADD2 STA
-	( get data ) ;data/cells ADD2 LDA
-
-JMP2r
-
-@get-port-right-value ( addr* -- value )
-
-	,get-port-right-raw JSR ;chrb36 JSR2
 
 JMP2r
 
