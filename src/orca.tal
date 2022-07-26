@@ -82,12 +82,25 @@
 	( len )
 	#00 .grid/height LDZ #00 .grid/width LDZ MUL2 .grid/length STZ2
 
-	( set toolbar size )
+	( cache positions )
 	.grid/x1 LDZ2 .toolbar/x1 STZ2
 	.grid/x2 LDZ2 .toolbar/x2 STZ2
 	.grid/y2 LDZ2 #000c ADD2
 		DUP2 .toolbar/y1 STZ2
+		DUP2 ;draw-dpad/y STA2
+		DUP2 ;draw-position/y STA2
+		DUP2 ;draw-timer/y STA2
+		DUP2 ;draw-speed/y STA2
+		DUP2 ;draw-state/y STA2
+		DUP2 ;draw-filepath/y STA2
 		#0010 ADD2 .toolbar/y2 STZ2
+	( cache x positions )
+	.grid/x1 LDZ2 ;draw-position/x STA2
+	.grid/x1 LDZ2 #0030 ADD2 ;draw-timer/x STA2
+	.grid/x1 LDZ2 #0050 ADD2 ;draw-dpad/x STA2
+	.grid/x1 LDZ2 #0050 ADD2 ;draw-speed/x STA2
+	.toolbar/x1 LDZ2 #0078 ADD2 ;draw-filepath/x STA2
+	.toolbar/x2 LDZ2 #0008 SUB2 ;draw-state/x STA2
 
 	( theme support )
 	;load-theme JSR2
@@ -634,8 +647,8 @@ JMP2r
 
 @draw-dpad ( -- )
 
-	.grid/x1 LDZ2 #0050 ADD2 .Screen/x DEO2
-	.toolbar/y1 LDZ2 .Screen/y DEO2
+	[ LIT2 &x $2 ] .Screen/x DEO2
+	[ LIT2 &y $2 ] .Screen/y DEO2
 	( value )
 	.dpad LDZ #04 ;draw-byte JSR2
 	( space )
@@ -647,8 +660,8 @@ JMP2r
 
 @draw-position ( -- )
 
-	.grid/x1 LDZ2 .Screen/x DEO2
-	.toolbar/y1 LDZ2 .Screen/y DEO2
+	[ LIT2 &x $2 ] .Screen/x DEO2
+	[ LIT2 &y $2 ] .Screen/y DEO2
 	( draw size )
 	.selection/from LDZ2 .selection/to LDZ2 EQU2k ,&normal JCN
 		SWP2 SUB2 DUP2
@@ -664,8 +677,8 @@ JMP2r
 
 @draw-timer ( -- )
 
-	.toolbar/y1 LDZ2 .Screen/y DEO2
-	.grid/x1 LDZ2 #0030 ADD2 .Screen/x DEO2
+	[ LIT2 &x $2 ] .Screen/x DEO2
+	[ LIT2 &y $2 ] .Screen/y DEO2
 	( value )
 	.timer/frame-lb LDZ STHk #03 .timer/playing LDZ DUP ADD SUB ;draw-byte JSR2
 	( icon )
@@ -676,8 +689,8 @@ JMP2r
 
 @draw-speed ( -- )
 
-	.grid/x1 LDZ2 #0050 ADD2 .Screen/x DEO2
-	.toolbar/y1 LDZ2 .Screen/y DEO2
+	[ LIT2 &x $2 ] .Screen/x DEO2
+	[ LIT2 &y $2 ] .Screen/y DEO2
 	( value )
 	.timer/speed LDZ #01 ;draw-byte JSR2
 	( th )
@@ -688,8 +701,8 @@ JMP2r
 
 @draw-state ( -- )
 
-	.toolbar/x2 LDZ2 #0008 SUB2 .Screen/x DEO2
-	.toolbar/y1 LDZ2 .Screen/y DEO2
+	[ LIT2 &x $2 ] .Screen/x DEO2
+	[ LIT2 &y $2 ] .Screen/y DEO2
 	( icon )
 	;save-icn #01 .state/changed LDZ ADD ;draw-sprite JSR2
 
@@ -697,8 +710,8 @@ JMP2r
 
 @draw-filepath ( color -- )
 
-	.toolbar/y1 LDZ2 .Screen/y DEO2
-	.toolbar/x1 LDZ2 #0078 ADD2 .Screen/x DEO2
+	[ LIT2 &x $2 ] .Screen/x DEO2
+	[ LIT2 &y $2 ] .Screen/y DEO2
 	( icon )
 	;filepath ROT ;draw-str-color JSR2
 
