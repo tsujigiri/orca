@@ -138,12 +138,13 @@ BRK
 			01 'r :file-rename "Rename $1
 			01 'o :file-open "Open $1
 			01 's :file-save "Save $1
-		05 "Edit $1
+		06 "Edit $1
 			01 'c :edit-copy "Copy $1
 			01 'v :edit-paste "Paste $1
 			01 'x :edit-cut "Cut $1
 			01 'i :toggle-insert "Insert $1
 			00 08 :edit-erase "Erase $1
+			01 'b :edit-comment "Comment $1
 		03 "Play $1
 			00 20 :play-toggle "Pause $1
 			01 ', :play-decr "Decr $1
@@ -1006,6 +1007,24 @@ JMP2r
 @edit-erase ( -- )
 
 	LIT '. ;fill-sel JSR2
+
+JMP2r
+
+@edit-comment ( -- )
+
+	.selection/x1 LDZ .selection/x2 LDZ NEQ ,&continue JCN
+		JMP2r
+		&continue
+	.selection/y2 LDZ INC .selection/y1 LDZ
+	&loop
+		( left )
+		.selection/x1 LDZ OVRk ;get-cell JSR2 ;data/cells ADD2 LDA STH
+			LIT '#  LIT '. STHr OVR EQU [ JMP SWP POP ] ;set-cell JSR2
+		( right )
+		.selection/x2 LDZ OVRk ;get-cell JSR2 ;data/cells ADD2 LDA STH
+			LIT '#  LIT '. STHr OVR EQU [ JMP SWP POP ] ;set-cell JSR2
+		INC GTHk ,&loop JCN
+	POP2
 
 JMP2r
 
