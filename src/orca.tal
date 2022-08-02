@@ -130,14 +130,13 @@ BRK
 
 @manifest
 
-	&name "Orca $1
-	&date "2022-07-02 $1
 	&menu
-		04 "File $1
+		05 "Orca $1
 			01 'n :file-new "New $1
 			01 'r :file-rename "Rename $1
 			01 'o :file-open "Open $1
 			01 's :file-save "Save $1
+			01 'q :exit "Exit $1
 		06 "Edit $1
 			01 'c :edit-copy "Copy $1
 			01 'v :edit-paste "Paste $1
