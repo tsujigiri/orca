@@ -614,7 +614,7 @@ JMP2r
 		DUP LIT '. NEQ ,&normalize JCN
 			( default to max ) POP #7f ,&continue JMP
 		&normalize
-		;base128 &continue SWP
+		;base128 JSR2 &continue SWP
 	( get channel ) [ LIT &ch $1 ]
 
 	( note on )
