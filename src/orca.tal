@@ -1011,19 +1011,21 @@ JMP2r
 
 @edit-comment ( -- )
 
-	.selection/x1 LDZ .selection/x2 LDZ NEQ ,&continue JCN
-		JMP2r
-		&continue
+	.selection/x1 LDZ .selection/x2 LDZ EQU ,&skip JCN
 	.selection/y2 LDZ INC .selection/y1 LDZ
 	&loop
-		( left )
-		.selection/x1 LDZ OVRk ;get-cell JSR2 ;data/cells ADD2 LDA STH
-			LIT '#  LIT '. STHr OVR EQU [ JMP SWP POP ] ;set-cell JSR2
-		( right )
-		.selection/x2 LDZ OVRk ;get-cell JSR2 ;data/cells ADD2 LDA STH
-			LIT '#  LIT '. STHr OVR EQU [ JMP SWP POP ] ;set-cell JSR2
+		( l ) .selection/x1 LDZ ,&row JSR ;set-cell JSR2
+		( r ) .selection/x2 LDZ ,&row JSR ;set-cell JSR2
 		INC GTHk ,&loop JCN
 	POP2
+	&skip
+
+JMP2r
+
+&row
+
+	OVRk ;get-cell JSR2 ;data/cells ADD2 LDA
+	LIT '# LIT '. ROT OVR EQU [ JMP SWP POP ]
 
 JMP2r
 
