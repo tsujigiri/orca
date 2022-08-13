@@ -12,9 +12,18 @@
 |a0 @File &vector $2 &success $2 &stat $2 &delete $1 &append $1 &name $2 &length $2 &read $2 &write $2
 |c0 @DateTime &year $2 &month $1 &day $1 &hour $1 &minute $1 &second $1 &dotw $1 &doty $2 &isdst $1
 
-%LOCKED-TYPE { #01 } %PORTEL-TYPE { #02 }
-%OPERATOR-TYPE { #03 } %PORTER-TYPE { #04 }
-%OUTPUT-TYPE { #05 } %IO-TYPE { #07 }
+( enums )
+
+|00
+
+	@types
+		&default $1
+		&locked $1
+		&portel $1
+		&operator $1
+		&porter $1
+		&output $1
+		&io $1
 
 |0000
 
@@ -309,6 +318,7 @@ BRK
 	.Mouse/y DEI2 DUP2 .cursor/y STZ2 .Screen/y DEO2
 	;cursor-icn .Screen/addr DEO2
 	.Mouse/state DEI #00 NEQ DUP ADD #41 ADD .Screen/sprite DEO
+
 	( route )
 	.Mouse/x DEI2 .Mouse/y DEI2 .grid ;within-rect JSR2 ,on-mouse-grid JCN
 	.Mouse/x DEI2 .Mouse/y DEI2 .toolbar ;within-rect JSR2 ,on-mouse-toolbar JCN
@@ -1043,6 +1053,8 @@ JMP2r
 (
 @|stdlib )
 
+@mcpy ( src* dst* len* -- ) SWP2 STH2 OVR2 ADD2 SWP2 &loop LDAk STH2kr STA INC2r INC2 GTH2k ,&loop JCN POP2 POP2 POP2r JMP2r
+
 @base128 ( char - b128 ) ,chrb36 JSR #00 SWP #007f MUL2 #0023 DIV2 NIP JMP2r
 @b36chr ( b36 -- char ) #24 ( MOD ) [ DIVk MUL SUB ] #00 SWP ;b36clc ADD2 LDA JMP2r
 @chrb36 ( char -- b36 ) #20 SUB #00 SWP ;values ADD2 LDA JMP2r
@@ -1058,7 +1070,7 @@ JMP2r
 
 @get-port-left-raw ( addr* -- value )
 
-	( set type ) STH2k PORTEL-TYPE STH2r ;data/types ADD2 STA
+	( set type ) STH2k .types/portel STH2r ;data/types ADD2 STA
 	( get data ) ;data/cells ADD2 LDA
 
 JMP2r
@@ -1066,7 +1078,7 @@ JMP2r
 @get-port-right-raw ( addr* -- value )
 
 	( set lock ) STH2k #01 STH2kr ;data/locks ADD2 STA
-	( set type ) PORTER-TYPE STH2r ;data/types ADD2 STA
+	( set type ) .types/porter STH2r ;data/types ADD2 STA
 	( get data ) ;data/cells ADD2 LDA
 
 JMP2r
@@ -1074,7 +1086,7 @@ JMP2r
 @set-port-output ( value addr* -- )
 
 	( set lock ) STH2k #01 STH2kr ;data/locks ADD2 STA
-	( set type ) OUTPUT-TYPE STH2r ;data/types ADD2 STA
+	( set type ) .types/output STH2r ;data/types ADD2 STA
 	( set data ) ;data/cells ADD2 STA
 
 JMP2r
