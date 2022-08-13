@@ -130,7 +130,7 @@ BRK
 	&menu
 		05 "Orca $1
 			01 'n :file-new "New $1
-			01 'r :file-rename "Rename $1
+			01 'r :trap "Rename $1
 			01 'o :file-open "Open $1
 			01 's :file-save "Save $1
 			01 'q :exit "Exit $1
@@ -175,9 +175,9 @@ JMP2r
 	;on-frame-trap .Screen/vector DEO2
 	#00 .Mouse/state DEO
 	( clear cursor )
-	#40 ;draw-cursor JSR2
+	#40 ;draw-cursor ( .. )
 
-JMP2r
+JMP2
 
 @on-console ( -> )
 
@@ -374,8 +374,7 @@ BRK
 
 	DUP #04 NEQ ,&no-scale JCN
 		POP
-		.selection/to LDZ2 ,&add-pos JSR ;set-sel-to JSR2
-		JMP2r
+		.selection/to LDZ2 ,&add-pos JSR ;set-sel-to JMP2
 		&no-scale
 	DUP #01 NEQ ,&no-drag JCN
 		POP
@@ -383,35 +382,20 @@ BRK
 		STH2k .selection/from LDZ2 ,&add-pos JSR
 		STH2r .selection/to LDZ2 ,&add-pos JSR
 			;set-sel-range JSR2
-		;edit-paste JSR2
-		JMP2r
+		;edit-paste JMP2
 		&no-drag
 	POP
 	( default )
 	STH2k .selection/from LDZ2 ,&add-pos JSR
 	STH2r .selection/to LDZ2 ,&add-pos JSR
-		;set-sel-range JSR2
+		;set-sel-range ( .. )
 
-JMP2r
+JMP2
 	&add-pos ROT ADD STH ADD STHr JMP2r
 
-@select-reset ( -- )
-
-	.selection/from LDZ2 ;set-sel-from JSR2
-
-JMP2r
-
-@select-all ( -- )
-
-	#0000 .grid/size LDZ2 ,set-sel-range JSR
-
-JMP2r
-
-@set-sel-from ( x y -- )
-
-	DUP2 ,set-sel-range JSR
-
-JMP2r
+@select-reset ( -- ) .selection/from LDZ2 ,set-sel-from JMP
+@select-all ( -- ) #0000 .grid/size LDZ2 ,set-sel-range JMP
+@set-sel-from ( x y -- ) DUP2 ,set-sel-range JMP
 
 @set-sel-to ( x y -- )
 
@@ -439,9 +423,9 @@ JMP2r
 	.guide LDZ #00 EQU ,&no-guide JCN ;toggle-guide JSR2 &no-guide
 	( redraw )
 	;draw-grid JSR2
-	;draw-position JSR2
+	;draw-position ( .. )
 
-JMP2r
+JMP2
 
 @fill-sel ( char -- )
 
@@ -456,9 +440,9 @@ JMP2r
 		POP2 POPr
 		INC GTHk ,&ver JCN
 	POP2
-	#01 .state/changed STZ ;draw-state JSR2
+	#01 .state/changed STZ ;draw-state ( .. )
 
-JMP2r
+JMP2
 
 @mod-speed ( mod -- )
 
@@ -468,9 +452,9 @@ JMP2r
 
 	#1f AND #04 GTHk [ JMP SWP POP ] .timer/speed STZ
 	#00 .timer/beat STZ
-	;draw-speed JSR2
+	;draw-speed ( .. )
 
-JMP2r
+JMP2
 
 @toggle-insert ( -- )
 
@@ -478,16 +462,16 @@ JMP2r
 		.Controller/vector DEI2 ;on-button-insert EQU2
 			[ JMP SWP2 POP2 ]
 			.Controller/vector DEO2
-	;draw-position JSR2
+	;draw-position ( .. )
 
-JMP2r
+JMP2
 
 @play-toggle ( -- )
 
 	.timer/playing LDZk #00 EQU SWP STZ
-	;draw-timer JSR2
+	;draw-timer ( .. )
 
-JMP2r
+JMP2
 
 @toggle-guide ( -- )
 
@@ -546,7 +530,7 @@ JMP2r
 
 	( iterate thru channels )
 
-	#10 #00 &while EQUk ,&end JCN
+	#1000 &while EQUk ,&end JCN
 		( note ) DUPk ADD .voices ADD LDZk
 		( remaining length ) SWP INC LDZ
 		( next channel if already 0 ) DUP #00 EQU ,&next-chan JCN
@@ -648,9 +632,9 @@ JMP2r
 	( space )
 	#00 .Screen/sprite DEO
 	( icon )
-	.dpad LDZ #01 ;draw-chr-color JSR2
+	.dpad LDZ #01 ;draw-chr-color ( .. )
 
-JMP2r
+JMP2
 
 @draw-position ( -- )
 
@@ -691,9 +675,9 @@ JMP2r
 	#01 ;draw-chr/color STA
 	.timer/speed LDZ ;draw-byte JSR2
 	( th )
-	;&th #03 ;draw-str-color JSR2
+	;&th #03 ;draw-str-color ( .. )
 
-JMP2r
+JMP2
 	&th "th $1
 
 @draw-state ( -- )
@@ -711,9 +695,9 @@ JMP2r
 	[ LIT2 &x $2 ] .Screen/x DEO2
 	[ LIT2 &y $2 ] .Screen/y DEO2
 	( icon )
-	;filepath ROT ;draw-str-color JSR2
+	;filepath ROT ;draw-str-color ( .. )
 
-JMP2r
+JMP2
 
 @draw-meter ( -- )
 
@@ -837,9 +821,9 @@ JMP2r
 
 @draw-hex ( byte -- )
 
-	 #0f AND DUP #09 GTH #07 MUL ADD #30 ADD ,draw-chr JSR
+	 #0f AND DUP #09 GTH #07 MUL ADD #30 ADD ,draw-chr ( .. )
 
-JMP2r
+JMP
 
 @draw-chr-color ( char color -- )
 
@@ -898,23 +882,17 @@ JMP2r
 	#0b ;set-speed JSR2
 
 	;run JSR2
-	#00 .state/changed STZ ;draw-state JSR2
+	#00 .state/changed STZ ;draw-state ( .. )
 
-JMP2r
-
-@file-rename ( -- )
-
-	;trap JSR2
-
-JMP2r
+JMP2
 
 @file-open ( -- )
 
 	#0000 ;filepath ,inject-file JSR
 	;draw-grid JSR2
-	#00 .state/changed STZ ;draw-state JSR2
+	#00 .state/changed STZ ;draw-state ( .. )
 
-JMP2r
+JMP2
 
 @inject-file ( x y path* -- )
 
@@ -952,9 +930,9 @@ JMP2r
 		( linebreak ) ;&lb .File/write DEO2
 		INC GTHk ,&ver JCN
 	POP2
-	#00 .state/changed STZ ;draw-state JSR2
+	#00 .state/changed STZ ;draw-state ( .. )
 
-JMP2r
+JMP2
 	&lb 0a
 
 ( random )
@@ -987,12 +965,7 @@ JMP2r
 
 @snarf-txt ".snarf $1
 
-@edit-cut ( -- )
-
-	,edit-copy JSR
-	LIT '. ;fill-sel JSR2
-
-JMP2r
+@edit-cut ( -- ) ,edit-copy JSR LIT '. ;fill-sel JMP2
 
 @edit-copy ( -- )
 
@@ -1016,15 +989,11 @@ JMP2r
 @edit-paste ( -- )
 
 	.selection LDZ2 ;snarf-txt ;inject-file JSR2
-	;draw-grid JSR2
+	;draw-grid ( .. )
 
-JMP2r
+JMP2
 
-@edit-erase ( -- )
-
-	LIT '. ;fill-sel JSR2
-
-JMP2r
+@edit-erase ( -- ) LIT '. ;fill-sel JMP2
 
 @edit-comment ( -- )
 
@@ -1061,8 +1030,8 @@ JMP2r
 @set-cell ( x y c -- ) ROT ROT ,get-cell JSR ;data/cells ADD2 STA JMP2r
 @get-cell ( x y -- addr* ) #00 SWP #00 .grid/width LDZ MUL2 ROT #00 SWP ADD2 JMP2r
 
-@get-port-right-value ( addr* -- value ) ,get-port-right-raw JSR ,chrb36 JSR JMP2r
-@get-port-left-value ( addr* -- value ) ,get-port-left-raw JSR ,chrb36 JSR JMP2r
+@get-port-right-value ( addr* -- value ) ,get-port-right-raw JSR ,chrb36 JMP
+@get-port-left-value ( addr* -- value ) ,get-port-left-raw JSR ,chrb36 JMP
 
 @get-port-left-raw ( addr* -- value )
 
