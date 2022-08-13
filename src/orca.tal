@@ -19,9 +19,9 @@
 	@types
 		&default $1
 		&locked $1
-		&portel $1
-		&operator $1
-		&porter $1
+		&pl $1
+		&op $1
+		&pr $1
 		&output $1
 		&io $1
 
@@ -1016,9 +1016,7 @@ JMP2r
 JMP2r
 
 (
-@|stdlib )
-
-@mcpy ( src* dst* len* -- ) SWP2 STH2 OVR2 ADD2 SWP2 &loop LDAk STH2kr STA INC2r INC2 GTH2k ,&loop JCN POP2 POP2 POP2r JMP2r
+@|helpers )
 
 @base128 ( char - b128 ) ,chrb36 JSR #00 SWP #007f MUL2 #0023 DIV2 NIP JMP2r
 @b36chr ( b36 -- char ) #24 ( MOD ) [ DIVk MUL SUB ] #00 SWP ;b36clc ADD2 LDA JMP2r
@@ -1026,6 +1024,8 @@ JMP2r
 @chrmid ( char -- midi ) DUP ,chrb36 JSR SWP ,ciuc JSR #24 MUL ADD #00 SWP ;notes ADD2 LDA JMP2r
 @ciuc ( char -- bool ) DUP #40 GTH SWP #5b LTH AND JMP2r
 @ci-key ( char -- bool ) DUP #20 GTH SWP #7b LTH AND JMP2r
+
+@set-case ( value case -- raw ) SWP ,b36chr JSR DUP #60 GTH ROT AND #50 SFT SUB JMP2r
 
 @set-cell ( x y c -- ) ROT ROT ,get-cell JSR ;data/cells ADD2 STA JMP2r
 @get-cell ( x y -- addr* ) #00 SWP #00 .grid/width LDZ MUL2 ROT #00 SWP ADD2 JMP2r
@@ -1035,7 +1035,7 @@ JMP2r
 
 @get-port-left-raw ( addr* -- value )
 
-	( set type ) STH2k .types/portel STH2r ;data/types ADD2 STA
+	( set type ) STH2k .types/pl STH2r ;data/types ADD2 STA
 	( get data ) ;data/cells ADD2 LDA
 
 JMP2r
@@ -1043,10 +1043,14 @@ JMP2r
 @get-port-right-raw ( addr* -- value )
 
 	( set lock ) STH2k #01 STH2kr ;data/locks ADD2 STA
-	( set type ) .types/porter STH2r ;data/types ADD2 STA
+	( set type ) .types/pr STH2r ;data/types ADD2 STA
 	( get data ) ;data/cells ADD2 LDA
 
 JMP2r
+
+@set-port-output-below ( value addr* -- )
+
+	#00 .grid/width LDZ ADD2
 
 @set-port-output ( value addr* -- )
 
@@ -1065,6 +1069,8 @@ JMP2r
 JMP2r
 
 ( generics )
+
+@mcpy ( src* dst* len* -- ) SWP2 STH2 OVR2 ADD2 SWP2 &loop LDAk STH2kr STA INC2r INC2 GTH2k ,&loop JCN POP2 POP2 POP2r JMP2r
 
 @mfil ( src* len* -- )
 
