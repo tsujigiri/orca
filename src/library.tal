@@ -124,12 +124,10 @@ JMP2r
 
 	STH2k
 	( set type ) .types/op STH2kr ;data/types ADD2 STA
-	POP2r
-	#00 .grid/width LDZ ADD2
-	( set lock ) DUP2 #01 ROT ROT ;data/locks ADD2 STA
-	( set type ) .types/output ROT ROT ;data/types ADD2 STA
+	( get cell ) #00 .grid/width LDZ ADD2 ;data/cells ADD2 LDA
+	( output ) STH2r ;set-port-output-below ( .. )
 
-JMP2r
+JMP2
 	&? 'H "Holds 20 "southward 20 "operand $1
 
 @op-i-lc ;get-bang JSR2 ,&* JCN POP2 JMP2r &*
