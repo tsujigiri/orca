@@ -1,4 +1,4 @@
-( app/orca : livecoding ide )
+( Orca )
 
 |00 @System &vector $2 &pad $6 &r $2 &g $2 &b $2
 |10 @Console &vector $2 &read $1 &pad $5 &write $1
@@ -16,40 +16,28 @@
 %OPERATOR-TYPE { #03 } %PORTER-TYPE { #04 }
 %OUTPUT-TYPE { #05 } %IO-TYPE { #07 }
 
-%MOD { DIVk MUL SUB }
-%MOD2 { DIV2k MUL2 SUB2 }
-
-%menu-def { #01 }
-%menu-sel { #04 }
-%menu-hov { #08 }
-%menu-hit { #0014 }
-%menu-auto { #15 }
-%menu-label { DEOk DEO }
-%menu-l { #40 }
-%menu-r { #04 }
-
 |0000
 
-@dpad $1 &last $1
-@timer &beat $1 &speed $1 &playing $1 &frame $1 &frame-lb $1
-@state &timer $1 &changed $1
-@guide $1
-@filepath $40
-@grid &x1 $2 &y1 $2 &x2 $2 &y2 $2 &size &width $1 &height $1 &length $2
-@selection &from &x1 $1 &y1 $1 &to &x2 $1 &y2 $1
-@cursor &x $2 &y $2
-@toolbar &x1 $2 &y1 $2 &x2 $2 &y2 $2
-@head &x $1 &y $1 &addr $2
-@variables $24
-@signal &midi $1 &midi-last $1
-@voices $20
+	@dpad $1 &last $1
+	@timer &beat $1 &speed $1 &playing $1 &frame $1 &frame-lb $1
+	@state &timer $1 &changed $1
+	@guide $1
+	@filepath $40
+	@grid &x1 $2 &y1 $2 &x2 $2 &y2 $2 &size &width $1 &height $1 &length $2
+	@selection &from &x1 $1 &y1 $1 &to &x2 $1 &y2 $1
+	@cursor &x $2 &y $2
+	@toolbar &x1 $2 &y1 $2 &x2 $2 &y2 $2
+	@head &x $1 &y $1 &addr $2
+	@variables $24
+	@signal &midi $1 &midi-last $1
+	@voices $20
 
 |0100 ( -> )
 
 	( theme )
-	#0f38 .System/r DEO2
-	#0fc8 .System/g DEO2
-	#0f98 .System/b DEO2
+	#0f58 .System/r DEO2
+	#0fb8 .System/g DEO2
+	#0fa8 .System/b DEO2
 
 	( init random )
 	;init-prng JSR2
@@ -154,6 +142,9 @@ BRK
 			00 1b :select-reset "Reset $1
 			01 'a :select-all "All $1
 		$1
+
+(
+@|vectors )
 
 @untrap ( -- )
 
@@ -366,7 +357,8 @@ BRK
 
 BRK
 
-( selection )
+(
+@|selection )
 
 @play-decr ( -- ) #ff ;mod-speed JSR2 JMP2r
 @play-incr ( -- ) #01 ;mod-speed JSR2 JMP2r
@@ -636,7 +628,8 @@ JMP2r
 
 JMP2r
 
-( drawing )
+(
+@|drawing )
 
 @draw-dpad ( -- )
 
@@ -852,6 +845,23 @@ JMP2r
 
 JMP2r
 
+@draw-str-right ( text* -- )
+
+	DUP2 ,get-strw JSR STH2
+	.Screen/x DEI2k STH2r SUB2 ROT DEO2
+
+@draw-str ( str* -- str* )
+
+	LDAk #00 EQU ,&skip JCN
+	#15 .Screen/auto DEO
+	&while
+		LDAk ,draw-chr JSR
+		INC2 LDAk ,&while JCN
+	&skip
+	INC2
+
+JMP2r
+
 @draw-str-color ( str* color -- )
 
 	,draw-chr/color STR
@@ -865,7 +875,8 @@ JMP2r
 
 JMP2r
 
-( file )
+(
+@|document )
 
 @file-new ( -- )
 
@@ -1029,10 +1040,11 @@ JMP2r
 
 JMP2r
 
-( helpers )
+(
+@|stdlib )
 
 @base128 ( char - b128 ) ,chrb36 JSR #00 SWP #007f MUL2 #0023 DIV2 NIP JMP2r
-@b36chr ( b36 -- char ) #24 MOD #00 SWP ;b36clc ADD2 LDA JMP2r
+@b36chr ( b36 -- char ) #24 ( MOD ) [ DIVk MUL SUB ] #00 SWP ;b36clc ADD2 LDA JMP2r
 @chrb36 ( char -- b36 ) #20 SUB #00 SWP ;values ADD2 LDA JMP2r
 @chrmid ( char -- midi ) DUP ,chrb36 JSR SWP ,ciuc JSR #24 MUL ADD #00 SWP ;notes ADD2 LDA JMP2r
 @ciuc ( char -- bool ) DUP #40 GTH SWP #5b LTH AND JMP2r
@@ -1114,3 +1126,4 @@ JMP2r
 	&cells $4000
 	&locks $4000
 	&types $4000
+

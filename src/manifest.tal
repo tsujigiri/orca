@@ -20,7 +20,7 @@ BRK
 	#42 .Mouse/state DEI #00 NEQ ADD .Screen/sprite DEO
 	( when touch cat )
 	.Mouse/state DEI #00 EQU ,&no-touch-cat JCN
-	.Mouse/y DEI2 menu-hit GTH2 ,&no-touch-cat JCN
+	.Mouse/y DEI2 #0014 GTH2 ,&no-touch-cat JCN
 		.Mouse/x DEI2 ;get-xcat JSR2 ;menu-select JSR2
 		( release ) #00 .Mouse/state DEO
 		BRK
@@ -28,7 +28,7 @@ BRK
 	( when sub active )
 	;draw-menu/sel LDA #ff EQU ,&no-sub JCN
 		( when sel changed )
-		.Mouse/y DEI2 #0004 SUB2 menu-r SFT2 NIP #01 SUB
+		.Mouse/y DEI2 #0004 SUB2 #04 SFT2 NIP #01 SUB
 		DUP ;draw-sub/sel LDA EQU ,&no-change JCN
 			DUP ;draw-sub/sel STA
 			;draw-menu/sel LDA #ff ;draw-sub JSR2
@@ -43,7 +43,7 @@ BRK
 		&no-sub
 	( don't leave if menu is active )
 	;draw-menu/sel LDA #ff NEQ ,&no-leave JCN
-	.Mouse/y DEI2 menu-hit LTH2 ,&no-leave JCN
+	.Mouse/y DEI2 #0014 LTH2 ,&no-leave JCN
 		,menu-close JSR
 		&no-leave
 
@@ -231,7 +231,7 @@ JMP2r
 	#00 ,&id STR
 	[ LIT2 &manifest :manifest ]
 	&cat
-		menu-sel menu-def [ LIT &sel ff ] [ LIT &id $1 ] EQU [ JMP SWP POP ] ;draw-chr/color STA
+		#0401 [ LIT &sel ff ] [ LIT &id $1 ] EQU [ JMP SWP POP ] ;draw-chr/color STA
 		INC2k ;draw-str JSR2 POP2 #20 ;draw-chr JSR2
 		;skip-sub JSR2
 		,&id LDR INC ,&id STR
@@ -249,9 +249,9 @@ JMP2r
 	LDAk STH INC2 ;skip-str JSR2
 	STHr #00
 	&subcat
-		STHk menu-hov menu-sel STHr [ LIT &sel ff ] EQU [ JMP SWP POP ] [ LIT &mask $1 ] AND ;draw-chr/color STA
+		STHk #0804 STHr [ LIT &sel ff ] EQU [ JMP SWP POP ] [ LIT &mask $1 ] AND ;draw-chr/color STA
 		[ LIT2 &anchor $2 ] .Screen/x DEO2
-		#00 OVR INC menu-l SFT2 #0004 ADD2 .Screen/y DEO2
+		#00 OVR INC #40 SFT2 #0004 ADD2 .Screen/y DEO2
 		SWP2 ;draw-label JSR2 SWP2
 		INC GTHk ,&subcat JCN
 	POP2 POP2
@@ -267,7 +267,7 @@ JMP2r
 		.Screen/auto DEI
 			#f2 .Screen/auto DEO
 			;blank-icn .Screen/addr DEO2
-			;draw-chr/color LDA .Screen/sprite menu-label
+			;draw-chr/color LDA .Screen/sprite DEOk DEO
 		.Screen/auto DEO
 	.Screen/y DEO2
 	( mod )
@@ -311,23 +311,6 @@ JMP2r
 	&buttons "ABsSUDLR $1
 	&cat ;&buf ;scat JSR2 ,&end JMP
 	&bsp "bsp $1 &tab "tab $1 &ent "ent $1 &spc "spc $1 &esc "esc $1 &del "del $1
-
-@draw-str-right ( text* -- )
-
-	DUP2 ;get-strw JSR2 STH2
-	.Screen/x DEI2k STH2r SUB2 ROT DEO2
-
-@draw-str ( str* -- str* )
-
-	LDAk #00 EQU ,&skip JCN
-	menu-auto .Screen/auto DEO
-	&while
-		LDAk ;draw-chr JSR2
-		INC2 LDAk ,&while JCN
-	&skip
-	INC2
-
-JMP2r
 
 @update-cursor ( color addr* -- )
 

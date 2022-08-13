@@ -145,7 +145,7 @@ JMP2r
 	( get mod ) STH2kr INC2 ;get-port-right-raw JSR2
 		( get case ) DUP ;ciuc JSR2 ,&case STR
 		( to value ) ;chrb36 JSR2 DUP #00 EQU ADD
-	( res ) #00 SWP ROT #00 SWP .timer/frame LDZ2 SWP2 DIV2 SWP2 MOD2 NIP
+	( res ) #00 SWP ROT #00 SWP .timer/frame LDZ2 SWP2 DIV2 SWP2 ( MOD2 ) [ DIV2k MUL2 SUB2 ] NIP
 	( set case ) ;b36chr JSR2 DUP #60 GTH [ LIT &case $1 ] AND #50 SFT SUB
 	( output ) STH2r #00 .grid/width LDZ ADD2 ;set-port-output JSR2
 
@@ -159,7 +159,7 @@ JMP2r
 	( set type ) OPERATOR-TYPE STH2kr ;data/types ADD2 STA
 	( get rate ) #0001 SUB2 ;get-port-left-value JSR2 DUP #00 EQU ADD
 	( get mod ) STH2kr INC2 ;get-port-right-value JSR2 DUP #00 EQU ADD
-	( res ) MUL #00 SWP .timer/frame LDZ2 SWP2 MOD2 #0000 EQU2
+	( res ) MUL #00 SWP .timer/frame LDZ2 SWP2 ( MOD2 ) [ DIV2k MUL2 SUB2 ] #0000 EQU2
 	( bang on equal ) #fc MUL LIT '. ADD
 	( output ) STH2r #00 .grid/width LDZ ADD2 ;set-port-output JSR2
 
@@ -240,7 +240,7 @@ JMP2r
 	( mod ) STH2kr INC2 ;get-port-right-raw JSR2
 		( get case ) DUP ;ciuc JSR2 ,&case STR
 		( to value ) ;chrb36 JSR2 DUP #00 EQU ADD
-	( res ) SWP STH2kr #00 .grid/width LDZ ADD2 [ ;data/cells ADD2 LDA ;chrb36 JSR2 ] ADD SWP MOD
+	( res ) SWP STH2kr #00 .grid/width LDZ ADD2 [ ;data/cells ADD2 LDA ;chrb36 JSR2 ] ADD SWP ( MOD ) [ DIVk MUL SUB ]
 	( set case ) ;b36chr JSR2 DUP #60 GTH [ LIT &case $1 ] AND #50 SFT SUB
 	( output ) STH2r #00 .grid/width LDZ ADD2 ;set-port-output JSR2
 
@@ -364,7 +364,7 @@ JMP2r
 		INC GTHk ,&loop JCN
 	POP
 	( read ) STH2kr INC2 ;get-port-right-raw JSR2
-	( output ) ROT ROT MOD #00 SWP STH2r #00 .grid/width LDZ ADD2 ADD2 ;set-port-output JSR2
+	( output ) ROT ROT ( MOD ) [ DIVk MUL SUB ] #00 SWP STH2r #00 .grid/width LDZ ADD2 ADD2 ;set-port-output JSR2
 
 JMP2r
 	&? 'P "Writes 20 "eastward 20 "operand $1
@@ -401,7 +401,7 @@ JMP2r
 	( b-max ) STH2kr INC2 ;get-port-right-raw JSR2
 		( get case ) DUP ;ciuc JSR2 ,&case STR
 		( to value ) ;chrb36 JSR2 DUP #00 EQU ADD
-	( mod ) OVR SUB ;prng JSR2 ADD SWP DUP #00 EQU ADD MOD ADD
+	( mod ) OVR SUB ;prng JSR2 ADD SWP DUP #00 EQU ADD ( MOD ) [ DIVk MUL SUB ] ADD
 	( set case ) ;b36chr JSR2 DUP #60 GTH [ LIT &case $1 ] AND #50 SFT SUB
 	( output ) STH2r #00 .grid/width LDZ ADD2 ;set-port-output JSR2
 
@@ -439,7 +439,7 @@ JMP2r
 		( type ) LOCKED-TYPE STH2r ;data/types ADD2 STA
 		INC GTHk ,&loop JCN
 	POP
-	( read ) MOD #00 SWP STH2kr INC2 ADD2 ;get-port-right-raw JSR2
+	( read ) ( MOD ) [ DIVk MUL SUB ] #00 SWP STH2kr INC2 ADD2 ;get-port-right-raw JSR2
 	STH2r #00 .grid/width LDZ ADD2 ;set-port-output JSR2
 
 JMP2r
@@ -454,7 +454,7 @@ JMP2r
 	( max ) STH2kr INC2 ;get-port-right-value JSR2 DUP #00 EQU ADD STH2
 	( frame ADD max SUB 1 ) .timer/frame LDZ2 STHkr #00 SWP ADD2 #0001 SUB2
 	( MUL step ) OVRr STHr #00 SWP MUL2
-	( % max ) STHkr #00 SWP MOD2
+	( % max ) STHkr #00 SWP ( MOD2 ) [ DIV2k MUL2 SUB2 ]
 	( ADD step ) SWPr STHr #00 SWP ADD2
 	( bucket GTH= max ) STHr #00 SWP LTH2 #01 NEQ
 	( bang if equal ) #fc MUL LIT '. ADD
