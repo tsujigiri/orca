@@ -375,7 +375,7 @@ JMP2r
 	DUP LIT '. EQU ,&idle JCN
 	OVR ;chrb36 JSR2 ,&save JCN
 	( load )
-		NIP ;chrb36 JSR2 .variables ADD LDZ STH2r #00 .grid/width LDZ ADD2 ;set-port-output JSR2 JMP2r
+		NIP ;chrb36 JSR2 .variables ADD LDZ STH2r #00 .grid/width LDZ ADD2 ;set-port-output JMP2
 	&save
 		SWP ;chrb36 JSR2 .variables ADD STZ POP2r JMP2r
 	&idle

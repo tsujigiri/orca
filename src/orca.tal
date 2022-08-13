@@ -311,13 +311,10 @@ BRK
 
 	.Mouse/y DEI2 #0014 LTH2 ;trap-menu JCN2
 
-	( clear last cursor )
-	#40 ;draw-cursor JSR2
-	( draw new cursor )
-	.Mouse/x DEI2 DUP2 .cursor/x STZ2 .Screen/x DEO2
-	.Mouse/y DEI2 DUP2 .cursor/y STZ2 .Screen/y DEO2
-	;cursor-icn .Screen/addr DEO2
-	.Mouse/state DEI #00 NEQ DUP ADD #41 ADD .Screen/sprite DEO
+	.Mouse/state DEI #00 NEQ DUP ADD #41 ADD ;cursor-icn ;update-cursor JSR2
+
+	( restore auto after cursor drawing )
+	#15 .Screen/auto DEO
 
 	( route )
 	.Mouse/x DEI2 .Mouse/y DEI2 .grid ;within-rect JSR2 ,on-mouse-grid JCN
@@ -370,8 +367,8 @@ BRK
 (
 @|selection )
 
-@play-decr ( -- ) #ff ;mod-speed JSR2 JMP2r
-@play-incr ( -- ) #01 ;mod-speed JSR2 JMP2r
+@play-decr ( -- ) #ff ;mod-speed JMP2
+@play-incr ( -- ) #01 ;mod-speed JMP2
 
 @mod-sel ( x y mod -- )
 
@@ -863,7 +860,6 @@ JMP2r
 @draw-str ( str* -- str* )
 
 	LDAk #00 EQU ,&skip JCN
-	#15 .Screen/auto DEO
 	&while
 		LDAk ,draw-chr JSR
 		INC2 LDAk ,&while JCN
