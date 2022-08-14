@@ -9,7 +9,7 @@ For more details, see the complete [operation manual](https://wiki.xxiivv.com/si
 
 You must have the [Uxn](https://git.sr.ht/~rabbits/uxn/) assembler and emulator.
 
-```
+```sh
 uxnasm orca.tal orca.rom && uxnemu orca.rom
 ```
 
@@ -19,7 +19,7 @@ If do not wish to assemble it yourself, you can download [orca.rom](https://rabb
 
 The `:` operator is used to send note values to other applications, to convert the signal to midi, use the [shim](https://git.sr.ht/~rabbits/shim/).
 
-```
+```sh
 uxnemu orca.rom | shim
 ```
 
