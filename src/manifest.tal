@@ -35,7 +35,7 @@ BRK
 			&no-touch-sub
 		BRK
 		&no-sub
-	( don't leave if menu is active )
+	( do not leave if menu is active )
 	;draw-menu/sel LDA #ff NEQ ,&no-leave JCN
 	.Mouse/y DEI2 #0014 LTH2 ,&no-leave JCN
 		,menu-close JSR
@@ -286,7 +286,7 @@ JMP2
 	POP2
 	( mix )
 	DUP #00 NEQ STHr #00 NEQ #0101 NEQ2 ,&no-mod JCN
-		LIT '+ ;&buf ;sput JSR2
+		LIT "+ ;&buf ;sput JSR2
 		&no-mod
 	( key )
 	DUP #08 NEQ ,&no-bsp JCN ;&bsp ,&cat JMP &no-bsp

@@ -129,27 +129,27 @@ BRK
 
 	&menu
 		05 "Orca $1
-			01 'n :file-new "New $1
-			01 'r :trap "Rename $1
-			01 'o :file-open "Open $1
-			01 's :file-save "Save $1
-			01 'q :exit "Exit $1
+			01 "n :file-new "New $1
+			01 "r :trap "Rename $1
+			01 "o :file-open "Open $1
+			01 "s :file-save "Save $1
+			01 "q :exit "Exit $1
 		06 "Edit $1
-			01 'c :edit-copy "Copy $1
-			01 'v :edit-paste "Paste $1
-			01 'x :edit-cut "Cut $1
-			01 'i :toggle-insert "Insert $1
+			01 "c :edit-copy "Copy $1
+			01 "v :edit-paste "Paste $1
+			01 "x :edit-cut "Cut $1
+			01 "i :toggle-insert "Insert $1
 			00 08 :edit-erase "Erase $1
-			01 'b :edit-comment "Comment $1
+			01 "b :edit-comment "Comment $1
 		03 "Play $1
 			00 20 :play-toggle "Pause $1
-			01 ', :play-decr "Decr $1
-			01 '. :play-incr "Incr $1
+			01 ", :play-decr "Decr $1
+			01 ". :play-incr "Incr $1
 		01 "View $1
-			01 'h :toggle-guide "Guide $1
+			01 "h :toggle-guide "Guide $1
 		02 "Select $1
 			00 1b :select-reset "Reset $1
-			01 'a :select-all "All $1
+			01 "a :select-all "All $1
 		$1
 
 (
@@ -287,7 +287,7 @@ BRK
 	[ #00 ] EQUk NIP ,&end JCN
 	[ #1b ] NEQk NIP ,&no-esc JCN ;toggle-insert JSR2 POP BRK &no-esc
 	[ #20 ] NEQk NIP ,&no-spc JCN #01 #0000 ;mod-sel JSR2 POP BRK &no-spc
-	[ #08 ] NEQk NIP ,&no-bks JCN #ff #0000 ;mod-sel JSR2 LIT '. ;fill-sel JSR2 POP BRK &no-bks
+	[ #08 ] NEQk NIP ,&no-bks JCN #ff #0000 ;mod-sel JSR2 LIT ". ;fill-sel JSR2 POP BRK &no-bks
 	DUP ;ci-key JSR2 #00 EQU ,&no-key JCN 
 		DUP ;fill-sel JSR2 #01 #0000 ;mod-sel JSR2 &no-key
 	&end
@@ -514,13 +514,13 @@ BRK
 
 @init ( -- )
 
-	LIT '. DUP ;mfil/data STA2
+	LIT ". DUP ;mfil/data STA2
 	;data/cells .grid/length LDZ2 ;mfil JSR2
 	&grid
 	#0000 ;mfil/data STA2
 	;data/locks .grid/length LDZ2 STH2k ;mfil JSR2
 	;data/types STH2r ;mfil JSR2
-	LIT '. DUP ;mfil/data STA2
+	LIT ". DUP ;mfil/data STA2
 	;variables #0024 ;mfil JSR2
 	#00 .signal/midi STZ
 
@@ -594,10 +594,10 @@ JMP2r
 @get-bang ( -- bang )
 
 	.head/addr LDZ2 ;data/cells ADD2 STH2k
-	( left ) #0001 SUB2 LDA LIT '* EQU ,&bang JCN
-	( top ) STH2kr #00 .grid/width LDZ SUB2 LDA LIT '* EQU ,&bang JCN
-	( right ) STH2kr INC2 LDA LIT '* EQU ,&bang JCN
-	( bottom ) STH2kr #00 .grid/width LDZ ADD2 LDA LIT '* EQU ,&bang JCN
+	( left ) #0001 SUB2 LDA LIT "* EQU ,&bang JCN
+	( top ) STH2kr #00 .grid/width LDZ SUB2 LDA LIT "* EQU ,&bang JCN
+	( right ) STH2kr INC2 LDA LIT "* EQU ,&bang JCN
+	( bottom ) STH2kr #00 .grid/width LDZ ADD2 LDA LIT "* EQU ,&bang JCN
 	POP2r #00 JMP2r
 	&bang POP2r #01
 
@@ -749,13 +749,13 @@ JMP2r
 @get-char-at-addr ( addr* -- char )
 
 	;data/cells ADD2 LDA
-	DUP LIT '. NEQ ,&no-bar JCN
+	DUP LIT ". NEQ ,&no-bar JCN
 		POP .head LDZ2
 		DUP2 #07 AND SWP #0f AND ORA ,&no-cross JCN
 			POP2 #7f JMP2r
 			&no-cross
 		DUP2 #01 AND SWP #03 AND ORA ,&no-dot JCN
-			&dot POP2 LIT '. JMP2r
+			&dot POP2 LIT ". JMP2r
 			&no-dot
 		DUP2 ,is-selected JSR ,&dot JCN
 		.head/addr LDZ2 ;data/types ADD2 LDA ,&dot JCN
@@ -769,10 +769,10 @@ JMP2r
 	;&word #0020 ;mclr JSR2
 	&while
 		INC2 DUP2 ;data/cells ADD2 LDA
-			DUP LIT '. EQU ,&skip JCN
+			DUP LIT ". EQU ,&skip JCN
 				DUP ;&word ;sput JSR2
 				&skip
-			LIT '. NEQ ,&while JCN
+			LIT ". NEQ ,&while JCN
 	POP2
 	;&word
 
@@ -965,7 +965,7 @@ JMP2r
 
 @snarf-txt ".snarf $1
 
-@edit-cut ( -- ) ,edit-copy JSR LIT '. ;fill-sel JMP2
+@edit-cut ( -- ) ,edit-copy JSR LIT ". ;fill-sel JMP2
 
 @edit-copy ( -- )
 
@@ -993,7 +993,7 @@ JMP2r
 
 JMP2
 
-@edit-erase ( -- ) LIT '. ;fill-sel JMP2
+@edit-erase ( -- ) LIT ". ;fill-sel JMP2
 
 @edit-comment ( -- )
 
@@ -1011,7 +1011,7 @@ JMP2r
 &row
 
 	OVRk ;get-cell JSR2 ;data/cells ADD2 LDA
-	LIT '# LIT '. ROT OVR EQU [ JMP SWP POP ]
+	LIT "# LIT ". ROT OVR EQU [ JMP SWP POP ]
 
 JMP2r
 
