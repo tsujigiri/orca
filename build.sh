@@ -1,32 +1,36 @@
 #!/bin/sh -e
 
-echo "Cleaning.."
+# ~/Applications/butler push bin/orca.rom hundredrabbits/orca:uxn
+
+ASM="uxncli $HOME/roms/drifblim.rom"
+EMU="uxnemu"
+LIN="uxncli $HOME/roms/uxnlin.rom"
+
+SRC="src/orca.tal"
+DST="bin/orca.rom"
+
+CPY="$HOME/roms"
+ETC="src/manifest.tal src/library"
+ARG="etc/tests.orca"
+
+echo ">> Cleaning"
 rm -rf bin
 mkdir bin
 
-if [ -e "$HOME/roms/uxnlin.rom" ]
+if [[ "$*" == *"--lint"* ]]
 then
-	echo "Linting.."
-	uxncli $HOME/roms/uxnlin.rom src/orca.tal
-	uxncli $HOME/roms/uxnlin.rom src/library.tal
-	uxncli $HOME/roms/uxnlin.rom src/manifest.tal
+    echo ">> Linting $SRC"
+	$LIN $SRC $ETC
 fi
 
-echo "Assembling.."
-uxnasm src/orca.tal bin/orca.rom 
+echo ">> Assembling $SRC"
+$ASM $SRC $DST
 
-echo "Installing.."
-if [ -d "$HOME/roms" ] && [ -e ./bin/orca.rom ]
+if [[ "$*" == *"--save"* ]]
 then
-	cp ./bin/orca.rom $HOME/roms
-	echo "Installed in $HOME/roms"
+    echo ">> Saving $DST"
+	cp $DST $CPY
 fi
 
-if [ "${1}" = '--push' ]; 
-then
-	echo "Pushing.."
-	~/Applications/butler push bin/orca.rom hundredrabbits/orca:uxn
-fi
-
-echo "Running.."
-uxnemu bin/orca.rom etc/tests.orca
+echo ">> Running $DST"
+$EMU $DST $ARG

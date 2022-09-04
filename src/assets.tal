@@ -336,3 +336,9 @@
 	( 7D	} ) :op-null
 	( 7E	~ ) :op-null
 	( 7F	_ ) :op-null
+
+@data
+	&cells $4000
+	&locks $4000
+	&types $4000
+

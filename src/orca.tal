@@ -1102,11 +1102,4 @@ JMP2r
 @untitled-txt "untitled.orca $1
 
 ~src/library.tal
-~src/assets.tal
-~src/manifest.tal
-
-@data
-	&cells $4000
-	&locks $4000
-	&types $4000
 
