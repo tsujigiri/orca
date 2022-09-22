@@ -57,6 +57,9 @@
 	( size )
 	#0328 .Screen/width DEO2
 	#01e0 .Screen/height DEO2
+	( playdate )
+	( #0190 .Screen/width DEO2
+	#00f0 .Screen/height DEO2 )
 
 	( synths )
 	#dd .Audio0/volume DEO #0118 .Audio0/adsr DEO2 #0100 .Audio0/length DEO2
@@ -802,6 +805,10 @@ JMP2r
 JMP2r
 
 @draw-guide ( -- )
+
+	.Screen/width DEI2 #0200 GTH2 ,&continue JCN
+		JMP2r
+		&continue
 
 	#0021 #0000
 	&loop
