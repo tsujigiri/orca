@@ -30,7 +30,7 @@
 	@dpad $1 &last $1
 	@timer &beat $1 &speed $1 &playing $1 &frame $1 &frame-lb $1
 	@state &timer $1 &changed $1
-	@guide $1
+	@guide $1 &grid $1
 	@filepath $40
 	@grid &x1 $2 &y1 $2 &x2 $2 &y2 $2 &size &width $1 &height $1 &length $2
 	@selection &from &x1 $1 &y1 $1 &to &x2 $1 &y2 $1
@@ -44,9 +44,9 @@
 |0100 ( -> )
 
 	( theme )
-	#0f58 .System/r DEO2
-	#0fb8 .System/g DEO2
-	#0fa8 .System/b DEO2
+	#0f35 .System/r DEO2
+	#0f3b .System/g DEO2
+	#0f3a .System/b DEO2
 
 	( init random )
 	;init-prng JSR2
@@ -57,8 +57,8 @@
 	( size )
 	#0328 .Screen/width DEO2
 	#01e0 .Screen/height DEO2
-	( playdate )
-	( #0190 .Screen/width DEO2
+	( playdate
+	#0190 .Screen/width DEO2
 	#00f0 .Screen/height DEO2 )
 
 	( synths )
@@ -116,6 +116,7 @@
 
 	( display guide )
 	;toggle-guide JSR2
+	;toggle-grid JSR2
 
 	( draw position )
 	;draw-position JSR2
@@ -148,8 +149,9 @@ BRK
 			00 20 :play-toggle "Pause $1
 			01 ", :play-decr "Decr $1
 			01 ". :play-incr "Incr $1
-		01 "View $1
-			01 "h :toggle-guide "Guide $1
+		02 "View $1
+			01 "g :toggle-guide "Guide $1
+			01 "h :toggle-grid "Grid $1
 		02 "Select $1
 			00 1b :select-reset "Reset $1
 			01 "a :select-all "All $1
@@ -314,7 +316,7 @@ BRK
 
 	.Mouse/y DEI2 #0014 LTH2 ;trap-menu JCN2
 
-	.Mouse/state DEI #00 NEQ DUP ADD #41 ADD ;cursor-icn ;update-cursor JSR2
+	#43 .Mouse/state DEI #00 NEQ SUB ;cursor-icn ;update-cursor JSR2
 
 	( restore auto after cursor drawing )
 	#15 .Screen/auto DEO
@@ -368,7 +370,7 @@ BRK
 	( right-side )
 	.grid/x2 LDZ2 .Mouse/x DEI2 SUB2 #03 SFT2 NIP
 	[ #00 ] NEQk NIP ,&no-save JCN ;file-save JSR2 &no-save
-	[ #02 ] NEQk NIP ,&no-guide JCN ;toggle-guide JSR2 &no-guide
+	[ #02 ] NEQk NIP ,&no-guide JCN ;toggle-grid JSR2 &no-guide
 	POP
 
 BRK
@@ -429,7 +431,7 @@ JMP2
 	( skip redraw when unchanged )
 	ADDr STHr #01 JCN JMP2r
 	( hide guide )
-	.guide LDZ #00 EQU ,&no-guide JCN ;toggle-guide JSR2 &no-guide
+	#00 .guide STZ
 	( redraw )
 	;draw-grid JSR2
 	;draw-position ( .. )
@@ -489,10 +491,18 @@ JMP2
 @toggle-guide ( -- )
 
 	.guide LDZk #00 EQU SWP STZ
+	;draw-grid ( .. )
+
+JMP2
+
+@toggle-grid ( -- )
+
+	.guide/grid LDZk #00 EQU SWP STZ
 	;draw-grid JSR2
+	( icon )
 	.toolbar/y1 LDZ2 .Screen/y DEO2
 	.grid/x2 LDZ2 #0018 SUB2 .Screen/x DEO2
-	#00 .guide LDZ #40 SFT2 ;help-icn ADD2 .Screen/addr DEO2
+	#00 .guide/grid LDZ #40 SFT2 ;help-icn ADD2 .Screen/addr DEO2
 	#01 .Screen/sprite DEO
 
 JMP2r
@@ -662,7 +672,7 @@ JMP2
 	POP2 ;draw-short JSR2
 	( icon )
 	;selector-icn #00 [ .Controller/vector DEI2 ;on-button-insert EQU2 ] #40 SFT2 ADD2 .Screen/addr DEO2
-	#02 .selection/from LDZ2 .selection/to LDZ2 EQU2 ADD .Screen/sprite DEO
+	#02 .selection/from LDZ2 .selection/to LDZ2 NEQ2 ADD .Screen/sprite DEO
 
 JMP2r
 
@@ -676,7 +686,7 @@ JMP2r
 		;draw-byte JSR2
 	( icon )
 	;beat-icn .Screen/addr DEO2
-	#03 SWP #07 AND #00 EQU SUB .Screen/sprite DEO
+	#02 SWP #07 AND #00 EQU ADD .Screen/sprite DEO
 
 JMP2r
 
@@ -737,6 +747,12 @@ JMP2r
 			DUP .head/x STZ
 			STH2kr .head/addr STZ2
 			STH2kr ,get-char-at-addr JSR ,get-color JSR ;draw-chr-color JSR2
+			( underline )
+			STH2kr ;data/locks ADD2 LDA #02 NEQ ,&no-lock JCN
+				.Screen/x DEI2k #0008 SUB2 ROT DEO2
+				;underline-icn .Screen/addr DEO2
+				#0f .Screen/sprite DEO
+				&no-lock
 			INC2r
 			INC GTHk ,&hor JCN
 		POP2
@@ -755,7 +771,7 @@ JMP2r
 	.head LDZ2 ;is-selected JSR2 ,&selected JCN
 		#00 .head/addr LDZ2 ;data/types ADD2 LDA ;cell-styles ADD2 LDA JMP2r
 	&selected
-		#09
+		#0c
 
 JMP2r
 
@@ -763,7 +779,11 @@ JMP2r
 
 	;data/cells ADD2 LDA
 	DUP LIT ". NEQ ,&no-bar JCN
-		POP .head LDZ2
+		POP 
+		.guide/grid LDZ ,&do-grid JCN
+			#20 JMP2r
+			&do-grid
+		.head LDZ2
 		DUP2 #07 AND SWP #0f AND ORA ,&no-cross JCN
 			POP2 #7f JMP2r
 			&no-cross
@@ -817,7 +837,7 @@ JMP2r
 		.Screen/y DEI2 .grid/y2 LDZ2 #0030 SUB2 GTH2 ,&skip JCN
 		DUP2k ADD2 ;op-table/docs ADD2 LDA2
 		( glyph )
-			LDAk #08 ;draw-chr-color JSR2
+			LDAk #0c ;draw-chr-color JSR2
 		( space )
 			#00 .Screen/sprite DEO
 		( text )
@@ -1059,7 +1079,7 @@ JMP2r
 
 @get-port-right-raw ( addr* -- value )
 
-	( set lock ) STH2k #01 STH2kr ;data/locks ADD2 STA
+	( set lock ) STH2k #02 STH2kr ;data/locks ADD2 STA
 	( set type ) .types/pr STH2r ;data/types ADD2 STA
 	( get data ) ;data/cells ADD2 LDA
 
@@ -1115,6 +1135,10 @@ JMP2r
 	#00
 
 JMP2r
+
+@underline-icn
+	0000 0000 0000 0000
+	0000 0000 0000 00ff
 
 @untitled-txt "untitled.orca $1
 
