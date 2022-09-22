@@ -8,7 +8,7 @@
 |50 @Audio2 &vector $2 &position $2 &output $1 &pad $3 &adsr $2 &length $2 &addr $2 &volume $1 &pitch $1
 |60 @Audio3 &vector $2 &position $2 &output $1 &pad $3 &adsr $2 &length $2 &addr $2 &volume $1 &pitch $1
 |80 @Controller &vector $2 &button $1 &key $1
-|90 @Mouse &vector $2 &x $2 &y $2 &state $1 &chord $1
+|90 @Mouse &vector $2 &x $2 &y $2 &state $1 &chord $1 &pad $4 &scrolly &scrolly-hb $1 &scrolly-lb $1
 |a0 @File &vector $2 &success $2 &stat $2 &delete $1 &append $1 &name $2 &length $2 &read $2 &write $2
 |c0 @DateTime &year $2 &month $1 &day $1 &hour $1 &minute $1 &second $1 &dotw $1 &doty $2 &isdst $1
 
@@ -316,6 +316,12 @@ BRK
 	( restore auto after cursor drawing )
 	#15 .Screen/auto DEO
 
+	.Controller/button DEI #02 NEQ ,&no-scroll JCN
+	.Mouse/scrolly-lb DEI #00 EQU ,&no-scroll JCN
+		.Mouse/scrolly-lb DEI ;dpad-input/mod JMP2
+		&no-scroll
+
+
 	( route )
 	.Mouse/x DEI2 .Mouse/y DEI2 .grid ;within-rect JSR2 ,on-mouse-grid JCN
 	.Mouse/x DEI2 .Mouse/y DEI2 .toolbar ;within-rect JSR2 ,on-mouse-toolbar JCN
@@ -429,6 +435,10 @@ JMP2
 
 @fill-sel ( char -- )
 
+	DUP #20 GTH ,&valid JCN
+		POP JMP2r
+		&valid
+
 	,&c STR
 	.selection/y2 LDZ INC .selection/y1 LDZ
 	&ver
@@ -489,25 +499,25 @@ JMP2r
 @dpad-input ( -> )
 
 	&start ( button* -> )
-		POP
+		POP .dpad/last STZ
 		#20 .dpad STZ
-		;&save JMP2
+		;draw-dpad JSR2
+		BRK
 	&end ( button* -> )
 		POP
-		.dpad LDZ #7f GTH ,&save JCN
 		.dpad LDZ ;fill-sel JSR2
 		.selection/from LDZ2 ;set-sel-from JSR2
 		#00 .dpad STZ
 		.dpad/last STZ
 		;draw-speed JSR2
 		BRK
-		,&save JMP
 	&add ( button* -> )
-		#02 NEQ ,&save JCN
-		DUP #04 SFT .dpad LDZ ADD #7f AND .dpad STZ
-		,&save JMP
-	&save ( -> )
-		.dpad/last STZ
+		POP #04 SFT
+	&mod ( mod -> )
+		.dpad LDZ ADD
+			( min ) #20 OVR #20 GTH [ JMP SWP POP ]
+			( max ) #7e OVR #7e LTH [ JMP SWP POP ]
+				.dpad STZ
 		;draw-dpad JSR2
 
 BRK
