@@ -4,7 +4,8 @@
 	:op-i/? :op-j/? :op-k/? :op-l/? :op-m/? :op-n/? :op-o/? :op-p/?
 	:op-q/? :op-r/? :op-s/? :op-t/? :op-u/? :op-v/? :op-w/? :op-x/?
 	:op-y/? :op-z/?
-	:op-bang/? :op-comment/? :op-synth/? :op-midi/? :op-pitch/? :op-byte/? :op-self/?
+	:op-bang/? :op-comment/? :op-synth/? 
+	:op-midi/? :op-pitch/? :op-byte/? :op-self/?
 
 @op-a-lc ;get-bang JSR2 ,&* JCN POP2 JMP2r &*
 @op-a ( add )
@@ -457,14 +458,16 @@ JMP2r
 @op-comment ( comment )
 
 	STH2k
-	( bounds )
+	( set itself )
+	.types/locked STH2kr ;data/types ADD2 STA
+	( get edge )
 	#00 .grid/width LDZ .head/x LDZ SUB ADD2
 	STH2r INC2
 	&loop
-		( set lock ) DUP2 #01 ROT ROT ;data/locks ADD2 STA
+		( set lock ) STH2k #01 STH2r ;data/locks ADD2 STA
 		( set type if unset )
 		DUP2 ;data/types ADD2 LDA ,&skip JCN
-			( set type ) DUP2 .types/locked ROT ROT ;data/types ADD2 STA
+			( set type ) STH2k .types/locked STH2r ;data/types ADD2 STA
 			&skip
 		( stop at hash ) DUP2 ;data/cells ADD2 LDA LIT "# EQU ,&end JCN
 		INC2 GTH2k ,&loop JCN
