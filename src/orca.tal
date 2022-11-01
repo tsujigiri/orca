@@ -44,9 +44,9 @@
 |0100 ( -> )
 
 	( theme )
-	#0f35 .System/r DEO2
-	#0f3b .System/g DEO2
-	#0f3a .System/b DEO2
+	#0f55 .System/r DEO2
+	#0f5b .System/g DEO2
+	#0f5a .System/b DEO2
 
 	( init random )
 	;init-prng JSR2

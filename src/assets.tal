@@ -36,7 +36,7 @@
 	77 78 79 7a
 
 @cell-styles
-	01 ( 0 normal )
+	02 ( 0 normal )
 	01 ( 1 locked )
 	01 ( 2 port-unlocked )
 	04 ( 3 operator )
