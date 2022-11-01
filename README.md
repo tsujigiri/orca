@@ -10,7 +10,7 @@ For more details, see the complete [operation manual](https://wiki.xxiivv.com/si
 You must have the [Uxn](https://git.sr.ht/~rabbits/uxn/) assembler and emulator.
 
 ```sh
-uxnasm orca.tal orca.rom && uxnemu orca.rom
+uxnasm src/orca.tal bin/orca.rom && uxnemu bin/orca.rom
 ```
 
 If do not wish to assemble it yourself, you can download [orca.rom](https://rabbits.srht.site/orca/orca.rom).
