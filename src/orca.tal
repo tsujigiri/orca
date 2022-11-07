@@ -54,10 +54,11 @@
 	( drawing mode )
 	#15 .Screen/auto DEO
 
-	( size )
-	#0328 .Screen/width DEO2
-	#01e0 .Screen/height DEO2
-	( playdate
+	( size thinkpad )
+	#02a8 .Screen/width DEO2
+	#0180 .Screen/height DEO2
+
+	( size playdate
 	#0190 .Screen/width DEO2
 	#00f0 .Screen/height DEO2 )
 
@@ -153,8 +154,8 @@ BRK
 			01 "g :toggle-guide "Guide $1
 			01 "h :toggle-grid "Grid $1
 		02 "Select $1
-			00 1b :select-reset "Reset $1
-			01 "a :select-all "All $1
+			00 1b :set-sel-reset "Reset $1
+			01 "a :set-sel-all "All $1
 		$1
 
 (
@@ -404,8 +405,8 @@ BRK
 JMP2
 	&add-pos ROT ADD STH ADD STHr JMP2r
 
-@select-reset ( -- ) .selection/from LDZ2 ,set-sel-from JMP
-@select-all ( -- ) #0000 .grid/size LDZ2 ,set-sel-range JMP
+@set-sel-reset ( -- ) .selection/from LDZ2 ,set-sel-from JMP
+@set-sel-all ( -- ) #0000 .grid/size LDZ2 ,set-sel-range JMP
 @set-sel-from ( x y -- ) DUP2 ,set-sel-range JMP
 
 @set-sel-to ( x y -- )
@@ -537,14 +538,11 @@ BRK
 
 @init ( -- )
 
-	LIT ". DUP ;mfil/data STA2
-	;data/cells .grid/length LDZ2 ;mfil JSR2
+	;data/cells .grid/length LDZ2 LIT ". DUP ;mfil JSR2
 	&grid
-	#0000 ;mfil/data STA2
-	;data/locks .grid/length LDZ2 STH2k ;mfil JSR2
-	;data/types STH2r ;mfil JSR2
-	LIT ". DUP ;mfil/data STA2
-	;variables #0024 ;mfil JSR2
+	;data/locks .grid/length LDZ2 STH2k #0000 ;mfil JSR2
+	;data/types STH2r #0000 ;mfil JSR2
+	;variables #0024 LIT ". DUP ;mfil JSR2
 	#00 .signal/midi STZ
 
 JMP2r
@@ -671,7 +669,7 @@ JMP2
 	#01 ;draw-chr/color STA
 	POP2 ;draw-short JSR2
 	( icon )
-	;selector-icn #00 [ .Controller/vector DEI2 ;on-button-insert EQU2 ] #40 SFT2 ADD2 .Screen/addr DEO2
+	;selector-icn #00 .Controller/vector DEI2 ;on-button-insert EQU2 #40 SFT2 ADD2 .Screen/addr DEO2
 	#02 .selection/from LDZ2 .selection/to LDZ2 NEQ2 ADD .Screen/sprite DEO
 
 JMP2r
@@ -1109,11 +1107,12 @@ JMP2r
 
 @mcpy ( src* dst* len* -- ) SWP2 STH2 OVR2 ADD2 SWP2 &loop LDAk STH2kr STA INC2r INC2 GTH2k ,&loop JCN POP2 POP2 POP2r JMP2r
 
-@mfil ( src* len* -- )
+@mfil ( src* len* data* -- )
 
+	,&data STR2
 	ADD2k NIP2 SWP2
 	&l
-		[ LIT2 &data 0000 ] OVR2 STA2
+		[ LIT2 &data $2 ] OVR2 STA2
 		INC2 INC2 GTH2k ,&l JCN
 	POP2 POP2
 
@@ -1135,10 +1134,6 @@ JMP2r
 	#00
 
 JMP2r
-
-@underline-icn
-	0000 0000 0000 0000
-	0000 0000 0000 00ff
 
 @untitled-txt "untitled.orca $1
 
