@@ -134,28 +134,28 @@ BRK
 
 	&menu
 		05 "Orca $1
-			01 "n :file-new "New $1
-			01 "r :trap "Rename $1
-			01 "o :file-open "Open $1
-			01 "s :file-save "Save $1
-			01 "q :exit "Exit $1
+			01 "n =file-new "New $1
+			01 "r =trap "Rename $1
+			01 "o =file-open "Open $1
+			01 "s =file-save "Save $1
+			01 "q =exit "Exit $1
 		06 "Edit $1
-			01 "c :edit-copy "Copy $1
-			01 "v :edit-paste "Paste $1
-			01 "x :edit-cut "Cut $1
-			01 "i :toggle-insert "Insert $1
-			00 08 :edit-erase "Erase $1
-			01 "b :edit-comment "Comment $1
+			01 "c =edit-copy "Copy $1
+			01 "v =edit-paste "Paste $1
+			01 "x =edit-cut "Cut $1
+			01 "i =toggle-insert "Insert $1
+			00 08 =edit-erase "Erase $1
+			01 "b =edit-comment "Comment $1
 		03 "Play $1
-			00 20 :play-toggle "Pause $1
-			01 ", :play-decr "Decr $1
-			01 ". :play-incr "Incr $1
+			00 20 =play-toggle "Pause $1
+			01 ", =play-decr "Decr $1
+			01 ". =play-incr "Incr $1
 		02 "View $1
-			01 "g :toggle-guide "Guide $1
-			01 "h :toggle-grid "Grid $1
+			01 "g =toggle-guide "Guide $1
+			01 "h =toggle-grid "Grid $1
 		02 "Select $1
-			00 1b :set-sel-reset "Reset $1
-			01 "a :set-sel-all "All $1
+			00 1b =set-sel-reset "Reset $1
+			01 "a =set-sel-all "All $1
 		$1
 
 (

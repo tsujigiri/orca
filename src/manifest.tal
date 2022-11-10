@@ -223,7 +223,7 @@ JMP2r
 	#0010 .Screen/x DEO2
 	#0004 .Screen/y DEO2
 	#00 ,&id STR
-	[ LIT2 &manifest :manifest ]
+	[ LIT2 &manifest =manifest ]
 	&cat
 		#0401 [ LIT &sel ff ] [ LIT &id $1 ] EQU [ JMP SWP POP ] ;draw-chr/color STA
 		INC2k ;draw-str JSR2 POP2 #20 ;draw-chr JSR2
