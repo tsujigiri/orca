@@ -15,6 +15,8 @@ uxnasm src/orca.tal bin/orca.rom && uxnemu bin/orca.rom
 
 If do not wish to assemble it yourself, you can download [orca.rom](https://rabbits.srht.site/orca/orca.rom).
 
+[![builds.sr.ht status](https://builds.sr.ht/~rabbits/orca-toy.svg)](https://builds.sr.ht/~rabbits/orca-toy?)
+
 ### I/O
 
 The `:` operator is used to send note values to other applications, to convert the signal to midi, use the [shim](https://git.sr.ht/~rabbits/shim/).
