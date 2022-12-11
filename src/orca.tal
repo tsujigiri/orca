@@ -239,7 +239,7 @@ JMP2r
 @on-mouse-trap ( -> )
 
 	( release trap on touch )
-	.Mouse/state DEI #00 NEQ JMP BRK
+	.Mouse/state DEI #00 NEQ [ JMP BRK ]
 	;untrap JSR2
 
 BRK
@@ -247,7 +247,7 @@ BRK
 @on-frame ( -> )
 
 	( paused )
-	.timer/playing LDZ JMP BRK
+	.timer/playing LDZ [ JMP BRK ]
 	( on beat )
 	.timer LDZ2 NEQ ,&skip JCN
 		;manage-voices JSR2
