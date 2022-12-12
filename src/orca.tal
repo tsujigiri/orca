@@ -43,6 +43,9 @@
 
 |0100 ( -> )
 
+	( meta )
+	;meta #f0 DEO2
+
 	( theme )
 	#0f55 .System/r DEO2
 	#0f5b .System/g DEO2
@@ -129,6 +132,13 @@
 	;untrap JSR2
 
 BRK
+
+@meta =&end =appicon &body
+	( name ) "Orca $1
+	( version ) "Ver. 20 "10 $1
+	( details ) "A 20 "Livecoding 20 "Language $1
+	( author ) "Hundred 20 "Rabbits 20 7f 20 "2022 $1
+	&end $1
 
 @manifest
 
@@ -828,7 +838,7 @@ JMP2r
 		JMP2r
 		&continue
 
-	#0021 #0000
+	#0020 #0000
 	&loop
 		( x ) DUP2 #84 SFT2 .grid/x1 LDZ2 ADD2 #0020 ADD2 .Screen/x DEO2
 		( y ) DUP2 #000f AND2 #40 SFT2 .grid/y1 LDZ2 ADD2 #0020 ADD2 .Screen/y DEO2

@@ -36,7 +36,7 @@ BRK
 		BRK
 		&no-sub
 	( do not leave if menu is active )
-	;draw-menu/sel LDA #ff NEQ ,&no-leave JCN
+	;draw-menu/sel LDA INC ,&no-leave JCN
 	.Mouse/y DEI2 #0014 LTH2 ,&no-leave JCN
 		,menu-close JSR
 		&no-leave
@@ -243,7 +243,7 @@ JMP2r
 	LDAk STH INC2 ;skip-str JSR2
 	STHr #00
 	&subcat
-		STHk #0904 STHr [ LIT &sel ff ] EQU [ JMP SWP POP ] [ LIT &mask $1 ] AND ;draw-chr/color STA
+		STHk #0d04 STHr [ LIT &sel ff ] EQU [ JMP SWP POP ] [ LIT &mask $1 ] AND ;draw-chr/color STA
 		[ LIT2 &anchor $2 ] .Screen/x DEO2
 		#00 OVR INC #40 SFT2 #0004 ADD2 .Screen/y DEO2
 		SWP2 ;draw-label JSR2 SWP2
