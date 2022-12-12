@@ -24,6 +24,7 @@
 		&pr $1
 		&output $1
 		&io $1
+		&comment $1
 
 |0000
 
@@ -47,9 +48,9 @@
 	;meta #f0 DEO2
 
 	( theme )
-	#0f55 .System/r DEO2
-	#0f5b .System/g DEO2
-	#0f5a .System/b DEO2
+	#0f75 .System/r DEO2
+	#0f7b .System/g DEO2
+	#0f7a .System/b DEO2
 
 	( init random )
 	;init-prng JSR2

@@ -44,9 +44,9 @@
 	01 ( 2 port-unlocked )
 	04 ( 3 operator )
 	03 ( 4 port-locked )
-	0e ( 5 port-output )
+	0c ( 5 port-output )
 	01 ( 6 selected )
-	01 ( 7 io )
+	02 ( 7 comment )
 
 @op-ascii
 	( 20	_ ) =op-null
@@ -163,7 +163,6 @@
 	0000 0000 0000 3844 9228 1000 0000 0000
 @underline-icn
 	0000 0000 0000 0000 0000 0000 0000 00ff
-
 @meter-icn
 	0000 0000 0000 0000 0000 0000 0000 0000
 	0000 0000 0000 0000 0000 0000 00ff 0000

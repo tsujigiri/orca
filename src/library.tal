@@ -459,7 +459,7 @@ JMP2r
 
 	STH2k
 	( set itself )
-	.types/locked STH2kr ;data/types ADD2 STA
+	.types/comment STH2kr ;data/types ADD2 STA
 	( get edge )
 	#00 .grid/width LDZ .head/x LDZ SUB ADD2
 	STH2r INC2
@@ -467,7 +467,7 @@ JMP2r
 		( set lock ) STH2k #01 STH2r ;data/locks ADD2 STA
 		( set type if unset )
 		DUP2 ;data/types ADD2 LDA ,&skip JCN
-			( set type ) STH2k .types/locked STH2r ;data/types ADD2 STA
+			( set type ) STH2k .types/comment STH2r ;data/types ADD2 STA
 			&skip
 		( stop at hash ) DUP2 ;data/cells ADD2 LDA LIT "# EQU ,&end JCN
 		INC2 GTH2k ,&loop JCN
