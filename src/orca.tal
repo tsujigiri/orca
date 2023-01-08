@@ -45,7 +45,7 @@
 |0100 ( -> )
 
 	( meta )
-	;meta #f0 DEO2
+	;meta #06 DEO2
 
 	( theme )
 	#0f75 .System/r DEO2
