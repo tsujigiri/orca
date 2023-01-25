@@ -13,31 +13,31 @@ BRK
 
 	#41 .Mouse/state DEI #00 NEQ ADD ;hand-icn update-cursor
 	( when touch cat )
-	.Mouse/state DEI #00 EQU ,&no-touch-cat JCN
-	.Mouse/y DEI2 #0014 GTH2 ,&no-touch-cat JCN
+	.Mouse/state DEI #00 EQU ?&no-touch-cat
+	.Mouse/y DEI2 #0014 GTH2 ?&no-touch-cat
 		.Mouse/x DEI2 get-xcat menu-select
 		( release ) #00 .Mouse/state DEO
 		BRK
 		&no-touch-cat
 	( when sub active )
-	;draw-menu/sel LDA #ff EQU ,&no-sub JCN
+	;draw-menu/sel LDA #ff EQU ?&no-sub
 		( when sel changed )
 		.Mouse/y DEI2 #0004 SUB2 #04 SFT2 NIP #01 SUB
-		DUP ;draw-sub/sel LDA EQU ,&no-change JCN
+		DUP ;draw-sub/sel LDA EQU ?&no-change
 			DUP ;draw-sub/sel STA
 			;draw-menu/sel LDA #ff draw-sub
 			&no-change
 		POP
 		( when touch sub )
-		.Mouse/state DEI #00 EQU ,&no-touch-sub JCN
+		.Mouse/state DEI #00 EQU ?&no-touch-sub
 			;draw-sub/sel LDA menu-select-sub
 			( release ) #00 .Mouse/state DEO
 			&no-touch-sub
 		BRK
 		&no-sub
 	( do not leave if menu is active )
-	;draw-menu/sel LDA INC ,&no-leave JCN
-	.Mouse/y DEI2 #0014 LTH2 ,&no-leave JCN
+	;draw-menu/sel LDA INC ?&no-leave
+	.Mouse/y DEI2 #0014 LTH2 ?&no-leave
 		menu-close
 		&no-leave
 
@@ -47,7 +47,7 @@ BRK
 
 	untrap
 	;draw-menu/sel LDA
-	DUP #ff EQU ,&no-clear JCN
+	DUP #ff EQU ?&no-clear
 		DUP #00 draw-sub
 		#ff ;draw-menu/sel STA
 		redraw-all
@@ -60,13 +60,13 @@ JMP2r
 @menu-select ( cat -- )
 
 	( exists )
-	DUP get-cat ORA ,&exists JCN
+	DUP get-cat ORA ?&exists
 		POP JMP2r
 		&exists
 	( clear )
 	;draw-menu/sel LDA
-	( unchanged ) EQUk ,menu-deselect JCN
-	( unselected ) DUP #ff EQU ,&no-clear JCN
+	( unchanged ) EQUk ?menu-deselect
+	( unselected ) DUP #ff EQU ?&no-clear
 		DUP #00 draw-sub
 		&no-clear
 	POP
@@ -105,10 +105,10 @@ BRK
 	#00 ,&id STR
 	;draw-menu/manifest LDA2
 	&cat
-		[ LIT &id 00 ] STHkr EQU ,&end JCN
+		[ LIT &id 00 ] STHkr EQU ?&end
 		skip-sub
 		,&id LDR INC ,&id STR
-		LDAk ,&cat JCN
+		LDAk ?&cat
 	POP2
 	#0000
 	&end
@@ -123,9 +123,9 @@ JMP2r
 	LDAk STH INC2 skip-str
 	STHr #00
 	&subcat
-		DUP STHkr EQU ,&end JCN
+		DUP STHkr EQU ?&end
 		SWP2 #0004 ADD2 skip-str SWP2
-		INC GTHk ,&subcat JCN
+		INC GTHk ?&subcat
 	POP2 POP2
 	( TODO: merge tails )
 	POPr
@@ -145,11 +145,11 @@ JMP2r
 	#00 ,&id STR
 	;draw-menu/manifest LDA2
 	&cat
-		[ LIT &id 00 ] [ LIT &target $1 ] EQU ,&end JCN
+		[ LIT &id 00 ] [ LIT &target $1 ] EQU ?&end
 		INC2k get-strw #0008 ADD2 STH2 ADD2r
 		skip-sub
 		,&id LDR INC ,&id STR
-		LDAk ,&cat JCN
+		LDAk ?&cat
 	POP2
 	&end
 	STH2r
@@ -166,13 +166,13 @@ JMP2r
 	;draw-menu/manifest LDA2
 	&cat
 		INC2k get-strw #0008 ADD2 STH2r ADD2
-		DUP2 [ LIT2 &target $2 ] LTH2 ,&continue JCN
+		DUP2 [ LIT2 &target $2 ] LTH2 ?&continue
 			POP2 POP2 [ LIT &id 00 ] JMP2r
 			&continue
 			STH2
 		skip-sub
 		,&id LDR INC ,&id STR
-		LDAk ,&cat JCN
+		LDAk ?&cat
 	POP2
 	POP2r
 	#ff
@@ -181,7 +181,7 @@ JMP2r
 
 @find-modkey ( mod key -- fn* )
 
-	ORAk ,&no-null JCN JMP2r &no-null
+	ORAk ?&no-null JMP2r &no-null
 	( not null )
 	,&mk STR2
 	;draw-menu/manifest LDA2
@@ -189,13 +189,13 @@ JMP2r
 		LDAk STH INC2 skip-str
 		STHr #00
 		&subcat
-			OVR2 LDA2 [ LIT2 &mk $2 ] NEQ2 ,&continue JCN
+			OVR2 LDA2 [ LIT2 &mk $2 ] NEQ2 ?&continue
 				POP2 INC2 INC2 LDA2 JMP2r
 				&continue
 			SWP2 #0004 ADD2 skip-str SWP2
-			INC GTHk ,&subcat JCN
+			INC GTHk ?&subcat
 		POP2
-		LDAk ,&cat JCN
+		LDAk ?&cat
 	POP2
 	#0000
 
@@ -207,14 +207,14 @@ JMP2r
 	STHr #00
 	&subcat
 		SWP2 #0004 ADD2 skip-str SWP2
-		INC GTHk ,&subcat JCN
+		INC GTHk ?&subcat
 	POP2
 
 JMP2r
 
 @skip-str ( str* -- str* )
 
-	&skip INC2 LDAk ,&skip JCN INC2
+	&skip INC2 LDAk ?&skip INC2
 
 JMP2r
 
@@ -229,7 +229,7 @@ JMP2r
 		INC2k draw-str POP2 #20 draw-chr
 		skip-sub
 		,&id LDR INC ,&id STR
-		LDAk ,&cat JCN
+		LDAk ?&cat
 	POP2
 
 JMP2r
@@ -238,7 +238,7 @@ JMP2r
 
 	,&mask STR POP
 	;draw-menu/sel LDA get-cat
-	ORAk #00 EQU ,&skip JCN
+	ORAk #00 EQU ?&skip
 	;draw-menu/sel LDA get-catx ,&anchor STR2
 	LDAk STH INC2 skip-str
 	STHr #00
@@ -247,7 +247,7 @@ JMP2r
 		[ LIT2 &anchor $2 ] .Screen/x DEO2
 		#00 OVR INC #40 SFT2 #0004 ADD2 .Screen/y DEO2
 		SWP2 draw-label SWP2
-		INC GTHk ,&subcat JCN
+		INC GTHk ?&subcat
 	POP2 POP2
 	&skip
 	POP2
@@ -279,22 +279,22 @@ JMP2
 	SWP STH
 	#0800
 	&loop
-		STHkr OVR SFT #01 AND #00 EQU ,&no-button JCN
+		STHkr OVR SFT #01 AND #00 EQU ?&no-button
 			#00 OVR ;&buttons ADD2 LDA ;&buf sput
 			&no-button
-		INC GTHk ,&loop JCN
+		INC GTHk ?&loop
 	POP2
 	( mix )
-	DUP #00 NEQ STHr #00 NEQ #0101 NEQ2 ,&no-mod JCN
+	DUP #00 NEQ STHr #00 NEQ #0101 NEQ2 ?&no-mod
 		LIT "+ ;&buf sput
 		&no-mod
 	( key )
-	DUP #08 NEQ ,&no-bsp JCN ;&bsp ,&cat JMP &no-bsp
-	DUP #09 NEQ ,&no-tab JCN ;&tab ,&cat JMP &no-tab
-	DUP #0d NEQ ,&no-ent JCN ;&ent ,&cat JMP &no-ent
-	DUP #20 NEQ ,&no-spc JCN ;&spc ,&cat JMP &no-spc
-	DUP #1b NEQ ,&no-esc JCN ;&esc ,&cat JMP &no-esc
-	DUP #7f NEQ ,&no-del JCN ;&del ,&cat JMP &no-del
+	DUP #08 NEQ ?&no-bsp ;&bsp !&cat &no-bsp
+	DUP #09 NEQ ?&no-tab ;&tab !&cat &no-tab
+	DUP #0d NEQ ?&no-ent ;&ent !&cat &no-ent
+	DUP #20 NEQ ?&no-spc ;&spc !&cat &no-spc
+	DUP #1b NEQ ?&no-esc ;&esc !&cat &no-esc
+	DUP #7f NEQ ?&no-del ;&del !&cat &no-del
 	DUP ;&buf sput
 	&end
 	POP
@@ -341,13 +341,13 @@ JMP2r
 (
 @|stdlib )
 
-@scap ( str* -- end* ) LDAk #00 NEQ JMP JMP2r &w INC2 LDAk ,&w JCN JMP2r
-@spop ( str* -- ) LDAk ,&n JCN POP2 JMP2r &n scap #0001 SUB2 #00 ROT ROT STA JMP2r
+@scap ( str* -- end* ) LDAk #00 NEQ JMP JMP2r &w INC2 LDAk ?&w JMP2r
+@spop ( str* -- ) LDAk ?&n POP2 JMP2r &n scap #0001 SUB2 #00 ROT ROT STA JMP2r
 @sput ( chr str* -- ) scap INC2k #00 ROT ROT STA STA JMP2r
 @slen ( str* -- len* ) DUP2 scap SWP2 SUB2 JMP2r
 @scat ( src* dst* -- ) scap
-@scpy ( src* dst* -- ) STH2 &w LDAk STH2kr STA INC2r INC2 LDAk ,&w JCN POP2 #00 STH2r STA JMP2r
-@mclr ( src* len* -- ) OVR2 ADD2 SWP2 &l STH2k #00 STH2r STA INC2 GTH2k ,&l JCN POP2 POP2 JMP2r
+@scpy ( src* dst* -- ) STH2 &w LDAk STH2kr STA INC2r INC2 LDAk ?&w POP2 #00 STH2r STA JMP2r
+@mclr ( src* len* -- ) OVR2 ADD2 SWP2 &l STH2k #00 STH2r STA INC2 GTH2k ?&l POP2 POP2 JMP2r
 
 @print ( short* -- )
 
