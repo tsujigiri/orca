@@ -194,21 +194,21 @@ JMP2r
 	;on-frame-trap .Screen/vector DEO2
 	#00 .Mouse/state DEO
 	( clear cursor )
-	#40 ;draw-cursor ( .. )
+	#40 
 
-JMP2
+!draw-cursor
 
 @on-console ( -> )
 
 	#00 draw-filepath
 	( start )
-	[ LIT &listening $1 ] ,&no-start JCN
+	[ LIT &listening $1 ] ?&no-start
 		#01 ,&listening STR
 		;filepath #0040 mclr
 		&no-start
 	( end )
 	.Console/read DEI
-	DUPk #1f GTH SWP #7f LTH AND ,&no-end JCN
+	DUPk #1f GTH SWP #7f LTH AND ?&no-end
 		#00 ,&listening STR
 		&no-end
 	( capture )
@@ -220,7 +220,7 @@ BRK
 @on-frame-trap ( -> )
 
 	.state/timer LDZ
-	DUP #07 AND ,&no-blink JCN
+	DUP #07 AND ?&no-blink
 		DUP #03 SFT #01 AND #30 SFT INC draw-filepath
 		&no-blink
 	INC .state/timer STZ
@@ -237,12 +237,12 @@ BRK
 
 @capture-trap ( button -- )
 
-	DUP ,&no-null JCN POP JMP2r &no-null
-	[ #08 ] NEQk NIP ,&no-pop JCN ;filepath spop POP JMP2r &no-pop
-	[ #0a ] NEQk NIP ,&no-load JCN file-open &no-load
-	[ #7f ] NEQk NIP ,&no-delete JCN ;filepath #0040 mclr POP JMP2r &no-delete
-	[ #20 ] GTHk NIP ,&no-special JCN untrap POP JMP2r &no-special
-	;filepath slen NIP #3f EQU ,&no-push JCN
+	DUP ?&no-null POP JMP2r &no-null
+	[ #08 ] NEQk NIP ?&no-pop ;filepath spop POP JMP2r &no-pop
+	[ #0a ] NEQk NIP ?&no-load file-open &no-load
+	[ #7f ] NEQk NIP ?&no-delete ;filepath #0040 mclr POP JMP2r &no-delete
+	[ #20 ] GTHk NIP ?&no-special untrap POP JMP2r &no-special
+	;filepath slen NIP #3f EQU ?&no-push
 		DUP ;filepath sput
 		&no-push
 	POP
@@ -262,7 +262,7 @@ BRK
 	( paused )
 	.timer/playing LDZ [ JMP BRK ]
 	( on beat )
-	.timer LDZ2 NEQ ,&skip JCN
+	.timer LDZ2 NEQ ?&skip
 		manage-voices
 		run
 		.timer/frame LDZ2k INC2 ROT STZ2
@@ -275,25 +275,25 @@ BRK
 
 @on-button ( -> )
 
-	.Controller/button DEI2 find-modkey ORAk #00 EQU ,&skip JCN
+	.Controller/button DEI2 find-modkey ORAk #00 EQU ?&skip
 		JSR2 BRK
 		&skip
 	POP2
 
 	( d-pad handler )
 	.Controller/button DEI .dpad/last LDZ
-	DUP2 #0200 EQU2 ;dpad-input/start JCN2
-	DUP2 #0002 EQU2 ;dpad-input/end JCN2
-	DUP #0f AND #02 EQU ;dpad-input/add JCN2
+	DUP2 #0200 EQU2 ?dpad-input/start
+	DUP2 #0002 EQU2 ?dpad-input/end
+	DUP #0f AND #02 EQU ?dpad-input/add
 	POP ( pop last )
 	.dpad/last STZ
 
 	( modifier handlers )
-	.Controller/button DEI #f0 AND ;on-button-arrow JCN2
+	.Controller/button DEI #f0 AND ?on-button-arrow
 
 	( default )
 	.Controller/key DEI 
-		DUP ci-key #00 EQU ,&no-input JCN
+		DUP ci-key #00 EQU ?&no-input
 			DUP fill-sel
 		&no-input
 	POP
@@ -303,11 +303,11 @@ BRK
 @on-button-insert ( -> )
 
 	.Controller/key DEI
-	[ #00 ] EQUk NIP ,&end JCN
-	[ #1b ] NEQk NIP ,&no-esc JCN toggle-insert POP BRK &no-esc
-	[ #20 ] NEQk NIP ,&no-spc JCN #01 #0000 mod-sel POP BRK &no-spc
-	[ #08 ] NEQk NIP ,&no-bks JCN #ff #0000 mod-sel LIT ". fill-sel POP BRK &no-bks
-	DUP ci-key #00 EQU ,&no-key JCN 
+	[ #00 ] EQUk NIP ?&end
+	[ #1b ] NEQk NIP ?&no-esc toggle-insert POP BRK &no-esc
+	[ #20 ] NEQk NIP ?&no-spc #01 #0000 mod-sel POP BRK &no-spc
+	[ #08 ] NEQk NIP ?&no-bks #ff #0000 mod-sel LIT ". fill-sel POP BRK &no-bks
+	DUP ci-key #00 EQU ?&no-key 
 		DUP fill-sel #01 #0000 mod-sel &no-key
 	&end
 	POP
@@ -328,30 +328,30 @@ BRK
 
 @on-mouse ( -> )
 
-	.Mouse/y DEI2 #0014 LTH2 ;trap-menu JCN2
+	.Mouse/y DEI2 #0014 LTH2 ?trap-menu
 
 	#43 .Mouse/state DEI #00 NEQ SUB ;cursor-icn update-cursor
 
 	( restore auto after cursor drawing )
 	#15 .Screen/auto DEO
 
-	.Controller/button DEI #02 NEQ ,&no-scroll JCN
-	.Mouse/scrolly-lb DEI #00 EQU ,&no-scroll JCN
+	.Controller/button DEI #02 NEQ ?&no-scroll
+	.Mouse/scrolly-lb DEI #00 EQU ?&no-scroll
 		.Mouse/scrolly-lb DEI ;dpad-input/mod JMP2
 		&no-scroll
 
 	( route )
-	.Mouse/x DEI2 .Mouse/y DEI2 .grid within-rect ,on-mouse-grid JCN
-	.Mouse/x DEI2 .Mouse/y DEI2 .toolbar within-rect ,on-mouse-toolbar JCN
+	.Mouse/x DEI2 .Mouse/y DEI2 .grid within-rect ?on-mouse-grid
+	.Mouse/x DEI2 .Mouse/y DEI2 .toolbar within-rect ?on-mouse-toolbar
 
 BRK
 
 @on-mouse-grid ( -> )
 
 	.Mouse/state DEI [ LIT &last $1 ]
-		ORAk #00 EQU ,&end JCN
+		ORAk #00 EQU ?&end
 		( on down )
-		DUP2 #0100 NEQ2 ,&no-down JCN
+		DUP2 #0100 NEQ2 ?&no-down
 			,&get-pos JSR set-sel-from
 			!&end
 			&no-down
@@ -375,15 +375,15 @@ BRK
 
 	( left-side )
 	.Mouse/x DEI2 .grid/x1 LDZ2 SUB2 #03 SFT2 NIP
-	[ #05 ] GTHk NIP ,&no-insert JCN toggle-insert POP BRK &no-insert
-	[ #09 ] GTHk NIP ,&no-pause JCN play-toggle POP BRK &no-pause
-	[ #0d ] GTHk NIP ,&no-speed JCN [ .Mouse/state DEI #01 EQU DUP ADD #01 SUB ] ;mod-speed JSR2 POP BRK &no-speed
-	[ #0e ] GTHk NIP OVR .grid/width LDZ SWP SUB #06 GTH #0101 NEQ2 ,&no-rename JCN trap &no-rename
+	[ #05 ] GTHk NIP ?&no-insert toggle-insert POP BRK &no-insert
+	[ #09 ] GTHk NIP ?&no-pause play-toggle POP BRK &no-pause
+	[ #0d ] GTHk NIP ?&no-speed [ .Mouse/state DEI #01 EQU DUP ADD #01 SUB ] ;mod-speed JSR2 POP BRK &no-speed
+	[ #0e ] GTHk NIP OVR .grid/width LDZ SWP SUB #06 GTH #0101 NEQ2 ?&no-rename trap &no-rename
 	POP
 	( right-side )
 	.grid/x2 LDZ2 .Mouse/x DEI2 SUB2 #03 SFT2 NIP
-	[ #00 ] NEQk NIP ,&no-save JCN file-save &no-save
-	[ #02 ] NEQk NIP ,&no-guide JCN toggle-grid &no-guide
+	[ #00 ] NEQk NIP ?&no-save file-save &no-save
+	[ #02 ] NEQk NIP ?&no-guide toggle-grid &no-guide
 	POP
 
 BRK
@@ -391,16 +391,16 @@ BRK
 (
 @|selection )
 
-@play-decr ( -- ) #ff ;mod-speed JMP2
-@play-incr ( -- ) #01 ;mod-speed JMP2
+@play-decr ( -- ) #ff !mod-speed
+@play-incr ( -- ) #01 !mod-speed
 
 @mod-sel ( x y mod -- )
 
-	DUP #04 NEQ ,&no-scale JCN
+	DUP #04 NEQ ?&no-scale
 		POP
 		.selection/to LDZ2 ,&add-pos JSR ;set-sel-to JMP2
 		&no-scale
-	DUP #01 NEQ ,&no-drag JCN
+	DUP #01 NEQ ?&no-drag
 		POP
 		edit-cut
 		STH2k .selection/from LDZ2 ,&add-pos JSR
@@ -428,11 +428,11 @@ JMP2
 @set-sel-range ( from* to* -- )
 
 	( clamp top-left )
-	OVR2 #ff NEQ SWP #ff NEQ AND ,&no-tl JCN
+	OVR2 #ff NEQ SWP #ff NEQ AND ?&no-tl
 		POP2 POP2 JMP2r
 		&no-tl
 	( clamp bottom-right )
-	OVR2 .grid/height LDZ LTH SWP .grid/width LDZ LTH AND ,&no-br JCN
+	OVR2 .grid/height LDZ LTH SWP .grid/width LDZ LTH AND ?&no-br
 		POP2 POP2 JMP2r
 		&no-br
 	( from )
@@ -453,7 +453,7 @@ JMP2
 
 @fill-sel ( char -- )
 
-	DUP #20 GTH ,&valid JCN
+	DUP #20 GTH ?&valid
 		POP JMP2r
 		&valid
 
@@ -464,13 +464,13 @@ JMP2
 		.selection/x2 LDZ INC .selection/x1 LDZ
 		&hor
 			DUP STHkr [ LIT &c $1 ] set-cell
-			INC GTHk ,&hor JCN
+			INC GTHk ?&hor
 		POP2 POPr
-		INC GTHk ,&ver JCN
+		INC GTHk ?&ver
 	POP2
-	#01 .state/changed STZ ;draw-state ( .. )
+	#01 .state/changed STZ
 
-JMP2
+!draw-state
 
 @mod-speed ( mod -- )
 
@@ -563,20 +563,20 @@ JMP2r
 
 	( iterate thru channels )
 
-	#1000 &while EQUk ,&end JCN
+	#1000 &while EQUk ?&end
 		( note ) DUPk ADD .voices ADD LDZk
 		( remaining length ) SWP INC LDZ
-		( next channel if already 0 ) DUP #00 EQU ,&next-chan JCN
+		( next channel if already 0 ) DUP #00 EQU ?&next-chan
 		( update remaining length ) #01 SUB ROTk DUP ADD .voices ADD INC STZ POP
 		( send note-off when length reaches 0 )
-		#00 NEQ ,&no-off JCN
+		#00 NEQ ?&no-off
 			( channel ) OVR .Console/write DEO
 			( note ) DUP .Console/write DEO
 			( off ) #00 .Console/write DEO
 		&no-off
 		POP
 		INC
-	,&while JMP &end POP2 JMP2r
+	!&while &end POP2 JMP2r
 
 	&next-chan POP2 INC
 	,&while JMP
@@ -595,13 +595,13 @@ JMP2r
 			DUP .head/x STZ
 			STH2kr run-char
 			INC2r
-			INC GTHk ,&hor JCN
+			INC GTHk ?&hor
 		POP2
-		INC GTHk ,&ver JCN
+		INC GTHk ?&ver
 	POP2
 	POP2r
 	( do not draw when menu )
-	;draw-menu/sel LDA #ff NEQ ,&skip JCN
+	;draw-menu/sel LDA #ff NEQ ?&skip
 		draw-grid
 		draw-timer
 		&skip
@@ -613,7 +613,7 @@ JMP2r
 	( cache )
 	DUP2 .head/addr STZ2
 	( skip locked )
-	DUP2 ;data/locks ADD2 LDA ,&locked JCN
+	DUP2 ;data/locks ADD2 LDA ?&locked
 	( run unlocked )
 	DUP2 ;data/cells ADD2 LDA
 	#00 SWP #20 SUB DUP ADD ;op-ascii ADD2 LDA2 JMP2
@@ -627,10 +627,10 @@ JMP2r
 @get-bang ( -- bang )
 
 	.head/addr LDZ2 ;data/cells ADD2 STH2k
-	( left ) #0001 SUB2 LDA LIT "* EQU ,&bang JCN
-	( top ) STH2kr #00 .grid/width LDZ SUB2 LDA LIT "* EQU ,&bang JCN
-	( right ) STH2kr INC2 LDA LIT "* EQU ,&bang JCN
-	( bottom ) STH2kr #00 .grid/width LDZ ADD2 LDA LIT "* EQU ,&bang JCN
+	( left ) #0001 SUB2 LDA LIT "* EQU ?&bang
+	( top ) STH2kr #00 .grid/width LDZ SUB2 LDA LIT "* EQU ?&bang
+	( right ) STH2kr INC2 LDA LIT "* EQU ?&bang
+	( bottom ) STH2kr #00 .grid/width LDZ ADD2 LDA LIT "* EQU ?&bang
 	POP2r #00 JMP2r
 	&bang POP2r #01
 
@@ -640,12 +640,12 @@ JMP2r
 
 	DUP2 GTHk [ JMP SWP SUB ] STH
 	( if rate GTH target )
-	ROT DUP STHr LTH ,&skip JCN
+	ROT DUP STHr LTH ?&skip
 		POP2 JMP2r
 		&skip
 	( target val rate )
 	STH
-	GTHk ,&no-below JCN
+	GTHk ?&no-below
 		NIP STHr SUB JMP2r
 		&no-below
 	NIP STHr ADD
@@ -674,7 +674,7 @@ JMP2
 	[ LIT2 &x $2 ] .Screen/x DEO2
 	[ LIT2 &y $2 ] .Screen/y DEO2
 	( draw size )
-	.selection/from LDZ2 .selection/to LDZ2 EQU2k ,&normal JCN
+	.selection/from LDZ2 .selection/to LDZ2 EQU2k ?&normal
 		SWP2 SUB2 DUP2
 		&normal
 	( value )
@@ -708,9 +708,9 @@ JMP2r
 	#01 ;draw-chr/color STA
 	.timer/speed LDZ draw-byte
 	( th )
-	;&th #03 ;draw-str-color ( .. )
+	;&th #03
 
-JMP2
+!draw-str-color
 	&th "th $1
 
 @draw-state ( -- )
@@ -728,9 +728,9 @@ JMP2r
 	[ LIT2 &x $2 ] .Screen/x DEO2
 	[ LIT2 &y $2 ] .Screen/y DEO2
 	( icon )
-	;filepath ROT ;draw-str-color ( .. )
+	;filepath ROT
 
-JMP2
+!draw-str-color
 
 @draw-meter ( -- )
 
@@ -758,27 +758,27 @@ JMP2r
 			STH2kr .head/addr STZ2
 			STH2kr get-char-at-addr get-color draw-chr-color
 			( underline )
-			STH2kr ;data/locks ADD2 LDA #02 NEQ ,&no-lock JCN
+			STH2kr ;data/locks ADD2 LDA #02 NEQ ?&no-lock
 				.Screen/x DEI2k #0008 SUB2 ROT DEO2
 				;underline-icn .Screen/addr DEO2
 				#0f .Screen/sprite DEO
 				&no-lock
 			INC2r
-			INC GTHk ,&hor JCN
+			INC GTHk ?&hor
 		POP2
-		INC GTHk ,&ver JCN
+		INC GTHk ?&ver
 	POP2
 	POP2r
 	( draw meter )
 	draw-meter
 	( draw guide )
-	.guide LDZ ;draw-guide JCN2
+	.guide LDZ ?draw-guide
 
 JMP2r
 
 @get-color ( -- char type )
 
-	.head LDZ2 is-selected ,&selected JCN
+	.head LDZ2 is-selected ?&selected
 		#00 .head/addr LDZ2 ;data/types ADD2 LDA ;cell-styles ADD2 LDA JMP2r
 	&selected
 		#0c
@@ -788,20 +788,20 @@ JMP2r
 @get-char-at-addr ( addr* -- char )
 
 	;data/cells ADD2 LDA
-	DUP LIT ". NEQ ,&no-bar JCN
+	DUP LIT ". NEQ ?&no-bar
 		POP 
-		.guide/grid LDZ ,&do-grid JCN
+		.guide/grid LDZ ?&do-grid
 			#20 JMP2r
 			&do-grid
 		.head LDZ2
-		DUP2 #07 AND SWP #0f AND ORA ,&no-cross JCN
+		DUP2 #07 AND SWP #0f AND ORA ?&no-cross
 			POP2 #7f JMP2r
 			&no-cross
-		DUP2 #01 AND SWP #03 AND ORA ,&no-dot JCN
+		DUP2 #01 AND SWP #03 AND ORA ?&no-dot
 			&dot POP2 LIT ". JMP2r
 			&no-dot
-		DUP2 is-selected ,&dot JCN
-		.head/addr LDZ2 ;data/types ADD2 LDA ,&dot JCN
+		DUP2 is-selected ?&dot
+		.head/addr LDZ2 ;data/types ADD2 LDA ?&dot
 		POP2 #20
 	&no-bar
 
@@ -812,10 +812,10 @@ JMP2r
 	;&word #0020 mclr
 	&while
 		INC2 DUP2 ;data/cells ADD2 LDA
-			DUP LIT ". EQU ,&skip JCN
+			DUP LIT ". EQU ?&skip
 				DUP ;&word sput
 				&skip
-			LIT ". NEQ ,&while JCN
+			LIT ". NEQ ?&while
 	POP2
 	;&word
 
@@ -824,10 +824,10 @@ JMP2r
 
 @is-selected ( x y -- bool )
 
-	DUP .selection/y1 LDZ LTH ,&end JCN
-	DUP .selection/y2 LDZ GTH ,&end JCN
-	OVR .selection/x1 LDZ LTH ,&end JCN
-	OVR .selection/x2 LDZ GTH ,&end JCN
+	DUP .selection/y1 LDZ LTH ?&end
+	DUP .selection/y2 LDZ GTH ?&end
+	OVR .selection/x1 LDZ LTH ?&end
+	OVR .selection/x2 LDZ GTH ?&end
 		POP2 #01 JMP2r
 	&end
 	POP2 #00
@@ -836,7 +836,7 @@ JMP2r
 
 @draw-guide ( -- )
 
-	.Screen/width DEI2 #0200 GTH2 ,&continue JCN
+	.Screen/width DEI2 #0200 GTH2 ?&continue
 		JMP2r
 		&continue
 
@@ -844,7 +844,7 @@ JMP2r
 	&loop
 		( x ) DUP2 #84 SFT2 .grid/x1 LDZ2 ADD2 #0020 ADD2 .Screen/x DEO2
 		( y ) DUP2 #000f AND2 #40 SFT2 .grid/y1 LDZ2 ADD2 #0020 ADD2 .Screen/y DEO2
-		.Screen/y DEI2 .grid/y2 LDZ2 #0030 SUB2 GTH2 ,&skip JCN
+		.Screen/y DEI2 .grid/y2 LDZ2 #0030 SUB2 GTH2 ?&skip
 		DUP2k ADD2 ;op-table/docs ADD2 LDA2
 		( glyph )
 			LDAk #0c draw-chr-color
@@ -853,7 +853,7 @@ JMP2r
 		( text )
 			INC2 #01 draw-str-color
 		&skip
-		INC2 GTH2k ,&loop JCN
+		INC2 GTH2k ?&loop
 	POP2 POP2
 
 JMP2r
@@ -890,10 +890,10 @@ JMP2r
 
 @draw-str ( str* -- str* )
 
-	LDAk #00 EQU ,&skip JCN
+	LDAk #00 EQU ?&skip
 	&while
 		LDAk draw-chr
-		INC2 LDAk ,&while JCN
+		INC2 LDAk ?&while
 	&skip
 	INC2
 
@@ -929,17 +929,17 @@ JMP2r
 	#0b set-speed
 
 	run
-	#00 .state/changed STZ ;draw-state ( .. )
+	#00 .state/changed STZ
 
-JMP2
+!draw-state
 
 @file-open ( -- )
 
 	#0000 ;filepath inject-file
 	draw-grid
-	#00 .state/changed STZ ;draw-state ( .. )
+	#00 .state/changed STZ
 
-JMP2
+!draw-state
 
 @inject-file ( x y path* -- )
 
@@ -949,15 +949,15 @@ JMP2
 	&stream
 		;&b .File/read DEO2
 		( write )
-		;&b LDA ci-key #00 EQU ,&invalid JCN
+		;&b LDA ci-key #00 EQU ?&invalid
 			DUP2 ;&b LDA set-cell
 			&invalid
 		( inc x ) SWP INC SWP
-		;&b LDA #0a NEQ ,&no-lb JCN
+		;&b LDA #0a NEQ ?&no-lb
 			( inc y ) INC
 			( reset x ) [ LIT &anchor-x $1 ] ROT POP SWP
 			&no-lb
-		.File/success DEI2 ORA ,&stream JCN
+		.File/success DEI2 ORA ?&stream
 	POP2
 
 JMP2r
@@ -972,14 +972,14 @@ JMP2r
 		.grid/width LDZ #00
 		&hor
 			OVR2 NIP OVR SWP get-cell ;data/cells ADD2 .File/write DEO2
-			INC GTHk ,&hor JCN
+			INC GTHk ?&hor
 		POP2
 		( linebreak ) ;&lb .File/write DEO2
-		INC GTHk ,&ver JCN
+		INC GTHk ?&ver
 	POP2
-	#00 .state/changed STZ ;draw-state ( .. )
+	#00 .state/changed STZ
 
-JMP2
+!draw-state
 	&lb 0a
 
 ( random )
@@ -1012,7 +1012,7 @@ JMP2r
 
 @snarf-txt ".snarf $1
 
-@edit-cut ( -- ) edit-copy LIT ". ;fill-sel JMP2
+@edit-cut ( -- ) edit-copy LIT ". !fill-sel
 
 @edit-copy ( -- )
 
@@ -1024,10 +1024,10 @@ JMP2r
 		.selection/x2 LDZ INC .selection/x1 LDZ
 		&hor
 			DUP STHkr get-cell ;data/cells ADD2 .File/write DEO2
-			INC GTHk ,&hor JCN
+			INC GTHk ?&hor
 		POP2 POPr
 		( linebreak ) ;&lb .File/write DEO2
-		INC GTHk ,&ver JCN
+		INC GTHk ?&ver
 	POP2
 
 JMP2r
@@ -1040,16 +1040,16 @@ JMP2r
 
 JMP2
 
-@edit-erase ( -- ) LIT ". ;fill-sel JMP2
+@edit-erase ( -- ) LIT ". !fill-sel
 
 @edit-comment ( -- )
 
-	.selection/x1 LDZ .selection/x2 LDZ EQU ,&skip JCN
+	.selection/x1 LDZ .selection/x2 LDZ EQU ?&skip
 	.selection/y2 LDZ INC .selection/y1 LDZ
 	&loop
 		( l ) .selection/x1 LDZ ,&row JSR set-cell
 		( r ) .selection/x2 LDZ ,&row JSR set-cell
-		INC GTHk ,&loop JCN
+		INC GTHk ?&loop
 	POP2
 	&skip
 
@@ -1077,8 +1077,8 @@ JMP2r
 @set-cell ( x y c -- ) ROT ROT get-cell ;data/cells ADD2 STA JMP2r
 @get-cell ( x y -- addr* ) #00 SWP #00 .grid/width LDZ MUL2 ROT #00 SWP ADD2 JMP2r
 
-@get-port-right-value ( addr* -- value ) get-port-right-raw ,chrb36 JMP
-@get-port-left-value ( addr* -- value ) get-port-left-raw ,chrb36 JMP
+@get-port-right-value ( addr* -- value ) get-port-right-raw !chrb36
+@get-port-left-value ( addr* -- value ) get-port-left-raw !chrb36
 
 @get-port-left-raw ( addr* -- value )
 
@@ -1117,7 +1117,7 @@ JMP2r
 
 ( generics )
 
-@mcpy ( src* dst* len* -- ) SWP2 STH2 OVR2 ADD2 SWP2 &loop LDAk STH2kr STA INC2r INC2 GTH2k ,&loop JCN POP2 POP2 POP2r JMP2r
+@mcpy ( src* dst* len* -- ) SWP2 STH2 OVR2 ADD2 SWP2 &loop LDAk STH2kr STA INC2r INC2 GTH2k ?&loop POP2 POP2 POP2r JMP2r
 
 @mfil ( src* len* data* -- )
 
@@ -1125,7 +1125,7 @@ JMP2r
 	ADD2k NIP2 SWP2
 	&l
 		[ LIT2 &data $2 ] OVR2 STA2
-		INC2 INC2 GTH2k ,&l JCN
+		INC2 INC2 GTH2k ?&l
 	POP2 POP2
 
 JMP2r
@@ -1133,11 +1133,11 @@ JMP2r
 @within-rect ( x* y* rect -- flag )
 
 	STH
-	( y LTH rect.y1 ) DUP2 STHkr INC INC LDZ2 LTH2 ,&skip JCN
-	( y GTH rect.y2 ) DUP2 STHkr #06 ADD LDZ2 GTH2 ,&skip JCN
+	( y LTH rect.y1 ) DUP2 STHkr INC INC LDZ2 LTH2 ?&skip
+	( y GTH rect.y2 ) DUP2 STHkr #06 ADD LDZ2 GTH2 ?&skip
 	SWP2
-	( x LTH rect.x1 ) DUP2 STHkr LDZ2 LTH2 ,&skip JCN
-	( x GTH rect.x2 ) DUP2 STHkr #04 ADD LDZ2 GTH2 ,&skip JCN
+	( x LTH rect.x1 ) DUP2 STHkr LDZ2 LTH2 ?&skip
+	( x GTH rect.x2 ) DUP2 STHkr #04 ADD LDZ2 GTH2 ?&skip
 	POP2 POP2 POPr
 	#01
 JMP2r
