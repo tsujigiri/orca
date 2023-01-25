@@ -212,7 +212,7 @@ JMP2
 		#00 ,&listening STR
 		&no-end
 	( capture )
-	,capture-trap JSR
+	capture-trap
 	#01 draw-filepath
 
 BRK
@@ -230,7 +230,7 @@ BRK
 @on-button-trap ( -> )
 
 	#00 draw-filepath
-	.Controller/key DEI DUP #0d EQU #03 MUL SUB ,capture-trap JSR
+	.Controller/key DEI DUP #0d EQU #03 MUL SUB capture-trap
 	#01 draw-filepath
 
 BRK
@@ -353,7 +353,7 @@ BRK
 		( on down )
 		DUP2 #0100 NEQ2 ,&no-down JCN
 			,&get-pos JSR set-sel-from
-			,&end JMP
+			!&end
 			&no-down
 		( on release )
 		,&get-pos JSR set-sel-to
@@ -417,9 +417,9 @@ BRK
 JMP2
 	&add-pos ROT ADD STH ADD STHr JMP2r
 
-@set-sel-reset ( -- ) .selection/from LDZ2 ,set-sel-from JMP
-@set-sel-all ( -- ) #0000 .grid/size LDZ2 ,set-sel-range JMP
-@set-sel-from ( x y -- ) DUP2 ,set-sel-range JMP
+@set-sel-reset ( -- ) .selection/from LDZ2 !set-sel-from
+@set-sel-all ( -- ) #0000 .grid/size LDZ2 !set-sel-range
+@set-sel-from ( x y -- ) DUP2 !set-sel-range
 
 @set-sel-to ( x y -- )
 
@@ -585,7 +585,7 @@ JMP2r
 
 @run ( -- )
 
-	,init/grid JSR
+	init/grid
 	( reset head ) LIT2r 0000
 	.grid/height LDZ #00
 	&ver
@@ -593,7 +593,7 @@ JMP2r
 		.grid/width LDZ #00
 		&hor
 			DUP .head/x STZ
-			STH2kr ,run-char JSR
+			STH2kr run-char
 			INC2r
 			INC GTHk ,&hor JCN
 		POP2
@@ -756,7 +756,7 @@ JMP2r
 		&hor
 			DUP .head/x STZ
 			STH2kr .head/addr STZ2
-			STH2kr ,get-char-at-addr JSR ,get-color JSR draw-chr-color
+			STH2kr get-char-at-addr get-color draw-chr-color
 			( underline )
 			STH2kr ;data/locks ADD2 LDA #02 NEQ ,&no-lock JCN
 				.Screen/x DEI2k #0008 SUB2 ROT DEO2
@@ -800,7 +800,7 @@ JMP2r
 		DUP2 #01 AND SWP #03 AND ORA ,&no-dot JCN
 			&dot POP2 LIT ". JMP2r
 			&no-dot
-		DUP2 ,is-selected JSR ,&dot JCN
+		DUP2 is-selected ,&dot JCN
 		.head/addr LDZ2 ;data/types ADD2 LDA ,&dot JCN
 		POP2 #20
 	&no-bar
@@ -860,11 +860,11 @@ JMP2r
 
 @draw-short ( short* -- )
 
-	SWP ,draw-byte JSR
+	SWP draw-byte
 
 @draw-byte ( byte -- )
 
-	DUP #04 SFT ,draw-hex JSR
+	DUP #04 SFT draw-hex
 
 @draw-hex ( byte -- )
 
@@ -885,14 +885,14 @@ JMP2r
 
 @draw-str-right ( text* -- )
 
-	DUP2 ,get-strw JSR STH2
+	DUP2 get-strw STH2
 	.Screen/x DEI2k STH2r SUB2 ROT DEO2
 
 @draw-str ( str* -- str* )
 
 	LDAk #00 EQU ,&skip JCN
 	&while
-		LDAk ,draw-chr JSR
+		LDAk draw-chr
 		INC2 LDAk ,&while JCN
 	&skip
 	INC2
@@ -935,7 +935,7 @@ JMP2
 
 @file-open ( -- )
 
-	#0000 ;filepath ,inject-file JSR
+	#0000 ;filepath inject-file
 	draw-grid
 	#00 .state/changed STZ ;draw-state ( .. )
 
@@ -1012,7 +1012,7 @@ JMP2r
 
 @snarf-txt ".snarf $1
 
-@edit-cut ( -- ) ,edit-copy JSR LIT ". ;fill-sel JMP2
+@edit-cut ( -- ) edit-copy LIT ". ;fill-sel JMP2
 
 @edit-copy ( -- )
 
@@ -1065,20 +1065,20 @@ JMP2r
 (
 @|helpers )
 
-@base128 ( char - b128 ) ,chrb36 JSR #00 SWP #007f MUL2 #0023 DIV2 NIP JMP2r
+@base128 ( char - b128 ) chrb36 #00 SWP #007f MUL2 #0023 DIV2 NIP JMP2r
 @b36chr ( b36 -- char ) #24 ( MOD ) [ DIVk MUL SUB ] #00 SWP ;b36clc ADD2 LDA JMP2r
 @chrb36 ( char -- b36 ) #20 SUB #00 SWP ;values ADD2 LDA JMP2r
-@chrmid ( char -- midi ) DUP ,chrb36 JSR SWP ,ciuc JSR #24 MUL ADD #00 SWP ;notes ADD2 LDA JMP2r
+@chrmid ( char -- midi ) DUP chrb36 SWP ciuc #24 MUL ADD #00 SWP ;notes ADD2 LDA JMP2r
 @ciuc ( char -- bool ) DUP #40 GTH SWP #5b LTH AND JMP2r
 @ci-key ( char -- bool ) DUP #20 GTH SWP #7b LTH AND JMP2r
 
-@set-case ( value case -- raw ) SWP ,b36chr JSR DUP #60 GTH ROT AND #50 SFT SUB JMP2r
+@set-case ( value case -- raw ) SWP b36chr DUP #60 GTH ROT AND #50 SFT SUB JMP2r
 
-@set-cell ( x y c -- ) ROT ROT ,get-cell JSR ;data/cells ADD2 STA JMP2r
+@set-cell ( x y c -- ) ROT ROT get-cell ;data/cells ADD2 STA JMP2r
 @get-cell ( x y -- addr* ) #00 SWP #00 .grid/width LDZ MUL2 ROT #00 SWP ADD2 JMP2r
 
-@get-port-right-value ( addr* -- value ) ,get-port-right-raw JSR ,chrb36 JMP
-@get-port-left-value ( addr* -- value ) ,get-port-left-raw JSR ,chrb36 JMP
+@get-port-right-value ( addr* -- value ) get-port-right-raw ,chrb36 JMP
+@get-port-left-value ( addr* -- value ) get-port-left-raw ,chrb36 JMP
 
 @get-port-left-raw ( addr* -- value )
 
