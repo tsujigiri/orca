@@ -4,7 +4,7 @@
 	=op-i/? =op-j/? =op-k/? =op-l/? =op-m/? =op-n/? =op-o/? =op-p/?
 	=op-q/? =op-r/? =op-s/? =op-t/? =op-u/? =op-v/? =op-w/? =op-x/?
 	=op-y/? =op-z/?
-	=op-bang/? =op-comment/? =op-synth/? 
+	=op-bang/? =op-comment/? =op-synth/?
 	=op-midi/? =op-pitch/? =op-byte/? =op-self/?
 
 @op-a-lc get-bang ?&* POP2 JMP2r &*

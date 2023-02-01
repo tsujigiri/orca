@@ -58,9 +58,9 @@
 	( drawing mode )
 	#15 .Screen/auto DEO
 
-	( size thinkpad )
-	#02a8 .Screen/width DEO2
-	#0180 .Screen/height DEO2
+	( thinkpad: #02a8 x #0180 )
+	#0380 .Screen/width DEO2
+	#0200 .Screen/height DEO2
 
 	( size playdate
 	#0190 .Screen/width DEO2
@@ -194,7 +194,7 @@ JMP2r
 	;on-frame-trap .Screen/vector DEO2
 	#00 .Mouse/state DEO
 	( clear cursor )
-	#40 
+	#40
 
 !draw-cursor
 
@@ -292,7 +292,7 @@ BRK
 	.Controller/button DEI #f0 AND ?on-button-arrow
 
 	( default )
-	.Controller/key DEI 
+	.Controller/key DEI
 		DUP ci-key #00 EQU ?&no-input
 			DUP fill-sel
 		&no-input
@@ -307,7 +307,7 @@ BRK
 	[ #1b ] NEQk NIP ?&no-esc toggle-insert POP BRK &no-esc
 	[ #20 ] NEQk NIP ?&no-spc #01 #0000 mod-sel POP BRK &no-spc
 	[ #08 ] NEQk NIP ?&no-bks #ff #0000 mod-sel LIT ". fill-sel POP BRK &no-bks
-	DUP ci-key #00 EQU ?&no-key 
+	DUP ci-key #00 EQU ?&no-key
 		DUP fill-sel #01 #0000 mod-sel &no-key
 	&end
 	POP
@@ -398,7 +398,7 @@ BRK
 
 	DUP #04 NEQ ?&no-scale
 		POP
-		.selection/to LDZ2 ,&add-pos JSR ;set-sel-to JMP2
+		.selection/to LDZ2 ,&add-pos JSR !set-sel-to
 		&no-scale
 	DUP #01 NEQ ?&no-drag
 		POP
@@ -447,9 +447,8 @@ JMP2
 	#00 .guide STZ
 	( redraw )
 	draw-grid
-	;draw-position ( .. )
 
-JMP2
+!draw-position
 
 @fill-sel ( char -- )
 
@@ -480,9 +479,8 @@ JMP2
 
 	#1f AND #04 GTHk [ JMP SWP POP ] .timer/speed STZ
 	#00 .timer/beat STZ
-	;draw-speed ( .. )
 
-JMP2
+!draw-speed
 
 @toggle-insert ( -- )
 
@@ -490,23 +488,20 @@ JMP2
 		.Controller/vector DEI2 ;on-button-insert EQU2
 			[ JMP SWP2 POP2 ]
 			.Controller/vector DEO2
-	;draw-position ( .. )
 
-JMP2
+!draw-position
 
 @play-toggle ( -- )
 
 	.timer/playing LDZk #00 EQU SWP STZ
-	;draw-timer ( .. )
 
-JMP2
+!draw-timer
 
 @toggle-guide ( -- )
 
 	.guide LDZk #00 EQU SWP STZ
-	;draw-grid ( .. )
 
-JMP2
+!draw-grid
 
 @toggle-grid ( -- )
 
@@ -665,9 +660,9 @@ JMP2r
 	( space )
 	#00 .Screen/sprite DEO
 	( icon )
-	.dpad LDZ #01 ;draw-chr-color ( .. )
+	.dpad LDZ #01
 
-JMP2
+!draw-chr-color
 
 @draw-position ( -- )
 
@@ -789,7 +784,7 @@ JMP2r
 
 	;data/cells ADD2 LDA
 	DUP LIT ". NEQ ?&no-bar
-		POP 
+		POP
 		.guide/grid LDZ ?&do-grid
 			#20 JMP2r
 			&do-grid
@@ -868,7 +863,7 @@ JMP2r
 
 @draw-hex ( byte -- )
 
-	 #0f AND DUP #09 GTH #07 MUL ADD #30 ADD ,draw-chr ( .. )
+	#0f AND DUP #09 GTH #07 MUL ADD #30 ADD ,draw-chr ( .. )
 
 JMP
 
@@ -1036,9 +1031,8 @@ JMP2r
 @edit-paste ( -- )
 
 	.selection LDZ2 ;snarf-txt inject-file
-	;draw-grid ( .. )
 
-JMP2
+!draw-grid
 
 @edit-erase ( -- ) LIT ". !fill-sel
 
