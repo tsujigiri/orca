@@ -59,7 +59,7 @@
 	#15 .Screen/auto DEO
 
 	( thinkpad: #02a8 x #0180 )
-	#0380 .Screen/width DEO2
+	#0330 .Screen/width DEO2
 	#0200 .Screen/height DEO2
 
 	( size playdate
