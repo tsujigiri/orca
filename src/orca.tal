@@ -91,8 +91,15 @@
 	#00 .grid/height LDZ #00 .grid/width LDZ MUL2 .grid/length STZ2
 
 	( cache positions )
-	.grid/x1 LDZ2 .toolbar/x1 STZ2
-	.grid/x2 LDZ2 .toolbar/x2 STZ2
+	.grid/x1 LDZ2
+		DUP2 .toolbar/x1 STZ2
+		DUP2 ;draw-position/x STA2
+		DUP2 #0030 ADD2 ;draw-timer/x STA2
+		DUP2 #0050 ADD2 ;draw-dpad/x STA2
+		#0050 ADD2 ;draw-speed/x STA2
+	.grid/x2 LDZ2
+		DUP2 .toolbar/x2 STZ2
+		#0028 SUB2 ;draw-meter/x STA2
 	.grid/y2 LDZ2 #000c ADD2
 		DUP2 .toolbar/y1 STZ2
 		DUP2 ;draw-dpad/y STA2
@@ -104,11 +111,6 @@
 		DUP2 ;draw-meter/y STA2
 		#0010 ADD2 .toolbar/y2 STZ2
 	( cache x positions )
-	.grid/x1 LDZ2 ;draw-position/x STA2
-	.grid/x1 LDZ2 #0030 ADD2 ;draw-timer/x STA2
-	.grid/x1 LDZ2 #0050 ADD2 ;draw-dpad/x STA2
-	.grid/x1 LDZ2 #0050 ADD2 ;draw-speed/x STA2
-	.grid/x2 LDZ2 #0028 SUB2 ;draw-meter/x STA2
 	.toolbar/x1 LDZ2 #0078 ADD2 ;draw-filepath/x STA2
 	.toolbar/x2 LDZ2 #0008 SUB2 ;draw-state/x STA2
 
@@ -138,7 +140,7 @@ BRK
 	( name ) "Orca 0a
 	( details ) "A 20 "Livecoding 20 "Playground 0a
 	( author ) "By 20 "Hundred 20 "Rabbits 0a
-	( date ) "Jan 20 "21, 20 "2023 00
+	( date ) "Feb 20 "19, 20 "2023 00
 	02
 		( icon ) 83 =appicon
 		( mask ) 41 1705
@@ -337,7 +339,7 @@ BRK
 
 	.Controller/button DEI #02 NEQ ?&no-scroll
 	.Mouse/scrolly-lb DEI #00 EQU ?&no-scroll
-		.Mouse/scrolly-lb DEI ;dpad-input/mod JMP2
+		.Mouse/scrolly-lb DEI !dpad-input/mod
 		&no-scroll
 
 	( route )
@@ -352,23 +354,26 @@ BRK
 		ORAk #00 EQU ?&end
 		( on down )
 		DUP2 #0100 NEQ2 ?&no-down
-			,&get-pos JSR set-sel-from
+			get-pos set-sel-from
 			!&end
 			&no-down
 		( on release )
-		,&get-pos JSR set-sel-to
+		get-pos set-sel-to
 	&end
 	POP ,&last STR
 
 BRK
-	&get-pos ( -- x y )
-		.Mouse/x DEI2 .grid/x1 LDZ2 SUB2 #03 SFT2 NIP
-		.Mouse/y DEI2 .grid/y1 LDZ2 SUB2 #04 SFT2 NIP
-	JMP2r
+
+@get-pos ( -- x y )
+
+	.Mouse/x DEI2 .grid/x1 LDZ2 SUB2 #03 SFT2 NIP
+	.Mouse/y DEI2 .grid/y1 LDZ2 SUB2 #04 SFT2 NIP
+
+JMP2r
 
 @on-mouse-toolbar ( -> )
 
-	( skip ) .Mouse/state DEI #01 JCN BRK
+	( skip ) .Mouse/state DEI #01 JCN [ BRK ]
 
 	( release )
 	#00 .Mouse/state DEO
@@ -377,7 +382,7 @@ BRK
 	.Mouse/x DEI2 .grid/x1 LDZ2 SUB2 #03 SFT2 NIP
 	[ #05 ] GTHk NIP ?&no-insert toggle-insert POP BRK &no-insert
 	[ #09 ] GTHk NIP ?&no-pause play-toggle POP BRK &no-pause
-	[ #0d ] GTHk NIP ?&no-speed [ .Mouse/state DEI #01 EQU DUP ADD #01 SUB ] ;mod-speed JSR2 POP BRK &no-speed
+	[ #0d ] GTHk NIP ?&no-speed [ .Mouse/state DEI #01 EQU DUP ADD #01 SUB ] mod-speed POP BRK &no-speed
 	[ #0e ] GTHk NIP OVR .grid/width LDZ SWP SUB #06 GTH #0101 NEQ2 ?&no-rename trap &no-rename
 	POP
 	( right-side )
@@ -398,24 +403,26 @@ BRK
 
 	DUP #04 NEQ ?&no-scale
 		POP
-		.selection/to LDZ2 ,&add-pos JSR !set-sel-to
+		.selection/to LDZ2 add-pos !set-sel-to
 		&no-scale
 	DUP #01 NEQ ?&no-drag
 		POP
 		edit-cut
-		STH2k .selection/from LDZ2 ,&add-pos JSR
-		STH2r .selection/to LDZ2 ,&add-pos JSR
+		STH2k .selection/from LDZ2 add-pos
+		STH2r .selection/to LDZ2 add-pos
 			set-sel-range
-		;edit-paste JMP2
+		!edit-paste
 		&no-drag
 	POP
 	( default )
-	STH2k .selection/from LDZ2 ,&add-pos JSR
-	STH2r .selection/to LDZ2 ,&add-pos JSR
-		;set-sel-range ( .. )
+	STH2k .selection/from LDZ2 add-pos
+	STH2r .selection/to LDZ2 add-pos
 
-JMP2
-	&add-pos ROT ADD STH ADD STHr JMP2r
+!set-sel-range
+
+@add-pos
+	ROT ADD STH ADD STHr
+JMP2r
 
 @set-sel-reset ( -- ) .selection/from LDZ2 !set-sel-from
 @set-sel-all ( -- ) #0000 .grid/size LDZ2 !set-sel-range
@@ -442,7 +449,7 @@ JMP2
 	.selection/x1 LDZ GTHk [ JMP SWP POP ] .grid/width LDZ #01 SUB LTHk [ JMP SWP POP ] STHr
 	DUP2 .selection/to LDZ2 NEQ2 STH .selection/to STZ2
 	( skip redraw when unchanged )
-	ADDr STHr #01 JCN JMP2r
+	ADDr STHr #01 JCN [ JMP2r ]
 	( hide guide )
 	#00 .guide STZ
 	( redraw )
@@ -571,7 +578,8 @@ JMP2r
 		&no-off
 		POP
 		INC
-	!&while &end POP2 JMP2r
+	!&while
+		&end POP2 JMP2r
 
 	&next-chan POP2 INC
 	,&while JMP
@@ -596,7 +604,7 @@ JMP2r
 	POP2
 	POP2r
 	( do not draw when menu )
-	;draw-menu/sel LDA #ff NEQ ?&skip
+	;draw-menu/sel LDA INC ?&skip
 		draw-grid
 		draw-timer
 		&skip
@@ -863,9 +871,9 @@ JMP2r
 
 @draw-hex ( byte -- )
 
-	#0f AND DUP #09 GTH #07 MUL ADD #30 ADD ,draw-chr ( .. )
+	#0f AND DUP #09 GTH #07 MUL ADD #30 ADD
 
-JMP
+!draw-chr
 
 @draw-chr-color ( char color -- )
 
@@ -1052,7 +1060,7 @@ JMP2r
 &row
 
 	OVRk get-addr read-cell
-	LIT "# LIT ". ROT OVR EQU [ JMP SWP POP ]
+	[ LIT2 "#. ] ROT OVR EQU [ JMP SWP POP ]
 
 JMP2r
 

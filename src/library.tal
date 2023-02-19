@@ -406,9 +406,9 @@ JMP2r
 
 @op-bang ( bang )
 
-	LIT ". ROT ROT write-cell
+	LIT ". ROT ROT
 
-JMP2r
+!write-cell
 	&? "* "Bangs 20 "neighboring 20 "operands $1
 
 @op-comment ( comment )
@@ -525,9 +525,9 @@ JMP2r
 	POP2
 	( has bang ) get-bang ?&is-bang [ POP2r JMP2r ] &is-bang
 	.head LDZ2 INC STH2kr get-word inject-file
-	( animate ) .types/io STH2r write-type
+	( animate ) .types/io STH2r
 
-JMP2r
+!write-type
 	&? "$ "Load 20 "orca 20 "file $1
 
 @op-null ( null )
