@@ -40,11 +40,14 @@
 
 	STH2k
 	( set type ) .types/op STH2kr write-type
-	( get rate ) get-port-left1-value DUP #00 EQU ADD
+	( get rate ) get-port-left1-value ( min1 ) DUP #00 EQU ADD
 	( get mod ) STH2kr get-port-right1-raw
 		( get case ) DUP ciuc ,&case STR
-		( to value ) chrb36 DUP #00 EQU ADD
-	( res ) #00 SWP ROT #00 SWP .timer/frame LDZ2 SWP2 DIV2 SWP2 ( MOD2 ) [ DIV2k MUL2 SUB2 ] NIP
+		( to value ) chrb36 ( min1 ) DUP #00 EQU ADD
+
+	( res ) #00 SWP ROT #00 SWP .timer/frame LDZ2 SWP2 DIV2 SWP2
+		( MOD2 ) [ DIV2k MUL2 SUB2 ] NIP
+
 	( set case ) [ LIT &case $1 ] set-case
 	( output ) STH2r !set-port-output-below
 	&? "C "Outputs 20 "modulo 20 "of 20 "frame $1
@@ -52,13 +55,15 @@
 @op-d-lc get-bang ?&* POP2 JMP2r &*
 @op-d ( delay )
 
-	STH2k
+	STH2
 	( set type ) .types/op STH2kr write-type
-	( get rate ) get-port-left1-value DUP #00 EQU ADD
-	( get mod ) STH2kr get-port-right1-value DUP #00 EQU ADD
-	( res ) MUL #00 SWP .timer/frame LDZ2 SWP2 ( MOD2 ) [ DIV2k MUL2 SUB2 ] #0000 EQU2
-	( bang on equal ) #fc MUL LIT ". ADD
-	( output ) STH2r !set-port-output-below
+	.timer/frame LDZ2
+		#00 ( get rate* ) STH2kr get-port-left1-value ( min1* ) EQUk ADD
+		#00 ( get mod* ) STH2kr get-port-right1-value ( min1* ) EQUk ADD
+			MUL2
+		( mod2 ) [ DIV2k MUL2 SUB2 ] #0000 EQU2
+		( bang ) [ LIT2 "*. ] ROT [ JMP SWP POP ]
+	STH2r !set-port-output-below
 	&? "D "Bangs 20 "on 20 "modulo 20 "of 20 "frame $1
 
 @op-e-lc get-bang ?&* POP2 JMP2r &*
@@ -96,7 +101,7 @@
 	( y ) STH2kr #0002 SUB2 get-port-left-value
 		( load ) #00 SWP INC2 [ #00 .grid/width LDZ MUL2 ] ADD2
 	,&save STR2
-	( len ) STH2kr get-port-left1-value DUP #00 EQU ADD
+	( len ) STH2kr get-port-left1-value ( min1 ) DUP #00 EQU ADD
 	#00
 	&l
 		( load ) #00 OVR STH2kr INC2 ADD2 get-port-right-raw
@@ -125,7 +130,7 @@ JMP2r
 	( step ) get-port-left1-value
 	( mod ) STH2kr get-port-right1-raw
 		( get case ) DUP ciuc ,&case STR
-		( to value ) chrb36 DUP #00 EQU ADD
+		( to value ) chrb36 ( min1 ) DUP #00 EQU ADD
 	( res ) SWP STH2kr #00 .grid/width LDZ ADD2 read-cell chrb36 ADD SWP ( MOD ) [ DIVk MUL SUB ]
 	( set case ) [ LIT &case $1 ] set-case
 	( output ) STH2r !set-port-output-below
@@ -228,7 +233,7 @@ JMP2r
 	STH2k
 	( set type ) .types/op STH2kr write-type
 	( key ) #0002 SUB2 get-port-left-value
-	( len ) STH2kr get-port-left1-value DUP #00 EQU ADD
+	( len ) STH2kr get-port-left1-value ( min1 ) DUP #00 EQU ADD
 	#00
 	&l
 		#00 OVR STH2kr #00 .grid/width LDZ ADD2 ADD2 STH2
@@ -251,7 +256,7 @@ JMP2r
 	( y ) STH2kr #0002 SUB2 get-port-left-value
 		( load ) #00 SWP [ #00 .grid/width LDZ MUL2 ] ADD2
 	,&load STR2
-	( len ) STH2kr get-port-left1-value DUP #00 EQU ADD
+	( len ) STH2kr get-port-left1-value ( min1 ) DUP #00 EQU ADD
 		( save ) #00 OVR STH2kr #00 .grid/width LDZ ADD2 SWP2 SUB2 INC2 ,&save STR2
 	#00
 	&l
@@ -272,8 +277,8 @@ JMP2r
 	( a-min ) get-port-left1-value
 	( b-max ) STH2kr get-port-right1-raw
 		( get case ) DUP ciuc ,&case STR
-		( to value ) chrb36 DUP #00 EQU ADD
-	( mod ) OVR SUB prng ADD SWP DUP #00 EQU ADD ( MOD ) [ DIVk MUL SUB ] ADD
+		( to value ) chrb36 ( min1 ) DUP #00 EQU ADD
+	( mod ) OVR SUB prng ADD SWP ( min1 ) DUP #00 EQU ADD ( MOD ) [ DIVk MUL SUB ] ADD
 	( set case ) [ LIT &case $1 ] set-case
 	( output ) STH2r !set-port-output-below
 	&? "R "Outputs 20 "random 20 "value $1
@@ -298,7 +303,7 @@ JMP2r
 	STH2k
 	( set type ) .types/op STH2kr write-type
 	( key ) #0002 SUB2 get-port-left-value
-	( len ) STH2kr get-port-left1-value DUP #00 EQU ADD
+	( len ) STH2kr get-port-left1-value ( min1 ) DUP #00 EQU ADD
 	#00
 	&l
 		#00 OVR STH2kr INC2 ADD2 STH2
@@ -316,7 +321,7 @@ JMP2r
 	STH2k
 	( set type ) .types/op STH2kr write-type
 	( step ) get-port-left1-value
-	( max ) STH2kr get-port-right1-value DUP #00 EQU ADD STH2
+	( max ) STH2kr get-port-right1-value ( min1 ) DUP #00 EQU ADD STH2
 	( frame ADD max SUB 1 ) .timer/frame LDZ2 STHkr #00 SWP ADD2 #0001 SUB2
 	( MUL step ) OVRr STHr #00 SWP MUL2
 	( % max ) STHkr #00 SWP ( MOD2 ) [ DIV2k MUL2 SUB2 ]
