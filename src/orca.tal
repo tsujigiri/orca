@@ -1074,7 +1074,78 @@ JMP2r
 @ci-key ( char -- bool ) #20 SUB #5b LTH JMP2r
 
 (
+@|ports )
+
+@get-port-right1-value ( addr* -- value ) INC2
+@get-port-right-value ( addr* -- value ) get-port-right-raw !chrb36
+
+@get-port-left1-value ( addr* -- value ) #0001 SUB2
+@get-port-left-value ( addr* -- value ) get-port-left-raw !chrb36
+
+@get-port-left1-raw ( addr* -- value ) #0001 SUB2
+@get-port-left-raw ( addr* -- value )
+	( bounds ) DUP2 .grid/length LDZ2 GTH2 ?&skip
+	( type ) STH2k .types/pl STH2r write-type/force
+	!read-cell/force
+	&skip POP2 LIT ". JMP2r
+
+@get-port-right1-raw ( addr* -- value ) INC2
+@get-port-right-raw ( addr* -- value )
+	( bounds ) DUP2 .grid/length LDZ2 GTH2 ?&skip
+	( lock ) STH2k #02 STH2kr write-lock/force
+	( type ) .types/pr STH2r write-type/force
+	!read-cell/force
+	&skip POP2 LIT ". JMP2r
+
+@set-port-output-below ( value addr* -- ) #00 .grid/width LDZ ADD2
+@set-port-output ( value addr* -- )
+	( bounds ) DUP2 .grid/length LDZ2 GTH2 ?&skip
+	( lock ) STH2k #01 STH2kr write-lock/force
+	( type ) .types/output STH2r write-type/force
+	!write-cell/force
+	&skip POP2 POP JMP2r
+
+@set-port-raw ( value addr* -- )
+	( bounds ) DUP2 .grid/length LDZ2 GTH2 ?&skip
+	( lock ) STH2k #01 STH2kr write-lock/force
+	( type ) #00 STH2r write-type/force
+	!write-cell/force
+	&skip POP2 POP JMP2r
+
+(
 @|primitives )
+
+@read-cell ( addr* -- cell )
+	( bounds ) DUP2 .grid/length LDZ2 GTH2 ?&skip
+	&force ;data/cells ADD2 LDA JMP2r
+	&skip POP2 LIT ". JMP2r
+
+@set-cell ( x y c -- )
+	ROT ROT get-addr
+@write-cell ( cell addr* -- )
+	( bounds ) DUP2 .grid/length LDZ2 GTH2 ?&skip
+	&force ;data/cells ADD2 STA JMP2r
+	&skip POP2 POP JMP2r
+
+@read-type ( addr* -- cell )
+	( bounds ) DUP2 .grid/length LDZ2 GTH2 ?&skip
+	&force ;data/types ADD2 LDA JMP2r
+	&skip POP2 .types/default JMP2r
+
+@write-type ( type addr* -- )
+	( bounds ) DUP2 .grid/length LDZ2 GTH2 ?&skip
+	&force ;data/types ADD2 STA JMP2r
+	&skip POP2 POP JMP2r
+
+@read-lock ( addr* -- lock )
+	( bounds ) DUP2 .grid/length LDZ2 GTH2 ?&skip
+	&force ;data/locks ADD2 LDA JMP2r
+	&skip POP2 #01 JMP2r
+
+@write-lock ( lock addr* -- )
+	( bounds ) DUP2 .grid/length LDZ2 GTH2 ?&skip
+	&force ;data/locks ADD2 STA JMP2r
+	&skip POP2 POP JMP2r
 
 @set-case ( value case -- raw )
 
@@ -1087,117 +1158,6 @@ JMP2r
 	#00 SWP #00 .grid/width LDZ MUL2 ROT #00 SWP ADD2
 
 JMP2r
-
-@get-port-right1-value ( addr* -- value )
-
-	INC2
-
-@get-port-right-value ( addr* -- value )
-
-	get-port-right-raw
-
-!chrb36
-
-@get-port-left1-value ( addr* -- value )
-
-	#0001 SUB2
-
-@get-port-left-value ( addr* -- value )
-
-	get-port-left-raw
-
-!chrb36
-
-@get-port-left1-raw ( addr* -- value )
-
-	#0001 SUB2
-
-@get-port-left-raw ( addr* -- value )
-
-	( type ) STH2k .types/pl STH2r write-type
-
-!read-cell
-
-@get-port-right1-raw ( addr* -- value )
-
-	INC2
-
-@get-port-right-raw ( addr* -- value )
-
-	( lock ) STH2k #02 STH2kr write-lock
-	( type ) .types/pr STH2r write-type
-
-!read-cell
-
-@set-port-output-below ( value addr* -- )
-
-	#00 .grid/width LDZ ADD2
-
-@set-port-output ( value addr* -- )
-
-	( lock ) STH2k #01 STH2kr write-lock
-	( type ) .types/output STH2r write-type
-
-!write-cell
-
-@set-port-raw ( value addr* -- )
-
-	( lock ) STH2k #01 STH2kr write-lock
-	( type ) #00 STH2r write-type
-
-!write-cell
-
-@read-cell ( addr* -- cell )
-
-	DUP2 .grid/length LDZ2 GTH2 ?&skip
-	;data/cells ADD2 LDA
-
-JMP2r
-	&skip POP2 LIT ". JMP2r
-
-@set-cell ( x y c -- )
-
-	ROT ROT get-addr
-
-@write-cell ( cell addr* -- )
-
-	DUP2 .grid/length LDZ2 GTH2 ?&skip
-	;data/cells ADD2 STA
-
-JMP2r
-	&skip POP2 POP JMP2r
-
-@read-type ( addr* -- cell )
-
-	DUP2 .grid/length LDZ2 GTH2 ?&skip
-	;data/types ADD2 LDA
-
-JMP2r
-	&skip POP2 .types/default JMP2r
-
-@write-type ( type addr* -- )
-
-	DUP2 .grid/length LDZ2 GTH2 ?&skip
-	;data/types ADD2 STA
-
-JMP2r
-	&skip POP2 POP JMP2r
-
-@read-lock ( addr* -- lock )
-
-	DUP2 .grid/length LDZ2 GTH2 ?&skip
-	;data/locks ADD2 LDA
-
-JMP2r
-	&skip POP2 #01 JMP2r
-
-@write-lock ( lock addr* -- )
-
-	DUP2 .grid/length LDZ2 GTH2 ?&skip
-	;data/locks ADD2 STA
-
-JMP2r
-	&skip POP2 POP JMP2r
 
 (
 @|stdlib )
