@@ -608,9 +608,9 @@ JMP2r
 	( cache )
 	DUP2 .head/addr STZ2
 	( skip locked )
-	DUP2 ;data/locks ADD2 LDA ?&locked
+	DUP2 read-lock ?&locked
 	( run unlocked )
-	DUP2 ;data/cells ADD2 LDA
+	DUP2 read-cell
 	#00 SWP #20 SUB DUP ADD ;op-ascii ADD2 LDA2 JMP2
 	&locked
 	POP2
@@ -753,7 +753,7 @@ JMP2r
 			STH2kr .head/addr STZ2
 			STH2kr get-char-at-addr get-color draw-chr-color
 			( underline )
-			STH2kr ;data/locks ADD2 LDA #02 NEQ ?&no-lock
+			STH2kr read-lock #02 NEQ ?&no-lock
 				.Screen/x DEI2k #0008 SUB2 ROT DEO2
 				;underline-icn .Screen/addr DEO2
 				#0f .Screen/sprite DEO
@@ -774,7 +774,7 @@ JMP2r
 @get-color ( -- char type )
 
 	.head LDZ2 is-selected ?&selected
-		#00 .head/addr LDZ2 ;data/types ADD2 LDA ;cell-styles ADD2 LDA JMP2r
+		#00 .head/addr LDZ2 read-type ;cell-styles ADD2 LDA JMP2r
 	&selected
 		#0c
 
@@ -782,7 +782,7 @@ JMP2r
 
 @get-char-at-addr ( addr* -- char )
 
-	;data/cells ADD2 LDA
+	read-cell
 	DUP LIT ". NEQ ?&no-bar
 		POP
 		.guide/grid LDZ ?&do-grid
@@ -796,7 +796,7 @@ JMP2r
 			&dot POP2 LIT ". JMP2r
 			&no-dot
 		DUP2 is-selected ?&dot
-		.head/addr LDZ2 ;data/types ADD2 LDA ?&dot
+		.head/addr LDZ2 read-type ?&dot
 		POP2 #20
 	&no-bar
 
@@ -806,7 +806,7 @@ JMP2r
 
 	;&word #0020 mclr
 	&while
-		INC2 DUP2 ;data/cells ADD2 LDA
+		INC2 DUP2 read-cell
 			DUP LIT ". EQU ?&skip
 				DUP ;&word sput
 				&skip
@@ -966,7 +966,7 @@ JMP2r
 	&ver
 		.grid/width LDZ #00
 		&hor
-			OVR2 NIP OVR SWP get-cell ;data/cells ADD2 .File/write DEO2
+			OVR2 NIP OVR SWP get-addr ;data/cells ADD2 .File/write DEO2
 			INC GTHk ?&hor
 		POP2
 		( linebreak ) ;&lb .File/write DEO2
@@ -1018,7 +1018,7 @@ JMP2r
 		STHk
 		.selection/x2 LDZ INC .selection/x1 LDZ
 		&hor
-			DUP STHkr get-cell ;data/cells ADD2 .File/write DEO2
+			DUP STHkr get-addr ;data/cells ADD2 .File/write DEO2
 			INC GTHk ?&hor
 		POP2 POPr
 		( linebreak ) ;&lb .File/write DEO2
@@ -1051,7 +1051,7 @@ JMP2r
 
 &row
 
-	OVRk get-cell ;data/cells ADD2 LDA
+	OVRk get-addr read-cell
 	LIT "# LIT ". ROT OVR EQU [ JMP SWP POP ]
 
 JMP2r
@@ -1063,31 +1063,64 @@ JMP2r
 @b36chr ( b36 -- char ) #24 ( MOD ) [ DIVk MUL SUB ] #00 SWP ;b36clc ADD2 LDA JMP2r
 @chrb36 ( char -- b36 ) #20 SUB #00 SWP ;values ADD2 LDA JMP2r
 @chrmid ( char -- midi ) DUP chrb36 SWP ciuc #24 MUL ADD #00 SWP ;notes ADD2 LDA JMP2r
-@ciuc ( char -- bool ) DUP #40 GTH SWP #5b LTH AND JMP2r
-@ci-key ( char -- bool ) DUP #20 GTH SWP #7b LTH AND JMP2r
+@ciuc ( char -- bool ) LIT "A SUB #1a LTH JMP2r
+@ci-key ( char -- bool ) #20 SUB #5b LTH JMP2r
 
-@set-case ( value case -- raw ) SWP b36chr DUP #60 GTH ROT AND #50 SFT SUB JMP2r
+(
+@|primitives )
 
-@set-cell ( x y c -- ) ROT ROT get-cell ;data/cells ADD2 STA JMP2r
-@get-cell ( x y -- addr* ) #00 SWP #00 .grid/width LDZ MUL2 ROT #00 SWP ADD2 JMP2r
+@set-case ( value case -- raw )
 
-@get-port-right-value ( addr* -- value ) get-port-right-raw !chrb36
-@get-port-left-value ( addr* -- value ) get-port-left-raw !chrb36
+	SWP b36chr DUP #60 GTH ROT AND #50 SFT SUB
+
+JMP2r
+
+@get-addr ( x y -- addr* )
+
+	#00 SWP #00 .grid/width LDZ MUL2 ROT #00 SWP ADD2
+
+JMP2r
+
+@get-port-right1-value ( addr* -- value )
+
+	INC2
+
+@get-port-right-value ( addr* -- value )
+
+	get-port-right-raw
+
+!chrb36
+
+@get-port-left1-value ( addr* -- value )
+
+	#0001 SUB2
+
+@get-port-left-value ( addr* -- value )
+
+	get-port-left-raw
+
+!chrb36
+
+@get-port-left1-raw ( addr* -- value )
+
+	#0001 SUB2
 
 @get-port-left-raw ( addr* -- value )
 
-	( set type ) STH2k .types/pl STH2r ;data/types ADD2 STA
-	( get data ) ;data/cells ADD2 LDA
+	( type ) STH2k .types/pl STH2r write-type
 
-JMP2r
+!read-cell
+
+@get-port-right1-raw ( addr* -- value )
+
+	INC2
 
 @get-port-right-raw ( addr* -- value )
 
-	( set lock ) STH2k #02 STH2kr ;data/locks ADD2 STA
-	( set type ) .types/pr STH2r ;data/types ADD2 STA
-	( get data ) ;data/cells ADD2 LDA
+	( lock ) STH2k #02 STH2kr write-lock
+	( type ) .types/pr STH2r write-type
 
-JMP2r
+!read-cell
 
 @set-port-output-below ( value addr* -- )
 
@@ -1095,21 +1128,60 @@ JMP2r
 
 @set-port-output ( value addr* -- )
 
-	( set lock ) STH2k #01 STH2kr ;data/locks ADD2 STA
-	( set type ) .types/output STH2r ;data/types ADD2 STA
-	( set data ) ;data/cells ADD2 STA
+	( lock ) STH2k #01 STH2kr write-lock
+	( type ) .types/output STH2r write-type
 
-JMP2r
+!write-cell
 
 @set-port-raw ( value addr* -- )
 
-	( set lock ) STH2k #01 STH2kr ;data/locks ADD2 STA
-	( set type ) #00 STH2r ;data/types ADD2 STA
-	( set data ) ;data/cells ADD2 STA
+	( lock ) STH2k #01 STH2kr write-lock
+	( type ) #00 STH2r write-type
+
+!write-cell
+
+@read-cell ( addr* -- cell )
+
+	;data/cells ADD2 LDA
 
 JMP2r
 
-( generics )
+@set-cell ( x y c -- )
+
+	ROT ROT get-addr
+
+@write-cell ( cell addr* -- )
+
+	;data/cells ADD2 STA
+
+JMP2r
+
+@read-type ( addr* -- cell )
+
+	;data/types ADD2 LDA
+
+JMP2r
+
+@write-type ( type addr* -- )
+
+	;data/types ADD2 STA
+
+JMP2r
+
+@read-lock ( addr* -- lock )
+
+	;data/locks ADD2 LDA
+
+JMP2r
+
+@write-lock ( lock addr* -- )
+
+	;data/locks ADD2 STA
+
+JMP2r
+
+(
+@|stdlib )
 
 @mcpy ( src* dst* len* -- ) SWP2 STH2 OVR2 ADD2 SWP2 &loop LDAk STH2kr STA INC2r INC2 GTH2k ?&loop POP2 POP2 POP2r JMP2r
 
