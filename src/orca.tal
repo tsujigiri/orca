@@ -146,32 +146,30 @@ BRK
 		( mask ) 41 1705
 
 @manifest
-
-	&menu
-		05 "Orca $1
-			01 "n =file-new "New $1
-			01 "r =trap "Rename $1
-			01 "o =file-open "Open $1
-			01 "s =file-save "Save $1
-			01 "q =exit "Exit $1
-		06 "Edit $1
-			01 "c =edit-copy "Copy $1
-			01 "v =edit-paste "Paste $1
-			01 "x =edit-cut "Cut $1
-			01 "i =toggle-insert "Insert $1
-			00 08 =edit-erase "Erase $1
-			01 "b =edit-comment "Comment $1
-		03 "Play $1
-			00 20 =play-toggle "Pause $1
-			01 ", =play-decr "Decr $1
-			01 ". =play-incr "Incr $1
-		02 "View $1
-			01 "g =toggle-guide "Guide $1
-			01 "h =toggle-grid "Grid $1
-		02 "Select $1
-			00 1b =set-sel-reset "Reset $1
-			01 "a =set-sel-all "All $1
-		$1
+	05 "Orca $1
+		01 "n =file-new "New $1
+		01 "r =trap "Rename $1
+		01 "o =file-open "Open $1
+		01 "s =file-save "Save $1
+		01 "q =exit "Exit $1
+	06 "Edit $1
+		01 "c =edit-copy "Copy $1
+		01 "v =edit-paste "Paste $1
+		01 "x =edit-cut "Cut $1
+		01 "i =toggle-insert "Insert $1
+		00 08 =edit-erase "Erase $1
+		01 "b =edit-comment "Comment $1
+	03 "Play $1
+		00 20 =play-toggle "Pause $1
+		01 ", =play-decr "Decr $1
+		01 ". =play-incr "Incr $1
+	02 "View $1
+		01 "g =toggle-guide "Guide $1
+		01 "h =toggle-grid "Grid $1
+	02 "Select $1
+		00 1b =set-sel-reset "Reset $1
+		01 "a =set-sel-all "All $1
+	$1
 
 (
 @|vectors )
@@ -618,7 +616,7 @@ JMP2r
 	( skip locked )
 	DUP2 read-lock ?&locked
 	( run unlocked )
-	DUP2 read-cell
+	DUP2 ;data/cells ADD2 LDA
 	#00 SWP #20 SUB DUP ADD ;op-ascii ADD2 LDA2 JMP2
 	&locked
 	POP2
@@ -634,10 +632,9 @@ JMP2r
 	( top ) STH2kr #00 .grid/width LDZ SUB2 LDA LIT "* EQU ?&bang
 	( right ) STH2kr INC2 LDA LIT "* EQU ?&bang
 	( bottom ) STH2kr #00 .grid/width LDZ ADD2 LDA LIT "* EQU ?&bang
-	POP2r #00 JMP2r
-	&bang POP2r #01
-
+	POP2r #00
 JMP2r
+	&bang POP2r #01 JMP2r
 
 @lerp ( rate target val -- val )
 
@@ -790,7 +787,7 @@ JMP2r
 
 @get-char-at-addr ( addr* -- char )
 
-	read-cell
+	;data/cells ADD2 LDA
 	DUP LIT ". NEQ ?&no-bar
 		POP
 		.guide/grid LDZ ?&do-grid
@@ -917,6 +914,8 @@ JMP2r
 
 (
 @|document )
+
+@untitled-txt "untitled.orca $1
 
 @file-new ( -- )
 
@@ -1150,9 +1149,11 @@ JMP2r
 
 @read-cell ( addr* -- cell )
 
+	DUP2 .grid/length LDZ2 GTH2 ?&skip
 	;data/cells ADD2 LDA
 
 JMP2r
+	&skip POP2 LIT ". JMP2r
 
 @set-cell ( x y c -- )
 
@@ -1160,33 +1161,43 @@ JMP2r
 
 @write-cell ( cell addr* -- )
 
+	DUP2 .grid/length LDZ2 GTH2 ?&skip
 	;data/cells ADD2 STA
 
 JMP2r
+	&skip POP2 POP JMP2r
 
 @read-type ( addr* -- cell )
 
+	DUP2 .grid/length LDZ2 GTH2 ?&skip
 	;data/types ADD2 LDA
 
 JMP2r
+	&skip POP2 .types/default JMP2r
 
 @write-type ( type addr* -- )
 
+	DUP2 .grid/length LDZ2 GTH2 ?&skip
 	;data/types ADD2 STA
 
 JMP2r
+	&skip POP2 POP JMP2r
 
 @read-lock ( addr* -- lock )
 
+	DUP2 .grid/length LDZ2 GTH2 ?&skip
 	;data/locks ADD2 LDA
 
 JMP2r
+	&skip POP2 #01 JMP2r
 
 @write-lock ( lock addr* -- )
 
+	DUP2 .grid/length LDZ2 GTH2 ?&skip
 	;data/locks ADD2 STA
 
 JMP2r
+	&skip POP2 POP JMP2r
 
 (
 @|stdlib )
@@ -1221,7 +1232,7 @@ JMP2r
 
 JMP2r
 
-@untitled-txt "untitled.orca $1
+
 
 ~src/library.tal
 
