@@ -418,9 +418,7 @@ BRK
 
 !set-sel-range
 
-@add-pos
-	ROT ADD STH ADD STHr
-JMP2r
+@add-pos ( xy xy -- xy ) ROT ADD STH ADD STHr JMP2r
 
 @set-sel-reset ( -- ) .selection/from LDZ2 !set-sel-from
 @set-sel-all ( -- ) #0000 .grid/size LDZ2 !set-sel-range
@@ -824,15 +822,14 @@ JMP2r
 
 @is-selected ( x y -- bool )
 
-	DUP .selection/y1 LDZ LTH ?&end
-	DUP .selection/y2 LDZ GTH ?&end
-	OVR .selection/x1 LDZ LTH ?&end
-	OVR .selection/x2 LDZ GTH ?&end
-		POP2 #01 JMP2r
-	&end
-	POP2 #00
+	DUP .selection/y1 LDZ LTH ?&outside
+	DUP .selection/y2 LDZ GTH ?&outside
+	OVR .selection/x1 LDZ LTH ?&outside
+	OVR .selection/x2 LDZ GTH ?&outside
+	POP2 #01
 
 JMP2r
+	&outside POP2 #00 JMP2r
 
 @draw-guide ( -- )
 
@@ -984,32 +981,6 @@ JMP2r
 !draw-state
 	&lb 0a
 
-( random )
-
-@init-prng ( -- )
-
-	( seed )
-	#00 .DateTime/second DEI
-	#00 .DateTime/minute DEI #60 SFT2 EOR2
-	#00 .DateTime/hour DEI #c0 SFT2 EOR2 ,prng/x STR2
-	#00 .DateTime/hour DEI #04 SFT2
-	#00 .DateTime/day DEI DUP2 ADD2 EOR2
-	#00 .DateTime/month DEI #60 SFT2 EOR2
-	.DateTime/year DEI2 #a0 SFT2 EOR2 ,prng/y STR2
-
-JMP2r
-
-@prng ( -- number* )
-
-	LIT2 &x $2
-	DUP2 #50 SFT2 EOR2
-	DUP2 #03 SFT2 EOR2
-	LIT2 &y $2 DUP2 ,&x STR2
-	DUP2 #01 SFT2 EOR2 EOR2
-	,&y STR2k POP
-
-JMP2r
-
 ( snarf )
 
 @snarf-txt ".snarf $1
@@ -1062,16 +1033,6 @@ JMP2r
 	[ LIT2 "#. ] ROT OVR EQU [ JMP SWP POP ]
 
 JMP2r
-
-(
-@|helpers )
-
-@base128 ( char - b128 ) chrb36 #00 SWP #007f MUL2 #0023 DIV2 NIP JMP2r
-@b36chr ( b36 -- char ) #24 ( MOD ) [ DIVk MUL SUB ] #00 SWP ;b36clc ADD2 LDA JMP2r
-@chrb36 ( char -- b36 ) #20 SUB #00 SWP ;values ADD2 LDA JMP2r
-@chrmid ( char -- midi ) DUP chrb36 SWP ciuc #24 MUL ADD #00 SWP ;notes ADD2 LDA JMP2r
-@ciuc ( char -- bool ) LIT "A SUB #1a LTH JMP2r
-@ci-key ( char -- bool ) #20 SUB #5b LTH JMP2r
 
 (
 @|ports )
@@ -1162,7 +1123,39 @@ JMP2r
 (
 @|stdlib )
 
+@base128 ( char - b128 ) chrb36 #00 SWP #007f MUL2 #0023 DIV2 NIP JMP2r
+@b36chr ( b36 -- char ) #24 ( MOD ) [ DIVk MUL SUB ] #00 SWP ;b36clc ADD2 LDA JMP2r
+@chrb36 ( char -- b36 ) #20 SUB #00 SWP ;values ADD2 LDA JMP2r
+@chrmid ( char -- midi ) DUP chrb36 SWP ciuc #24 MUL ADD #00 SWP ;notes ADD2 LDA JMP2r
+@ciuc ( char -- bool ) LIT "A SUB #1a LTH JMP2r
+@ci-key ( char -- bool ) #20 SUB #5b LTH JMP2r
 @mcpy ( src* dst* len* -- ) SWP2 STH2 OVR2 ADD2 SWP2 &loop LDAk STH2kr STA INC2r INC2 GTH2k ?&loop POP2 POP2 POP2r JMP2r
+
+( random )
+
+@init-prng ( -- )
+
+	( seed )
+	#00 .DateTime/second DEI
+	#00 .DateTime/minute DEI #60 SFT2 EOR2
+	#00 .DateTime/hour DEI #c0 SFT2 EOR2 ,prng/x STR2
+	#00 .DateTime/hour DEI #04 SFT2
+	#00 .DateTime/day DEI DUP2 ADD2 EOR2
+	#00 .DateTime/month DEI #60 SFT2 EOR2
+	.DateTime/year DEI2 #a0 SFT2 EOR2 ,prng/y STR2
+
+JMP2r
+
+@prng ( -- number* )
+
+	LIT2 &x $2
+	DUP2 #50 SFT2 EOR2
+	DUP2 #03 SFT2 EOR2
+	LIT2 &y $2 DUP2 ,&x STR2
+	DUP2 #01 SFT2 EOR2 EOR2
+	,&y STR2k POP
+
+JMP2r
 
 @mfil ( src* len* data* -- )
 
