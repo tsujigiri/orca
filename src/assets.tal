@@ -1,6 +1,16 @@
 (
 @|tables )
 
+@styles-lut [
+	02 ( 0 normal )
+	01 ( 1 locked )
+	01 ( 2 port-unlocked )
+	04 ( 3 operator )
+	03 ( 4 port-locked )
+	0c ( 5 port-output )
+	01 ( 6 selected )
+	02 ( 7 comment ) ]
+
 @docs-lut [
 	=op-a =op-b =op-c =op-d =op-e =op-f =op-g =op-h
 	=op-i =op-j =op-k =op-l =op-m =op-n =op-o =op-p
@@ -45,16 +55,6 @@
 	67 68 69 6a 6b 6c 6d 6e
 	6f 70 71 72 73 74 75 76
 	77 78 79 7a ]
-
-@cell-styles
-	02 ( 0 normal )
-	01 ( 1 locked )
-	01 ( 2 port-unlocked )
-	04 ( 3 operator )
-	03 ( 4 port-locked )
-	0c ( 5 port-output )
-	01 ( 6 selected )
-	02 ( 7 comment )
 
 @op-ascii
 	( 20	_ ) =op-null

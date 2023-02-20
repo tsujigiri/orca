@@ -777,7 +777,7 @@ JMP2r
 @get-color ( -- char type )
 
 	.head LDZ2 is-selected ?&selected
-		#00 .head/addr LDZ2 read-type ;cell-styles ADD2 LDA JMP2r
+		#00 .head/addr LDZ2 read-type ;styles-lut ADD2 LDA JMP2r
 	&selected
 		#0c
 
