@@ -1,12 +1,3 @@
-@op-table
-	&docs [
-	=op-a =op-b =op-c =op-d =op-e =op-f =op-g =op-h
-	=op-i =op-j =op-k =op-l =op-m =op-n =op-o =op-p
-	=op-q =op-r =op-s =op-t =op-u =op-v =op-w =op-x
-	=op-y =op-z
-	=op-bang =op-comment =op-synth
-	=op-midi =op-pitch =op-byte =op-self ]
-
 (
 @|core )
 

@@ -842,7 +842,7 @@ JMP2r
 		( x ) DUP2 #84 SFT2 .grid/x1 LDZ2 ADD2 #0020 ADD2 .Screen/x DEO2
 		( y ) DUP2 #000f AND2 #40 SFT2 .grid/y1 LDZ2 ADD2 #0020 ADD2 .Screen/y DEO2
 		.Screen/y DEI2 .grid/y2 LDZ2 #0030 SUB2 GTH2 ?&skip
-		DUP2k ADD2 ;op-table/docs ADD2 LDA2
+		DUP2k ADD2 ;docs-lut ADD2 LDA2
 		( glyph )
 			LDAk #0c draw-chr-color
 		( space )
