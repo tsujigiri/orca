@@ -38,16 +38,15 @@
 @op-c-lc get-bang ?&* POP2 JMP2r &*
 @op-c ( clock )
 
-	STH2k
+	STH2
 	( set type ) .types/op STH2kr write-type
-	( get rate ) get-port-left1-value ( min1 ) DUP #00 EQU ADD
-	( get mod ) STH2kr get-port-right1-raw
-		( get case ) DUP ciuc ,&case STR
-		( to value ) chrb36 ( min1 ) DUP #00 EQU ADD
-
-	( res ) #00 SWP ROT #00 SWP .timer/frame LDZ2 SWP2 DIV2 SWP2
+	.timer/frame LDZ2
+	#00 ( get rate ) STH2kr get-port-left1-value ( min1* ) EQUk ADD
+		DIV2
+	#00 ( get mod ) STH2kr get-port-right1-raw
+			( get case ) DUP ciuc ,&case STR
+			( to value ) chrb36 ( min1* ) EQUk ADD
 		( MOD2 ) [ DIV2k MUL2 SUB2 ] NIP
-
 	( set case ) [ LIT &case $1 ] set-case
 	( output ) STH2r !set-port-output-below
 	&? "C "Outputs 20 "modulo 20 "of 20 "frame $1
