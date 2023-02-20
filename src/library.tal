@@ -7,33 +7,34 @@
 	=op-bang/? =op-comment/? =op-synth/?
 	=op-midi/? =op-pitch/? =op-byte/? =op-self/?
 
-( add )
-@op-a-lc get-bang ?&* POP2 JMP2r &* @op-a
+(
+@|core )
 
+@op-a ( add )
+	&? "A "Outputs 20 "sum 20 "of 20 "inputs $1
+	&lc get-bang ?&* POP2 JMP2r &*
 	STH2k
 	( set type ) .types/op STH2kr write-type
 	( a ) get-port-left1-value
 	( b ) STH2kr get-port-right1-raw
 		( case-val ) DUP ciuc ,&case STR chrb36
 	( res ) ADD
-	[ LIT &case $1 ] set-case STH2r !set-port-output-below
-	&? "A "Outputs 20 "sum 20 "of 20 "inputs $1
+[ LIT &case $1 ] set-case STH2r !set-port-output-below
 
-( subtract )
-@op-b-lc get-bang ?&* POP2 JMP2r &* @op-b
-
+@op-b ( subtract )
+	&? "B "Outputs 20 "difference 20 "of 20 "inputs $1
+	&lc get-bang ?&* POP2 JMP2r &*
 	STH2k
 	( set type ) .types/op STH2kr write-type
 	( a ) get-port-left1-value
 	( b ) STH2kr get-port-right1-raw
 		( case-val ) DUP ciuc ,&case STR chrb36
 	( res ) SUB DUP #80 LTH ?&bounce #24 SWP SUB &bounce
-	[ LIT &case $1 ] set-case STH2r !set-port-output-below
-	&? "B "Outputs 20 "difference 20 "of 20 "inputs $1
+[ LIT &case $1 ] set-case STH2r !set-port-output-below
 
-( clock )
-@op-c-lc get-bang ?&* POP2 JMP2r &* @op-c
-
+@op-c ( clock )
+	&? "C "Outputs 20 "modulo 20 "of 20 "frame $1
+	&lc get-bang ?&* POP2 JMP2r &*
 	STH2
 	( set type ) .types/op STH2kr write-type
 	.timer/frame LDZ2
@@ -44,12 +45,11 @@
 			( case-val ) DUP ciuc ,&case STR chrb36
 			( min1* ) EQUk ADD
 		( mod2 ) [ DIV2k MUL2 SUB2 ] NIP
-	[ LIT &case $1 ] set-case STH2r !set-port-output-below
-	&? "C "Outputs 20 "modulo 20 "of 20 "frame $1
+[ LIT &case $1 ] set-case STH2r !set-port-output-below
 
-( delay )
-@op-d-lc get-bang ?&* POP2 JMP2r &* @op-d
-
+@op-d ( delay )
+	&? "D "Bangs 20 "on 20 "modulo 20 "of 20 "frame $1
+	&lc get-bang ?&* POP2 JMP2r &*
 	STH2
 	( set type ) .types/op STH2kr write-type
 	.timer/frame LDZ2
@@ -58,37 +58,34 @@
 			MUL2
 		( mod2 ) [ DIV2k MUL2 SUB2 ] #0000 EQU2
 		( bang ) [ LIT2 "*. ] ROT [ JMP SWP POP ]
-	STH2r !set-port-output-below
-	&? "D "Bangs 20 "on 20 "modulo 20 "of 20 "frame $1
+STH2r !set-port-output-below
 
-( east )
-@op-e-lc get-bang ?&* POP2 JMP2r &* @op-e
-
+@op-e ( east )
+	&? "E "Moves 20 "eastward 20 "or 20 "bangs $1
+	&lc get-bang ?&* POP2 JMP2r &*
 	STH2k
 	( set type ) .types/op STH2kr write-type
 	read-cell ,&self STR
 	( wall ) .head/x LDZ INC .grid/width LDZ EQU ?&collide
 	( cell ) STH2kr INC2 read-cell LIT ". NEQ ?&collide
 	( new ) [ LIT &self $1 ] STH2kr INC2 set-port-raw
-	LIT ". STH2r !set-port-raw
+LIT ". STH2r !set-port-raw
 	&collide
-	LIT "* STH2r !set-port-output
-	&? "E "Moves 20 "eastward 20 "or 20 "bangs $1
+LIT "* STH2r !set-port-output
 
-( if )
-@op-f-lc get-bang ?&* POP2 JMP2r &* @op-f
-
+@op-f ( if )
+	&? "F "Bangs 20 "if 20 "inputs 20 "are 20 "equal $1
+	&lc get-bang ?&* POP2 JMP2r &*
 	STH2k
 	( set type ) .types/op STH2kr write-type
 	( a ) get-port-left1-raw
 	( b ) STH2kr get-port-right1-raw
 	( bang ) EQU [ LIT2 "*. ] ROT [ JMP SWP POP ]
-	STH2r !set-port-output-below
-	&? "F "Bangs 20 "if 20 "inputs 20 "are 20 "equal $1
+STH2r !set-port-output-below
 
-( generator )
-@op-g-lc get-bang ?&* POP2 JMP2r &* @op-g
-
+@op-g ( generator )
+	&? "G "Writes 20 "operands 20 "with 20 "offset $1
+	&lc get-bang ?&* POP2 JMP2r &*
 	STH2k
 	( set type ) .types/op STH2kr write-type
 	( x ) STH2kr #0003 SUB2 get-port-left-value
@@ -104,22 +101,19 @@
 		INC GTHk ?&l
 	POP2
 	POP2r
-
 JMP2r
-	&? "G "Writes 20 "operands 20 "with 20 "offset $1
 
-( hold )
-@op-h-lc get-bang ?&* POP2 JMP2r &* @op-h
-
+@op-h ( hold )
+	&? "H "Holds 20 "southward 20 "operand $1
+	&lc get-bang ?&* POP2 JMP2r &*
 	STH2k
 	( set type ) .types/op STH2kr write-type
 	( cell ) #00 .grid/width LDZ ADD2 read-cell
-	STH2r !set-port-output-below
-	&? "H "Holds 20 "southward 20 "operand $1
+STH2r !set-port-output-below
 
-( increment )
-@op-i-lc get-bang ?&* POP2 JMP2r &* @op-i
-
+@op-i ( increment )
+	&? "I "Increments 20 "southward 20 "operand $1
+	&lc get-bang ?&* POP2 JMP2r &*
 	STH2k
 	( set type ) .types/op STH2kr write-type
 	( step ) get-port-left1-value
@@ -128,12 +122,11 @@ JMP2r
 		( min1 ) DUP #00 EQU ADD
 	( res ) SWP STH2kr #00 .grid/width LDZ ADD2 read-cell chrb36 ADD SWP
 	( MOD ) [ DIVk MUL SUB ]
-	[ LIT &case $1 ] set-case STH2r !set-port-output-below
-	&? "I "Increments 20 "southward 20 "operand $1
+[ LIT &case $1 ] set-case STH2r !set-port-output-below
 
-( jumper )
-@op-j-lc get-bang ?&* POP2 JMP2r &* @op-j
-
+@op-j ( jumper )
+	&? "J "Outputs 20 "northward 20 "operand $1
+	&lc get-bang ?&* POP2 JMP2r &*
 	STH2k
 	( set type ) .types/op STH2kr write-type
 	( get above ) #00 .grid/width LDZ SUB2 get-port-left-raw
@@ -145,12 +138,11 @@ JMP2r
 	&while
 		#00 .grid/width LDZ ADD2 DUP2 read-cell chrb36 #13 EQU
 		?&while
-	( set below ) !set-port-output
-	&? "J "Outputs 20 "northward 20 "operand $1
+!set-port-output
 
-( konkat )
-@op-k-lc get-bang ?&* POP2 JMP2r &* @op-k
-
+@op-k ( konkat )
+	&? "K "Reads 20 "multiple 20 "variables $1
+	&lc get-bang ?&* POP2 JMP2r &*
 	STH2k
 	( set type ) .types/op STH2kr write-type
 	get-port-left1-value #00
@@ -165,37 +157,33 @@ JMP2r
 		INC GTHk ?&l
 	POP2
 	POP2r
-
 JMP2r
-	&? "K "Reads 20 "multiple 20 "variables $1
 
-( lesser )
-@op-l-lc get-bang ?&* POP2 JMP2r &* @op-l
-
+@op-l ( lesser )
+	&? "L "Outputs 20 "smallest 20 "of 20 "inputs $1
+	&lc get-bang ?&* POP2 JMP2r &*
 	STH2k
 	( set type ) .types/op STH2kr write-type
 	( a ) get-port-left1-value
 	( b ) STH2kr get-port-right1-raw
 		( case-val ) DUP ciuc ,&case STR chrb36
 	( res ) [ LTHk JMP SWP POP ]
-	[ LIT &case $1 ] set-case STH2r !set-port-output-below
-	&? "L "Outputs 20 "smallest 20 "of 20 "inputs $1
+[ LIT &case $1 ] set-case STH2r !set-port-output-below
 
-( multiply )
-@op-m-lc get-bang ?&* POP2 JMP2r &* @op-m
-
+@op-m ( multiply )
+	&? "M "Outputs 20 "product 20 "of 20 "inputs $1
+	&lc get-bang ?&* POP2 JMP2r &*
 	STH2k
 	( set type ) .types/op STH2kr write-type
 	( a ) get-port-left1-value
 	( b ) STH2kr get-port-right1-raw
 		( case-val ) DUP ciuc ,&case STR chrb36
 	( res ) MUL
-	[ LIT &case $1 ] set-case STH2r !set-port-output-below
-	&? "M "Outputs 20 "product 20 "of 20 "inputs $1
+[ LIT &case $1 ] set-case STH2r !set-port-output-below
 
-( north )
-@op-n-lc get-bang ?&* POP2 JMP2r &* @op-n
-
+@op-n ( north )
+	&? "N "Moves 20 "Northward 20 "or 20 "bangs $1
+	&lc get-bang ?&* POP2 JMP2r &*
 	STH2k
 	( set type ) .types/op STH2kr write-type
 	read-cell ,&self STR
@@ -204,23 +192,21 @@ JMP2r
 	( write new ) [ LIT &self $1 ] STH2kr #00 .grid/width LDZ SUB2 set-port-raw
 	( erase old ) LIT ". STH2r !set-port-raw
 	&collide
-	LIT "* STH2r !set-port-output
-	&? "N "Moves 20 "Northward 20 "or 20 "bangs $1
+LIT "* STH2r !set-port-output
 
-( read )
-@op-o-lc get-bang ?&* POP2 JMP2r &* @op-o
-
+@op-o ( read )
+	&? "O "Reads 20 "operand 20 "with 20 "offset $1
+	&lc get-bang ?&* POP2 JMP2r &*
 	STH2k
 	( set type ) .types/op STH2kr write-type
 	( x ) STH2kr #0002 SUB2 get-port-left-value INC #00 SWP ADD2
 	( y ) STH2kr get-port-left1-value #00 SWP #00 .grid/width LDZ MUL2 ADD2
 	( val ) get-port-right-raw
-	STH2r !set-port-output-below
-	&? "O "Reads 20 "operand 20 "with 20 "offset $1
+STH2r !set-port-output-below
 
-( push )
-@op-p-lc get-bang ?&* POP2 JMP2r &* @op-p
-
+@op-p ( push )
+	&? "P "Writes 20 "eastward 20 "operand $1
+	&lc get-bang ?&* POP2 JMP2r &*
 	STH2k
 	( set type ) .types/op STH2kr write-type
 	( key ) #0002 SUB2 get-port-left-value
@@ -235,12 +221,11 @@ JMP2r
 	( read ) STH2kr get-port-right1-raw
 	ROT ROT
 	( MOD ) [ DIVk MUL SUB ] #00 SWP STH2r #00 .grid/width LDZ ADD2 ADD2
-		!set-port-output
-	&? "P "Writes 20 "eastward 20 "operand $1
+!set-port-output
 
-( query )
-@op-q-lc get-bang ?&* POP2 JMP2r &* @op-q
-
+@op-q ( query )
+	&? "Q "Reads 20 "operands 20 "with 20 "offset $1
+	&lc get-bang ?&* POP2 JMP2r &*
 	STH2k
 	( set type ) .types/op STH2kr write-type
 	( x ) STH2kr #0003 SUB2 get-port-left-value
@@ -257,13 +242,11 @@ JMP2r
 		INC GTHk ?&l
 	POP2
 	POP2r
-
 JMP2r
-	&? "Q "Reads 20 "operands 20 "with 20 "offset $1
 
-( random )
-@op-r-lc get-bang ?&* POP2 JMP2r &* @op-r
-
+@op-r ( random )
+	&? "R "Outputs 20 "random 20 "value $1
+	&lc get-bang ?&* POP2 JMP2r &*
 	STH2k
 	( set type ) .types/op STH2kr write-type
 	( a-min ) get-port-left1-value
@@ -272,12 +255,11 @@ JMP2r
 		( min1 ) DUP #00 EQU ADD
 	( mod ) OVR SUB prng ADD SWP ( min1 ) DUP #00 EQU ADD
 	( MOD ) [ DIVk MUL SUB ] ADD
-	[ LIT &case $1 ] set-case STH2r !set-port-output-below
-	&? "R "Outputs 20 "random 20 "value $1
+[ LIT &case $1 ] set-case STH2r !set-port-output-below
 
-( south )
-@op-s-lc get-bang ?&* POP2 JMP2r &* @op-s
-
+@op-s ( south )
+	&? "S "Moves 20 "southward 20 "or 20 "bangs $1
+	&lc get-bang ?&* POP2 JMP2r &*
 	STH2k
 	( set type ) .types/op STH2kr write-type
 	read-cell ,&self STR
@@ -286,12 +268,11 @@ JMP2r
 	( write new ) [ LIT &self $1 ] STH2kr #00 .grid/width LDZ ADD2 set-port-raw
 	( erase old ) LIT ". STH2r !set-port-raw
 	&collide
-	LIT "* STH2r !set-port-output
-	&? "S "Moves 20 "southward 20 "or 20 "bangs $1
+LIT "* STH2r !set-port-output
 
-( track )
-@op-t-lc get-bang ?&* POP2 JMP2r &* @op-t
-
+@op-t ( track )
+	&? "T "Reads 20 "eastward 20 "operand $1
+	&lc get-bang ?&* POP2 JMP2r &*
 	STH2k
 	( set type ) .types/op STH2kr write-type
 	( key ) #0002 SUB2 get-port-left-value
@@ -305,12 +286,11 @@ JMP2r
 	POP
 	( read )
 	( MOD ) [ DIVk MUL SUB ] #00 SWP STH2kr INC2 ADD2 get-port-right-raw
-	STH2r !set-port-output-below
-	&? "T "Reads 20 "eastward 20 "operand $1
+STH2r !set-port-output-below
 
-( Uclid )
-@op-u-lc get-bang ?&* POP2 JMP2r &* @op-u
-
+@op-u ( Uclid )
+	&? "U "Bangs 20 "on 20 "Euclidean 20 "rhythm $1
+	&lc get-bang ?&* POP2 JMP2r &*
 	STH2k
 	( set type ) .types/op STH2kr write-type
 	( step ) get-port-left1-value
@@ -322,12 +302,11 @@ JMP2r
 	( ADD step ) SWPr STHr #00 SWP ADD2
 	( bucket GTH= max ) STHr #00 SWP LTH2 #01 NEQ
 	( bang if equal ) #fc MUL LIT ". ADD
-	STH2r !set-port-output-below
-	&? "U "Bangs 20 "on 20 "Euclidean 20 "rhythm $1
+STH2r !set-port-output-below
 
-( variable )
-@op-v-lc get-bang ?&* POP2 JMP2r &* @op-v
-
+@op-v ( variable )
+	&? "V "Reads 20 "and 20 "writes 20 "variable $1
+	&lc get-bang ?&* POP2 JMP2r &*
 	STH2k
 	( set type ) .types/op STH2kr write-type
 	( key ) get-port-left1-raw
@@ -340,13 +319,11 @@ JMP2r
 		SWP chrb36 .variables ADD STZ POP2r JMP2r
 	&idle
 		POP2 POP2r
-
 JMP2r
-	&? "V "Reads 20 "and 20 "writes 20 "variable $1
 
-( west )
-@op-w-lc get-bang ?&* POP2 JMP2r &* @op-w
-
+@op-w ( west )
+	&? "W "Moves 20 "westward 20 "or 20 "bangs $1
+	&lc get-bang ?&* POP2 JMP2r &*
 	STH2k
 	( set type ) .types/op STH2kr write-type
 	read-cell ,&self STR
@@ -355,23 +332,22 @@ JMP2r
 	( write new ) [ LIT &self $1 ] STH2kr #0001 SUB2 set-port-raw
 	( erase old ) LIT ". STH2r !set-port-raw
 	&collide
-	LIT "* STH2r !set-port-output
-	&? "W "Moves 20 "westward 20 "or 20 "bangs $1
+LIT "* STH2r !set-port-output
 
-( write )
-@op-x-lc get-bang ?&* POP2 JMP2r &* @op-x
-
+@op-x ( write )
+	&? "X "Writes 20 "operand 20 "with 20 "offset $1
+	&lc get-bang ?&* POP2 JMP2r &*
 	STH2k
 	( set type ) .types/op STH2kr write-type
 	( x ) STH2kr #0002 SUB2 get-port-left-value #00 SWP ADD2
 	( y ) STH2kr get-port-left1-value INC #00 SWP #00 .grid/width LDZ MUL2 ADD2
 	( val ) STH2r get-port-right1-raw
-	ROT ROT !set-port-output
-	&? "X "Writes 20 "operand 20 "with 20 "offset $1
+	ROT ROT
+!set-port-output
 
-( yumper )
-@op-y-lc get-bang ?&* POP2 JMP2r &* @op-y
-
+@op-y ( yumper )
+	&? "Y "Outputs 20 "westward 20 "operand $1
+	&lc get-bang ?&* POP2 JMP2r &*
 	STH2k
 	( set type ) .types/op STH2kr write-type
 	( get above ) get-port-left1-raw
@@ -383,12 +359,11 @@ JMP2r
 	&while
 		INC2 DUP2 read-cell chrb36 #22 EQU
 		?&while
-	( set below ) !set-port-output
-	&? "Y "Outputs 20 "westward 20 "operand $1
+!set-port-output
 
-( lerp )
-@op-z-lc get-bang ?&* POP2 JMP2r &* @op-z
-
+@op-z ( lerp )
+	&? "Z "Transitions 20 "operand 20 "to 20 "input $1
+	&lc get-bang ?&* POP2 JMP2r &*
 	STH2k
 	( set type ) .types/op STH2kr write-type
 	( rate ) get-port-left1-value
@@ -396,23 +371,20 @@ JMP2r
 		( case-val ) DUP ciuc ,&case STR chrb36
 	( val ) STH2kr #00 .grid/width LDZ ADD2 read-cell chrb36
 	( res ) lerp
-	[ LIT &case $1 ] set-case STH2r !set-port-output-below
-	&? "Z "Transitions 20 "operand 20 "to 20 "input $1
+[ LIT &case $1 ] set-case STH2r !set-port-output-below
 
 (
 @|special )
 
-( bang )
 @op-bang
-
-	LIT ". ROT ROT
-
-!write-cell
 	&? "* "Bangs 20 "neighboring 20 "operands $1
+	&*
+	LIT ". ROT ROT
+!write-cell
 
-( comment )
 @op-comment
-
+	&? "# "Comments 20 "a 20 "line $1
+	&*
 	STH2k
 	( set itself )
 	.types/comment STH2kr write-type
@@ -429,13 +401,11 @@ JMP2r
 		INC2 GTH2k ?&l
 	&end
 	POP2 POP2
-
 JMP2r
-	&? "# "Comments 20 "a 20 "line $1
 
-( synth )
 @op-synth
-
+	&? "= "Play 20 "note 20 "with 20 "uxn 20 "synth $1
+	&*
 	STH2k
 	( channel ) get-port-right1-value [ ,&ch STR ]
 	( octave ) STH2kr INC2 get-port-right1-value
@@ -445,27 +415,21 @@ JMP2r
 	( animate ) .types/io STH2r write-type
 	( get note ) chrmid SWP [ #0c MUL ] ADD
 	( play ) .Audio0/pitch [ LIT &ch $1 ] #03 AND #40 SFT ADD DEO
-
 JMP2r
-	&? "= "Play 20 "note 20 "with 20 "uxn 20 "synth $1
 
-( midi )
 @op-midi
-
+	&? ": "Send 20 "a 20 "midi 20 "note $1
+	&*
 	STH2k
 	( channel ) get-port-right1-value [ ,&ch STR ]
 	( octave ) STH2kr INC2 get-port-right1-value
 	( note ) STH2kr #0003 ADD2 get-port-right-raw
 	( velocity ) STH2kr #0004 ADD2 get-port-right-raw [ ,&vel STR ]
 	( length ) STH2kr #0005 ADD2 get-port-right-value
-
 	( has note ) OVR LIT ". NEQ ?&has-note [ POP POP2 POP2r JMP2r ] &has-note
 	( has bang ) get-bang ?&is-bang [ POP POP2 POP2r JMP2r ] &is-bang
-
 	( store length ) .voices ,&ch LDR DUP ADD ADD INC STZk POP [ ,&len STR ]
-
 	( animate ) .types/io STH2r write-type
-
 	( get note ) chrmid SWP [ #0c MUL ] ADD
 	( store note ) DUP .voices ,&ch LDR DUP ADD ADD STZ
 	( get velocity ) [ LIT &vel $1 ]
@@ -474,14 +438,11 @@ JMP2r
 		&normalize
 		base128 &continue SWP
 	( get channel ) [ LIT &ch $1 ]
-
 	( note on )
 	( channel ) DUP .Console/write DEO
 	( note ) OVR .Console/write DEO
 	( velocity ) ROT .Console/write DEO
-
 	.signal/midi LDZk INC SWP STZ
-
 	( note off immediately if 0 length )
 	[ LIT &len $1 ] #00 NEQ ?&done
 		( channel ) .Console/write DEO
@@ -490,13 +451,11 @@ JMP2r
 		JMP2r
 	&done
 	POP2
-
 JMP2r
-	&? ": "Send 20 "a 20 "midi 20 "note $1
 
-( pitch )
 @op-pitch
-
+	&? "; "Send 20 "a 20 "raw 20 "pitch 20 "byte $1
+	&*
 	STH2k
 	( octave ) get-port-right1-value
 	( note ) STH2kr INC2 get-port-right1-raw
@@ -504,26 +463,22 @@ JMP2r
 	( has bang ) get-bang ?&is-bang [ POP2 POP2r JMP2r ] &is-bang
 	( animate ) .types/io STH2r write-type
 	( get note ) chrmid SWP [ #0c MUL ] ADD .Console/write DEO
-
 JMP2r
-	&? "; "Send 20 "a 20 "raw 20 "pitch 20 "byte $1
-
-( byte )
+	
 @op-byte
-
+	&? "/ "Send 20 "a 20 "raw 20 "hexadecimal 20 "byte $1
+	&*
 	STH2k
 	( hn ) get-port-right1-value
 	( ln ) STH2kr INC2 get-port-right1-value
 	( has bang ) get-bang ?&is-bang [ POP2 POP2r JMP2r ] &is-bang
 	( animate ) .types/io STH2r write-type
 	#0f AND SWP #0f AND #40 SFT ADD .Console/write DEO
-
 JMP2r
-	&? "/ "Send 20 "a 20 "raw 20 "hexadecimal 20 "byte $1
 
-( self )
 @op-self
-
+	&? "$ "Load 20 "orca 20 "file $1
+	&*
 	STH2k
 	&while
 		INC2 DUP2 get-port-right-raw LIT ". NEQ ?&while
@@ -531,15 +486,11 @@ JMP2r
 	( has bang ) get-bang ?&is-bang [ POP2r JMP2r ] &is-bang
 	.head LDZ2 INC STH2kr get-word inject-file
 	( animate ) .types/io STH2r
-
 !write-type
-	&? "$ "Load 20 "orca 20 "file $1
 
-( null )
 @op-null
-
+	&*
 	POP2
-
 JMP2r
 
 ~src/manifest.tal
