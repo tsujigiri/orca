@@ -88,7 +88,9 @@
 		DUP2 #04 SFT2 NIP #05 SUB .grid/height STZ
 		#01 SFT2 .grid/height LDZ #01 SFT #00 SWP #40 SFT2 ADD2 .grid/y2 STZ2
 	( len )
-	#00 .grid/height LDZ #00 .grid/width LDZ MUL2 .grid/length STZ2
+	[ LIT2 00 -grid/height ] LDZ
+	[ LIT2 00 -grid/width ] LDZ
+		MUL2 .grid/length STZ2
 
 	( cache positions )
 	.grid/x1 LDZ2
@@ -627,9 +629,9 @@ JMP2r
 
 	.head/addr LDZ2 ;data/cells ADD2 STH2k
 	( left ) #0001 SUB2 LDA LIT "* EQU ?&bang
-	( top ) STH2kr #00 .grid/width LDZ SUB2 LDA LIT "* EQU ?&bang
+	( top ) STH2kr [ LIT2 00 -grid/width ] LDZ SUB2 LDA LIT "* EQU ?&bang
 	( right ) STH2kr INC2 LDA LIT "* EQU ?&bang
-	( bottom ) STH2kr #00 .grid/width LDZ ADD2 LDA LIT "* EQU ?&bang
+	( bottom ) STH2kr [ LIT2 00 -grid/width ] LDZ ADD2 LDA LIT "* EQU ?&bang
 	POP2r #00
 JMP2r
 	&bang POP2r #01 JMP2r
@@ -1058,7 +1060,7 @@ JMP2r
 	!read-cell/force
 	&skip POP2 LIT ". JMP2r
 
-@set-port-output-below ( value addr* -- ) #00 .grid/width LDZ ADD2
+@set-port-output-below ( value addr* -- ) [ LIT2 00 -grid/width ] LDZ ADD2
 @set-port-output ( value addr* -- )
 	( bounds ) DUP2 .grid/length LDZ2 GTH2 ?&skip
 	( lock ) STH2k #01 STH2kr write-lock/force
@@ -1116,7 +1118,7 @@ JMP2r
 
 @get-addr ( x y -- addr* )
 
-	#00 SWP #00 .grid/width LDZ MUL2 ROT #00 SWP ADD2
+	#00 SWP [ LIT2 00 -grid/width ] LDZ MUL2 ROT #00 SWP ADD2
 
 JMP2r
 

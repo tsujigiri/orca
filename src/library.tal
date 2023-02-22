@@ -88,7 +88,7 @@ STH2r !set-port-output-below
 	( x ) STH2kr #0003 SUB2 get-port-left-value
 		( load ) #00 SWP ADD2
 	( y ) STH2kr #0002 SUB2 get-port-left-value
-		( load ) #00 SWP INC2 [ #00 .grid/width LDZ MUL2 ] ADD2
+		( load ) #00 SWP INC2 [ LIT2 00 -grid/width ] LDZ MUL2 ADD2
 	,&save STR2
 	( len ) STH2kr get-port-left1-value ( min1 ) DUP #00 EQU ADD
 	#00
@@ -106,7 +106,7 @@ JMP2r
 
 	STH2k
 	( set type ) .types/op STH2kr write-type
-	( cell ) #00 .grid/width LDZ ADD2 read-cell
+	( cell ) [ LIT2 00 -grid/width ] LDZ ADD2 read-cell
 
 STH2r !set-port-output-below
 
@@ -119,7 +119,7 @@ STH2r !set-port-output-below
 	( mod ) STH2kr get-port-right1-raw
 		( case-val ) DUP ciuc ,&case STR chrb36
 		( min1 ) DUP #00 EQU ADD
-	( res ) SWP STH2kr #00 .grid/width LDZ ADD2 read-cell chrb36 ADD SWP
+	( res ) SWP STH2kr [ LIT2 00 -grid/width ] LDZ ADD2 read-cell chrb36 ADD SWP
 	( MOD ) [ DIVk MUL SUB ]
 
 [ LIT &case $1 ] set-case STH2r !set-port-output-below
@@ -129,14 +129,14 @@ STH2r !set-port-output-below
 
 	STH2k
 	( set type ) .types/op STH2kr write-type
-	( get above ) #00 .grid/width LDZ SUB2 get-port-left-raw
+	( get above ) [ LIT2 00 -grid/width ] LDZ SUB2 get-port-left-raw
 	( ignore cable )
 	DUP chrb36 #13 NEQ ?&no-wire
 		POP POP2r JMP2r &no-wire
 	( skip down )
 	STH2r
 	&while
-		#00 .grid/width LDZ ADD2 DUP2 read-cell chrb36 #13 EQU
+		[ LIT2 00 -grid/width ] LDZ ADD2 DUP2 read-cell chrb36 #13 EQU
 		?&while
 
 !set-port-output
@@ -192,8 +192,8 @@ JMP2r
 	( set type ) .types/op STH2kr write-type
 	read-cell ,&self STR
 	( wall ) .head/y LDZ #01 SUB #ff EQU ?&collide
-	( cell ) STH2kr #00 .grid/width LDZ SUB2 read-cell LIT ". NEQ ?&collide
-	( write new ) [ LIT &self $1 ] STH2kr #00 .grid/width LDZ SUB2 set-port-raw
+	( cell ) STH2kr [ LIT2 00 -grid/width ] LDZ SUB2 read-cell LIT ". NEQ ?&collide
+	( write new ) [ LIT &self $1 ] STH2kr [ LIT2 00 -grid/width ] LDZ SUB2 set-port-raw
 	( erase old ) LIT ". STH2r !set-port-raw
 	&collide
 
@@ -205,7 +205,7 @@ LIT "* STH2r !set-port-output
 	STH2k
 	( set type ) .types/op STH2kr write-type
 	( x ) STH2kr #0002 SUB2 get-port-left-value INC #00 SWP ADD2
-	( y ) STH2kr get-port-left1-value #00 SWP #00 .grid/width LDZ MUL2 ADD2
+	( y ) STH2kr get-port-left1-value #00 SWP [ LIT2 00 -grid/width ] LDZ MUL2 ADD2
 	( val ) get-port-right-raw
 
 STH2r !set-port-output-below
@@ -219,14 +219,14 @@ STH2r !set-port-output-below
 	( len ) STH2kr get-port-left1-value ( min1 ) DUP #00 EQU ADD
 	#00
 	&l
-		#00 OVR STH2kr #00 .grid/width LDZ ADD2 ADD2 STH2
+		#00 OVR STH2kr [ LIT2 00 -grid/width ] LDZ ADD2 ADD2 STH2
 		( lock ) #01 STH2kr write-lock
 		( type ) .types/locked STH2r write-type
 		INC GTHk ?&l
 	POP
 	( read ) STH2kr get-port-right1-raw
 	ROT ROT
-	( MOD ) [ DIVk MUL SUB ] #00 SWP STH2r #00 .grid/width LDZ ADD2 ADD2
+	( MOD ) [ DIVk MUL SUB ] #00 SWP STH2r [ LIT2 00 -grid/width ] LDZ ADD2 ADD2
 
 !set-port-output
 
@@ -238,10 +238,10 @@ STH2r !set-port-output-below
 	( x ) STH2kr #0003 SUB2 get-port-left-value
 		( load ) #00 SWP INC2 ADD2
 	( y ) STH2kr #0002 SUB2 get-port-left-value
-		( load ) #00 SWP [ #00 .grid/width LDZ MUL2 ] ADD2
+		( load ) #00 SWP [ LIT2 00 -grid/width ] LDZ MUL2 ADD2
 	,&load STR2
 	( len ) STH2kr get-port-left1-value ( min1 ) DUP #00 EQU ADD
-		( save ) #00 OVR STH2kr #00 .grid/width LDZ ADD2 SWP2 SUB2 INC2 ,&save STR2
+		( save ) #00 OVR STH2kr [ LIT2 00 -grid/width ] LDZ ADD2 SWP2 SUB2 INC2 ,&save STR2
 	#00
 	&l
 		( load ) #00 OVR [ LIT2 &load $2 ] ADD2 get-port-right-raw
@@ -273,8 +273,8 @@ JMP2r
 	( set type ) .types/op STH2kr write-type
 	read-cell ,&self STR
 	( wall ) .head/y LDZ INC .grid/height LDZ EQU ?&collide
-	( cell ) STH2kr #00 .grid/width LDZ ADD2 read-cell LIT ". NEQ ?&collide
-	( write new ) [ LIT &self $1 ] STH2kr #00 .grid/width LDZ ADD2 set-port-raw
+	( cell ) STH2kr [ LIT2 00 -grid/width ] LDZ ADD2 read-cell LIT ". NEQ ?&collide
+	( write new ) [ LIT &self $1 ] STH2kr [ LIT2 00 -grid/width ] LDZ ADD2 set-port-raw
 	( erase old ) LIT ". STH2r !set-port-raw
 	&collide
 
@@ -326,7 +326,7 @@ STH2r !set-port-output-below
 	DUP LIT ". EQU ?&idle
 	OVR chrb36 ?&save
 	( load )
-		NIP chrb36 .variables ADD LDZ STH2r #00 .grid/width LDZ ADD2 !set-port-output
+		NIP chrb36 .variables ADD LDZ STH2r [ LIT2 00 -grid/width ] LDZ ADD2 !set-port-output
 	&save
 		SWP chrb36 .variables ADD STZ POP2r JMP2r
 	&idle
@@ -354,7 +354,7 @@ LIT "* STH2r !set-port-output
 	STH2k
 	( set type ) .types/op STH2kr write-type
 	( x ) STH2kr #0002 SUB2 get-port-left-value #00 SWP ADD2
-	( y ) STH2kr get-port-left1-value INC #00 SWP #00 .grid/width LDZ MUL2 ADD2
+	( y ) STH2kr get-port-left1-value INC #00 SWP [ LIT2 00 -grid/width ] LDZ MUL2 ADD2
 	( val ) STH2r get-port-right1-raw
 	ROT ROT
 
@@ -385,7 +385,7 @@ LIT "* STH2r !set-port-output
 	( rate ) get-port-left1-value
 	( target ) STH2kr get-port-right1-raw
 		( case-val ) DUP ciuc ,&case STR chrb36
-	( val ) STH2kr #00 .grid/width LDZ ADD2 read-cell chrb36
+	( val ) STH2kr [ LIT2 00 -grid/width ] LDZ ADD2 read-cell chrb36
 	( res ) lerp
 
 [ LIT &case $1 ] set-case STH2r !set-port-output-below
@@ -407,7 +407,7 @@ LIT "* STH2r !set-port-output
 	( set itself )
 	.types/comment STH2kr write-type
 	( get edge )
-	#00 .grid/width LDZ .head/x LDZ SUB ADD2
+	[ LIT2 00 -grid/width ] LDZ .head/x LDZ SUB ADD2
 	STH2r INC2
 	&l
 		( set lock ) STH2k #01 STH2r write-lock
