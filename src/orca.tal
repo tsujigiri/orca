@@ -35,7 +35,6 @@
 	@filepath $40
 	@grid &x1 $2 &y1 $2 &x2 $2 &y2 $2 &size &width $1 &height $1 &length $2
 	@selection &from &x1 $1 &y1 $1 &to &x2 $1 &y2 $1
-	@cursor &x $2 &y $2
 	@toolbar &x1 $2 &y1 $2 &x2 $2 &y2 $2
 	@head &x $1 &y $1 &addr $2
 	@variables $24
@@ -1084,7 +1083,9 @@ JMP2r
 	&skip POP2 LIT ". JMP2r
 
 @set-cell ( x y c -- )
-	ROT ROT get-addr
+	ROT ROT
+	( bounds ) OVR .grid/width LDZ #01 SUB GTH ?write-cell/skip
+	get-addr
 @write-cell ( cell addr* -- )
 	( bounds ) DUP2 .grid/length LDZ2 GTH2 ?&skip
 	&force ;data/cells ADD2 STA JMP2r
