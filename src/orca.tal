@@ -472,7 +472,7 @@ BRK
 		POP2 POPr
 		INC GTHk ?&ver
 	POP2
-	#01 .state/changed STZ
+	[ LIT2 01 -state/changed ] STZ
 
 !draw-state
 
@@ -516,7 +516,7 @@ BRK
 	.toolbar/y1 LDZ2 .Screen/y DEO2
 	.grid/x2 LDZ2 #0018 SUB2 .Screen/x DEO2
 	#00 .guide/grid LDZ #40 SFT2 ;help-icn ADD2 .Screen/addr DEO2
-	#01 .Screen/sprite DEO
+	[ LIT2 01 -Screen/sprite ] DEO
 
 JMP2r
 
@@ -663,7 +663,7 @@ JMP2r
 	#04 ;draw-chr/color STA
 	.dpad LDZ draw-byte
 	( space )
-	#00 .Screen/sprite DEO
+	[ LIT2 00 -Screen/sprite ] DEO
 	( icon )
 	.dpad LDZ #01
 
@@ -719,7 +719,7 @@ JMP2r
 	[ LIT2 &y $2 ] .Screen/y DEO2
 	( icon )
 	;save-icn .Screen/addr DEO2
-	#01 .Screen/sprite DEO
+	[ LIT2 01 -Screen/sprite ] DEO
 
 JMP2r
 
@@ -848,7 +848,7 @@ JMP2r
 		( glyph )
 			LDAk #0c draw-chr-color
 		( space )
-			#00 .Screen/sprite DEO
+			[ LIT2 00 -Screen/sprite ] DEO
 		( text )
 			INC2 #01 draw-str-color
 		&skip
@@ -878,7 +878,7 @@ JMP2r
 @draw-chr ( char -- )
 
 	#20 SUB #00 SWP #40 SFT2 ;font ADD2 .Screen/addr DEO2
-	[ LIT &color 01 ] .Screen/sprite DEO
+	[ LIT2 &color 01 -Screen/sprite ] DEO
 
 JMP2r
 
@@ -930,7 +930,7 @@ JMP2r
 	#0b set-speed
 
 	run
-	#00 .state/changed STZ
+	[ LIT2 00 -state/changed ] STZ
 
 !draw-state
 
@@ -938,7 +938,7 @@ JMP2r
 
 	#0000 ;filepath inject-file
 	draw-grid
-	#00 .state/changed STZ
+	[ LIT2 00 -state/changed ] STZ
 
 !draw-state
 
@@ -978,7 +978,7 @@ JMP2r
 		( linebreak ) ;&lb .File/write DEO2
 		INC GTHk ?&ver
 	POP2
-	#00 .state/changed STZ
+	[ LIT2 00 -state/changed ] STZ
 
 !draw-state
 	&lb 0a
