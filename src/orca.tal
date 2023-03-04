@@ -160,8 +160,9 @@ BRK
 		01 "i =toggle-insert "Insert $1
 		00 08 =edit-erase "Erase $1
 		01 "b =edit-comment "Comment $1
-	03 "Play $1
+	04 "Play $1
 		00 20 =play-toggle "Pause $1
+		00 0d =play-step "Step $1
 		01 ", =play-decr "Decr $1
 		01 ". =play-incr "Incr $1
 	02 "View $1
@@ -264,10 +265,7 @@ BRK
 	.timer/playing LDZ [ JMP BRK ]
 	( on beat )
 	.timer LDZ2 NEQ ?&skip
-		manage-voices
 		run
-		.timer/frame LDZ2k INC2 ROT STZ2
-		#00 .timer/beat STZ
 		&skip
 	( inc beat )
 	.timer/beat LDZk INC SWP STZ
@@ -501,6 +499,15 @@ BRK
 
 !draw-timer
 
+@play-step ( -- )
+
+	.timer/playing LDZ ?&skip
+		run
+		&skip
+	#00 .timer/playing STZ
+
+!draw-timer
+
 @toggle-guide ( -- )
 
 	.guide LDZk #00 EQU SWP STZ
@@ -585,6 +592,7 @@ JMP2r
 
 @run ( -- )
 
+	manage-voices
 	init/grid
 	( reset head ) LIT2r 0000
 	.grid/height LDZ #00
@@ -605,6 +613,8 @@ JMP2r
 		draw-grid
 		draw-timer
 		&skip
+	.timer/frame LDZ2k INC2 ROT STZ2
+	#00 .timer/beat STZ
 
 JMP2r
 
