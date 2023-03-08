@@ -35,7 +35,6 @@
 	@filepath $40
 	@grid &x1 $2 &y1 $2 &x2 $2 &y2 $2 &size &width $1 &height $1 &length $2
 	@selection &from &x1 $1 &y1 $1 &to &x2 $1 &y2 $1
-	@toolbar &x1 $2 &y1 $2 &x2 $2 &y2 $2
 	@head &x $1 &y $1 &addr $2
 	@variables $24
 	@signal &midi $1 &midi-last $1
@@ -58,7 +57,7 @@
 	#15 .Screen/auto DEO
 
 	( thinkpad: #02a8 x #0180 )
-	#0330 .Screen/width DEO2
+	#0328 .Screen/width DEO2
 	#0200 .Screen/height DEO2
 
 	( size playdate
@@ -93,27 +92,22 @@
 
 	( cache positions )
 	.grid/x1 LDZ2
-		DUP2 .toolbar/x1 STZ2
+		DUP2 #0078 ADD2 ;draw-filepath/x STA2
 		DUP2 ;draw-position/x STA2
 		DUP2 #0030 ADD2 ;draw-timer/x STA2
 		DUP2 #0050 ADD2 ;draw-dpad/x STA2
 		#0050 ADD2 ;draw-speed/x STA2
 	.grid/x2 LDZ2
-		DUP2 .toolbar/x2 STZ2
+		DUP2 #0008 SUB2 ;draw-state/x STA2
 		#0028 SUB2 ;draw-meter/x STA2
-	.grid/y2 LDZ2 #000c ADD2
-		DUP2 .toolbar/y1 STZ2
+	.grid/y2 LDZ2 #0010 ADD2
 		DUP2 ;draw-dpad/y STA2
 		DUP2 ;draw-position/y STA2
 		DUP2 ;draw-timer/y STA2
 		DUP2 ;draw-speed/y STA2
 		DUP2 ;draw-state/y STA2
 		DUP2 ;draw-filepath/y STA2
-		DUP2 ;draw-meter/y STA2
-		#0010 ADD2 .toolbar/y2 STZ2
-	( cache x positions )
-	.toolbar/x1 LDZ2 #0078 ADD2 ;draw-filepath/x STA2
-	.toolbar/x2 LDZ2 #0008 SUB2 ;draw-state/x STA2
+		;draw-meter/y STA2
 
 	( theme support )
 	load-theme
@@ -340,8 +334,14 @@ BRK
 		&no-scroll
 
 	( route )
-	.Mouse/x DEI2 .Mouse/y DEI2 .grid within-rect ?on-mouse-grid
-	.Mouse/x DEI2 .Mouse/y DEI2 .toolbar within-rect ?on-mouse-toolbar
+	.Mouse/x DEI2 .grid/x1 LDZ2 LTH2 ?&skip
+	.Mouse/x DEI2 .grid/x2 LDZ2 GTH2 ?&skip
+		.Mouse/y DEI2 .grid/y2 LDZ2 GTH2 ?&no-grid
+			!on-mouse-grid
+			&no-grid
+		.Mouse/y DEI2 .grid/y2 LDZ2 SUB2 NIP #04 SFT #01 EQU ?on-mouse-toolbar
+		&skip
+	#00 .Mouse/state DEO
 
 BRK
 
@@ -519,7 +519,7 @@ BRK
 	.guide/grid LDZk #00 EQU SWP STZ
 	draw-grid
 	( icon )
-	.toolbar/y1 LDZ2 .Screen/y DEO2
+	.grid/y2 LDZ2 #0010 ADD2 .Screen/y DEO2
 	.grid/x2 LDZ2 #0018 SUB2 .Screen/x DEO2
 	#00 .guide/grid LDZ #40 SFT2 ;help-icn ADD2 .Screen/addr DEO2
 	[ LIT2 01 -Screen/sprite ] DEO
@@ -1180,25 +1180,6 @@ JMP2r
 	POP2 POP2
 
 JMP2r
-
-@within-rect ( x* y* rect -- flag )
-
-	STH
-	( y LTH rect.y1 ) DUP2 STHkr INC INC LDZ2 LTH2 ?&skip
-	( y GTH rect.y2 ) DUP2 STHkr #06 ADD LDZ2 GTH2 ?&skip
-	SWP2
-	( x LTH rect.x1 ) DUP2 STHkr LDZ2 LTH2 ?&skip
-	( x GTH rect.x2 ) DUP2 STHkr #04 ADD LDZ2 GTH2 ?&skip
-	POP2 POP2 POPr
-	#01
-JMP2r
-	&skip
-	POP2 POP2 POPr
-	#00
-
-JMP2r
-
-
 
 ~src/library.tal
 
