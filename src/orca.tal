@@ -31,7 +31,7 @@
 	@dpad $1 &last $1
 	@timer &beat $1 &speed $1 &playing $1 &frame $1 &frame-lb $1
 	@state &timer $1 &changed $1
-	@guide $1 &grid $1
+	@help $1
 	@filepath $40
 	@grid &x1 $2 &y1 $2 &x2 $2 &y2 $2 &size &width $1 &height $1 &length $2
 	@selection &from &x1 $1 &y1 $1 &to &x2 $1 &y2 $1
@@ -116,11 +116,9 @@
 	( blank file )
 	file-new
 
-	( display guide )
-	toggle-guide
-	toggle-grid
-
 	( draw position )
+	toggle-help
+	toggle-grid
 	draw-position
 
 	( start )
@@ -160,8 +158,8 @@ BRK
 		01 ", =play-decr "Decr $1
 		01 ". =play-incr "Incr $1
 	02 "View $1
-		01 "g =toggle-guide "Guide $1
-		01 "h =toggle-grid "Grid $1
+		01 "g =toggle-grid "Grid $1
+		01 "h =toggle-help "Help $1
 	02 "Select $1
 		00 1b =set-sel-reset "Reset $1
 		01 "a =set-sel-all "All $1
@@ -385,7 +383,7 @@ JMP2r
 	( right-side )
 	.grid/x2 LDZ2 .Mouse/x DEI2 SUB2 #03 SFT2 NIP
 	[ #00 ] NEQk NIP ?&no-save file-save &no-save
-	[ #02 ] NEQk NIP ?&no-guide toggle-grid &no-guide
+	[ #02 ] NEQk NIP ?&no-help toggle-grid &no-help
 	POP
 
 BRK
@@ -527,8 +525,8 @@ JMP2r
 	DUP2 .selection/to LDZ2 NEQ2 STH .selection/to STZ2
 	( skip redraw when unchanged )
 	ADDr STHr #01 JCN [ JMP2r ]
-	( hide guide )
-	#00 .guide STZ
+	( hide help )
+	#00 .help STZ
 	( redraw )
 	draw-grid
 
@@ -601,20 +599,20 @@ JMP2r
 
 !draw-timer
 
-@toggle-guide ( -- )
+@toggle-help ( -- )
 
-	.guide LDZk #00 EQU SWP STZ
+	.help LDZk #00 EQU SWP STZ
 
 !draw-grid
 
 @toggle-grid ( -- )
 
-	.guide/grid LDZk #00 EQU SWP STZ
+	;get-char/grid LDA DUP #00 EQU ;get-char/grid STA
 	draw-grid
 	( icon )
 	.grid/y2 LDZ2 #0010 ADD2 .Screen/y DEO2
 	.grid/x2 LDZ2 #0018 SUB2 .Screen/x DEO2
-	#00 .guide/grid LDZ #40 SFT2 ;help-icn ADD2 .Screen/addr DEO2
+	#00 SWP #40 SFT2 ;help-icn ADD2 .Screen/addr DEO2
 	[ LIT2 01 -Screen/sprite ] DEO
 
 JMP2r
@@ -628,12 +626,12 @@ JMP2r
 
 JMP2r
 
-@get-char-at-addr ( addr* -- char )
+@get-char ( addr* -- char )
 
 	;data/cells ADD2 LDA
 	DUP LIT ". NEQ ?&no-bar
 		POP
-		.guide/grid LDZ ?&do-grid
+		[ LIT &grid $1 ] ?&do-grid
 			#20 JMP2r
 			&do-grid
 		.head LDZ2
@@ -743,7 +741,7 @@ JMP2r
 		&hor
 			DUP .head/x STZ
 			STH2kr .head/addr STZ2
-			STH2kr get-char-at-addr get-color draw-chr-color
+			STH2kr get-char get-color draw-chr-color
 			( underline )
 			STH2kr read-lock #02 NEQ ?&no-lock
 				.Screen/x DEI2k #0008 SUB2 ROT DEO2
@@ -758,12 +756,12 @@ JMP2r
 	POP2r
 	( draw meter )
 	draw-meter
-	( draw guide )
-	.guide LDZ ?draw-guide
+	( draw help )
+	.help LDZ ?draw-help
 
 JMP2r
 
-@draw-guide ( -- )
+@draw-help ( -- )
 
 	.Screen/width DEI2 #0200 GTH2 ?&continue
 		JMP2r
