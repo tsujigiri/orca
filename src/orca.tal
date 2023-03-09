@@ -421,11 +421,11 @@ BRK
 
 @init ( -- )
 
-	;data/cells .grid/length LDZ2 LIT ". DUP mfil
+	;data/cells .grid/length LDZ2 [ LIT2 ".. ] mfil
 	&grid
-	;data/locks .grid/length LDZ2 STH2k #0000 mfil
-	;data/types STH2r #0000 mfil
-	;variables #0024 LIT ". DUP mfil
+	;data/locks .grid/length LDZ2 #0000 mfil
+	;data/types .grid/length LDZ2 #0000 mfil
+	;variables #0024 [ LIT2 ".. ] mfil
 	#00 .signal/midi STZ
 
 JMP2r
