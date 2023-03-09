@@ -851,7 +851,7 @@ JMP2r
 	[ LIT2 &y $2 ] .Screen/y DEO2
 	( icon )
 	;save-icn .Screen/addr DEO2
-	[ LIT2 01 -Screen/sprite ] DEO
+	.state/changed LDZ DUP ADD INC .Screen/sprite DEO
 
 JMP2r
 
