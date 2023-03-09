@@ -275,9 +275,9 @@ BRK
 
 	( d-pad handler )
 	.Controller/button DEI .dpad/last LDZ
-	DUP2 #0200 EQU2 ?dpad-input/start
-	DUP2 #0002 EQU2 ?dpad-input/end
-	DUP #0f AND #02 EQU ?dpad-input/add
+	DUP2 #0200 EQU2 ?on-dpad/start
+	DUP2 #0002 EQU2 ?on-dpad/end
+	DUP #0f AND #02 EQU ?on-dpad/add
 	POP ( pop last )
 	.dpad/last STZ
 
@@ -330,7 +330,7 @@ BRK
 
 	.Controller/button DEI #02 NEQ ?&no-scroll
 	.Mouse/scrolly-lb DEI #00 EQU ?&no-scroll
-		.Mouse/scrolly-lb DEI !dpad-input/mod
+		.Mouse/scrolly-lb DEI !on-dpad/mod
 		&no-scroll
 
 	( route )
@@ -390,8 +390,90 @@ JMP2r
 
 BRK
 
+@on-dpad ( -> )
+
+	&start ( button* -> )
+		POP .dpad/last STZ
+		#20 .dpad STZ
+		draw-dpad
+		BRK
+	&end ( button* -> )
+		POP
+		.dpad LDZ fill-sel
+		.selection/from LDZ2 set-sel-from
+		#00 .dpad STZ
+		.dpad/last STZ
+		draw-speed
+		BRK
+	&add ( button* -> )
+		POP #04 SFT
+	&mod ( mod -> )
+		.dpad LDZ ADD
+			( min ) #20 OVR #20 GTH [ JMP SWP POP ]
+			( max ) #7e OVR #7e LTH [ JMP SWP POP ]
+				.dpad STZ
+		draw-dpad
+
+BRK
+
 (
-@|selection )
+@|core )
+
+@init ( -- )
+
+	;data/cells .grid/length LDZ2 LIT ". DUP mfil
+	&grid
+	;data/locks .grid/length LDZ2 STH2k #0000 mfil
+	;data/types STH2r #0000 mfil
+	;variables #0024 LIT ". DUP mfil
+	#00 .signal/midi STZ
+
+JMP2r
+
+@run ( -- )
+
+	manage-voices
+	init/grid
+	( reset head ) LIT2r 0000
+	.grid/height LDZ #00
+	&ver
+		DUP .head/y STZ
+		.grid/width LDZ #00
+		&hor
+			DUP .head/x STZ
+			STH2kr run-char
+			INC2r
+			INC GTHk ?&hor
+		POP2
+		INC GTHk ?&ver
+	POP2
+	POP2r
+	( do not draw when menu )
+	;draw-menu/sel LDA INC ?&skip
+		draw-grid
+		draw-timer
+		&skip
+	.timer/frame LDZ2k INC2 ROT STZ2
+	#00 .timer/beat STZ
+
+JMP2r
+
+@run-char ( id* -- )
+
+	( cache )
+	DUP2 .head/addr STZ2
+	( skip locked )
+	DUP2 read-lock ?&locked
+	( run unlocked )
+	DUP2 ;data/cells ADD2 LDA
+	#00 SWP #20 SUB DUP ADD ;op-ascii ADD2 LDA2 JMP2
+	&locked
+	POP2
+
+JMP2r
+
+(
+@|actions )
 
 @play-decr ( -- ) #ff !mod-speed
 @play-incr ( -- ) #01 !mod-speed
@@ -473,6 +555,17 @@ BRK
 
 !draw-state
 
+@is-selected ( x y -- bool )
+
+	DUP .selection/y1 LDZ LTH ?&outside
+	DUP .selection/y2 LDZ GTH ?&outside
+	OVR .selection/x1 LDZ LTH ?&outside
+	OVR .selection/x2 LDZ GTH ?&outside
+	POP2 #01
+
+JMP2r
+	&outside POP2 #00 JMP2r
+
 @mod-speed ( mod -- )
 
 	.timer/speed LDZ ADD
@@ -526,113 +619,57 @@ BRK
 
 JMP2r
 
-( special )
+@get-color ( -- char type )
 
-@dpad-input ( -> )
+	.head LDZ2 is-selected ?&selected
+		#00 .head/addr LDZ2 read-type ;styles-lut ADD2 LDA JMP2r
+	&selected
+		#0c
 
-	&start ( button* -> )
-		POP .dpad/last STZ
-		#20 .dpad STZ
-		draw-dpad
-		BRK
-	&end ( button* -> )
+JMP2r
+
+@get-char-at-addr ( addr* -- char )
+
+	;data/cells ADD2 LDA
+	DUP LIT ". NEQ ?&no-bar
 		POP
-		.dpad LDZ fill-sel
-		.selection/from LDZ2 set-sel-from
-		#00 .dpad STZ
-		.dpad/last STZ
-		draw-speed
-		BRK
-	&add ( button* -> )
-		POP #04 SFT
-	&mod ( mod -> )
-		.dpad LDZ ADD
-			( min ) #20 OVR #20 GTH [ JMP SWP POP ]
-			( max ) #7e OVR #7e LTH [ JMP SWP POP ]
-				.dpad STZ
-		draw-dpad
-
-BRK
-
-@init ( -- )
-
-	;data/cells .grid/length LDZ2 LIT ". DUP mfil
-	&grid
-	;data/locks .grid/length LDZ2 STH2k #0000 mfil
-	;data/types STH2r #0000 mfil
-	;variables #0024 LIT ". DUP mfil
-	#00 .signal/midi STZ
+		.guide/grid LDZ ?&do-grid
+			#20 JMP2r
+			&do-grid
+		.head LDZ2
+		DUP2 #07 AND SWP #0f AND ORA ?&no-cross
+			POP2 #7f JMP2r
+			&no-cross
+		DUP2 #01 AND SWP #03 AND ORA ?&no-dot
+			&dot POP2 LIT ". JMP2r
+			&no-dot
+		DUP2 is-selected ?&dot
+		.head/addr LDZ2 read-type ?&dot
+		POP2 #20
+	&no-bar
 
 JMP2r
 
-@manage-voices ( -> )
+@get-word ( addr* -- word* )
 
-	( iterate thru channels )
-
-	#1000 &while EQUk ?&end
-		( note ) DUPk ADD .voices ADD LDZk
-		( remaining length ) SWP INC LDZ
-		( next channel if already 0 ) DUP #00 EQU ?&next-chan
-		( update remaining length ) #01 SUB ROTk DUP ADD .voices ADD INC STZ POP
-		( send note-off when length reaches 0 )
-		#00 NEQ ?&no-off
-			( channel ) OVR .Console/write DEO
-			( note ) DUP .Console/write DEO
-			( off ) #00 .Console/write DEO
-		&no-off
-		POP
-		INC
-	!&while
-		&end POP2 JMP2r
-
-	&next-chan POP2 INC
-	,&while JMP
-
-JMP2r
-
-@run ( -- )
-
-	manage-voices
-	init/grid
-	( reset head ) LIT2r 0000
-	.grid/height LDZ #00
-	&ver
-		DUP .head/y STZ
-		.grid/width LDZ #00
-		&hor
-			DUP .head/x STZ
-			STH2kr run-char
-			INC2r
-			INC GTHk ?&hor
-		POP2
-		INC GTHk ?&ver
+	;&word #0020 mclr
+	&while
+		INC2 DUP2 read-cell
+			DUP LIT ". EQU ?&skip
+				DUP ;&word sput
+				&skip
+			LIT ". NEQ ?&while
 	POP2
-	POP2r
-	( do not draw when menu )
-	;draw-menu/sel LDA INC ?&skip
-		draw-grid
-		draw-timer
-		&skip
-	.timer/frame LDZ2k INC2 ROT STZ2
-	#00 .timer/beat STZ
+	;&word
 
 JMP2r
+	&word $20
 
-@run-char ( id* -- )
+@get-strw ( str* -- width* )
 
-	( cache )
-	DUP2 .head/addr STZ2
-	( skip locked )
-	DUP2 read-lock ?&locked
-	( run unlocked )
-	DUP2 ;data/cells ADD2 LDA
-	#00 SWP #20 SUB DUP ADD ;op-ascii ADD2 LDA2 JMP2
-	&locked
-	POP2
+	slen #30 SFT2
 
 JMP2r
-
-( operations )
 
 @get-bang ( -- bang )
 
@@ -662,7 +699,93 @@ JMP2r
 JMP2r
 
 (
+@|voices )
+
+@manage-voices ( -> )
+
+	( iterate thru channels )
+
+	#1000 &while EQUk ?&end
+		( note ) DUPk ADD .voices ADD LDZk
+		( remaining length ) SWP INC LDZ
+		( next channel if already 0 ) DUP #00 EQU ?&next-chan
+		( update remaining length ) #01 SUB ROTk DUP ADD .voices ADD INC STZ POP
+		( send note-off when length reaches 0 )
+		#00 NEQ ?&no-off
+			( channel ) OVR .Console/write DEO
+			( note ) DUP .Console/write DEO
+			( off ) #00 .Console/write DEO
+		&no-off
+		POP
+		INC
+	!&while
+		&end POP2 JMP2r
+
+	&next-chan POP2 INC
+	,&while JMP
+
+JMP2r
+
+(
 @|drawing )
+
+@redraw-all ( -- )
+
+@draw-grid ( -- )
+
+	( reset head ) LIT2r 0000
+	.grid/height LDZ #00
+	&ver
+		DUP .head/y STZ
+		( x ) .grid/x1 LDZ2 .Screen/x DEO2
+		( y ) #00 OVR #40 SFT2 .grid/y1 LDZ2 ADD2 .Screen/y DEO2
+		.grid/width LDZ #00
+		&hor
+			DUP .head/x STZ
+			STH2kr .head/addr STZ2
+			STH2kr get-char-at-addr get-color draw-chr-color
+			( underline )
+			STH2kr read-lock #02 NEQ ?&no-lock
+				.Screen/x DEI2k #0008 SUB2 ROT DEO2
+				;underline-icn .Screen/addr DEO2
+				#0f .Screen/sprite DEO
+				&no-lock
+			INC2r
+			INC GTHk ?&hor
+		POP2
+		INC GTHk ?&ver
+	POP2
+	POP2r
+	( draw meter )
+	draw-meter
+	( draw guide )
+	.guide LDZ ?draw-guide
+
+JMP2r
+
+@draw-guide ( -- )
+
+	.Screen/width DEI2 #0200 GTH2 ?&continue
+		JMP2r
+		&continue
+
+	#0020 #0000
+	&loop
+		( x ) DUP2 #84 SFT2 .grid/x1 LDZ2 ADD2 #0020 ADD2 .Screen/x DEO2
+		( y ) DUP2 #000f AND2 #40 SFT2 .grid/y1 LDZ2 ADD2 #0020 ADD2 .Screen/y DEO2
+		.Screen/y DEI2 .grid/y2 LDZ2 #0030 SUB2 GTH2 ?&skip
+		DUP2k ADD2 ;docs-lut ADD2 LDA2
+		( glyph )
+			LDAk #0c draw-chr-color
+		( space )
+			[ LIT2 00 -Screen/sprite ] DEO
+		( text )
+			INC2 #01 draw-str-color
+		&skip
+		INC2 GTH2k ?&loop
+	POP2 POP2
+
+JMP2r
 
 @draw-dpad ( -- )
 
@@ -751,121 +874,6 @@ JMP2r
 
 JMP2r
 
-@redraw-all ( -- )
-
-@draw-grid ( -- )
-
-	( reset head ) LIT2r 0000
-	.grid/height LDZ #00
-	&ver
-		DUP .head/y STZ
-		( x ) .grid/x1 LDZ2 .Screen/x DEO2
-		( y ) #00 OVR #40 SFT2 .grid/y1 LDZ2 ADD2 .Screen/y DEO2
-		.grid/width LDZ #00
-		&hor
-			DUP .head/x STZ
-			STH2kr .head/addr STZ2
-			STH2kr get-char-at-addr get-color draw-chr-color
-			( underline )
-			STH2kr read-lock #02 NEQ ?&no-lock
-				.Screen/x DEI2k #0008 SUB2 ROT DEO2
-				;underline-icn .Screen/addr DEO2
-				#0f .Screen/sprite DEO
-				&no-lock
-			INC2r
-			INC GTHk ?&hor
-		POP2
-		INC GTHk ?&ver
-	POP2
-	POP2r
-	( draw meter )
-	draw-meter
-	( draw guide )
-	.guide LDZ ?draw-guide
-
-JMP2r
-
-@get-color ( -- char type )
-
-	.head LDZ2 is-selected ?&selected
-		#00 .head/addr LDZ2 read-type ;styles-lut ADD2 LDA JMP2r
-	&selected
-		#0c
-
-JMP2r
-
-@get-char-at-addr ( addr* -- char )
-
-	;data/cells ADD2 LDA
-	DUP LIT ". NEQ ?&no-bar
-		POP
-		.guide/grid LDZ ?&do-grid
-			#20 JMP2r
-			&do-grid
-		.head LDZ2
-		DUP2 #07 AND SWP #0f AND ORA ?&no-cross
-			POP2 #7f JMP2r
-			&no-cross
-		DUP2 #01 AND SWP #03 AND ORA ?&no-dot
-			&dot POP2 LIT ". JMP2r
-			&no-dot
-		DUP2 is-selected ?&dot
-		.head/addr LDZ2 read-type ?&dot
-		POP2 #20
-	&no-bar
-
-JMP2r
-
-@get-word ( addr* -- word* )
-
-	;&word #0020 mclr
-	&while
-		INC2 DUP2 read-cell
-			DUP LIT ". EQU ?&skip
-				DUP ;&word sput
-				&skip
-			LIT ". NEQ ?&while
-	POP2
-	;&word
-
-JMP2r
-	&word $20
-
-@is-selected ( x y -- bool )
-
-	DUP .selection/y1 LDZ LTH ?&outside
-	DUP .selection/y2 LDZ GTH ?&outside
-	OVR .selection/x1 LDZ LTH ?&outside
-	OVR .selection/x2 LDZ GTH ?&outside
-	POP2 #01
-
-JMP2r
-	&outside POP2 #00 JMP2r
-
-@draw-guide ( -- )
-
-	.Screen/width DEI2 #0200 GTH2 ?&continue
-		JMP2r
-		&continue
-
-	#0020 #0000
-	&loop
-		( x ) DUP2 #84 SFT2 .grid/x1 LDZ2 ADD2 #0020 ADD2 .Screen/x DEO2
-		( y ) DUP2 #000f AND2 #40 SFT2 .grid/y1 LDZ2 ADD2 #0020 ADD2 .Screen/y DEO2
-		.Screen/y DEI2 .grid/y2 LDZ2 #0030 SUB2 GTH2 ?&skip
-		DUP2k ADD2 ;docs-lut ADD2 LDA2
-		( glyph )
-			LDAk #0c draw-chr-color
-		( space )
-			[ LIT2 00 -Screen/sprite ] DEO
-		( text )
-			INC2 #01 draw-str-color
-		&skip
-		INC2 GTH2k ?&loop
-	POP2 POP2
-
-JMP2r
-
 @draw-short ( short* -- )
 
 	SWP draw-byte
@@ -911,12 +919,6 @@ JMP2r
 
 	,draw-chr/color STR
 	draw-str POP2
-
-JMP2r
-
-@get-strw ( str* -- width* )
-
-	slen #30 SFT2
 
 JMP2r
 
