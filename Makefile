@@ -21,7 +21,7 @@ run: bin/orca.rom
 clean:
 	rm -f bin/*
 
-bin/orca.rom: src/orca.tal src/library.tal
+bin/orca.rom: src/*.tal
 	${UXNASM} src/orca.tal $@
 
 .PHONY: build lint install run clean
